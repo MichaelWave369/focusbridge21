@@ -1,0 +1,175 @@
+/* FocusBridge21 v1.0.1 — floating control layout hotfix
+   Keeps all lab launch buttons in clean rails so they do not overlap. */
+
+:root {
+  --fb21-rail-gap: 58px;
+  --fb21-rail-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  --fb21-rail-side: calc(18px + env(safe-area-inset-right, 0px));
+  --fb21-rail-left: calc(18px + env(safe-area-inset-left, 0px));
+}
+
+/* Shared launcher polish */
+.fb21-coach-launcher,
+.fb21-v06-btn,
+.fb21-v07-button,
+.fb21-guide-fab,
+.fb21-audio-btn,
+.fb21-v10-button,
+.fb21-lab-fab {
+  min-height: 44px;
+  white-space: nowrap;
+  line-height: 1;
+  transition: transform 0.16s ease, opacity 0.16s ease, border-color 0.16s ease;
+}
+
+.fb21-coach-launcher:hover,
+.fb21-v06-btn:hover,
+.fb21-v07-button:hover,
+.fb21-guide-fab:hover,
+.fb21-audio-btn:hover,
+.fb21-v10-button:hover,
+.fb21-lab-fab:hover {
+  transform: translateY(-1px);
+}
+
+/* Right rail: most frequently used tools. */
+.fb21-coach-launcher {
+  right: var(--fb21-rail-side) !important;
+  bottom: var(--fb21-rail-bottom) !important;
+  z-index: 9998 !important;
+}
+
+.fb21-v06-btn {
+  right: var(--fb21-rail-side) !important;
+  bottom: calc(var(--fb21-rail-bottom) + var(--fb21-rail-gap)) !important;
+  z-index: 9998 !important;
+}
+
+.fb21-guide-fab {
+  right: var(--fb21-rail-side) !important;
+  bottom: calc(var(--fb21-rail-bottom) + (var(--fb21-rail-gap) * 2)) !important;
+  z-index: 9998 !important;
+}
+
+.fb21-audio-btn {
+  right: var(--fb21-rail-side) !important;
+  bottom: calc(var(--fb21-rail-bottom) + (var(--fb21-rail-gap) * 3)) !important;
+  z-index: 9998 !important;
+}
+
+.fb21-v07-button {
+  right: var(--fb21-rail-side) !important;
+  bottom: calc(var(--fb21-rail-bottom) + (var(--fb21-rail-gap) * 4)) !important;
+  z-index: 9998 !important;
+}
+
+/* Left rail: release/status + Pattern Lab, separated from the right rail. */
+.fb21-v10-button {
+  left: var(--fb21-rail-left) !important;
+  right: auto !important;
+  bottom: var(--fb21-rail-bottom) !important;
+  z-index: 9998 !important;
+}
+
+.fb21-lab-fab {
+  left: var(--fb21-rail-left) !important;
+  right: auto !important;
+  bottom: calc(var(--fb21-rail-bottom) + var(--fb21-rail-gap)) !important;
+  z-index: 9998 !important;
+}
+
+/* Keep panels clear of the tidy rails. */
+.fb21-coach {
+  right: var(--fb21-rail-side) !important;
+  bottom: calc(var(--fb21-rail-bottom) + var(--fb21-rail-gap)) !important;
+}
+
+.fb21-audio-panel {
+  right: calc(var(--fb21-rail-side) + 6px) !important;
+  bottom: calc(var(--fb21-rail-bottom) + (var(--fb21-rail-gap) * 5) + 10px) !important;
+  max-height: calc(100vh - 360px) !important;
+}
+
+/* Install prompt should not sit over the rails. */
+.fb21-install-strip {
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+  width: min(620px, calc(100vw - 300px)) !important;
+  min-width: min(620px, calc(100vw - 300px));
+}
+
+/* Add breathing room when fixed controls are visible. */
+body {
+  padding-bottom: 96px;
+}
+
+@media (max-width: 980px) {
+  :root {
+    --fb21-rail-gap: 54px;
+    --fb21-rail-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    --fb21-rail-side: calc(12px + env(safe-area-inset-right, 0px));
+    --fb21-rail-left: calc(12px + env(safe-area-inset-left, 0px));
+  }
+
+  .fb21-coach-launcher,
+  .fb21-v06-btn,
+  .fb21-v07-button,
+  .fb21-guide-fab,
+  .fb21-audio-btn,
+  .fb21-v10-button,
+  .fb21-lab-fab {
+    padding: 10px 12px !important;
+    font-size: 0.88rem !important;
+  }
+
+  .fb21-install-strip {
+    width: min(560px, calc(100vw - 260px)) !important;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  /* On phones/tablets, use a compact bottom dock instead of tall side rails. */
+  .fb21-coach-launcher,
+  .fb21-v06-btn,
+  .fb21-v07-button,
+  .fb21-guide-fab,
+  .fb21-audio-btn,
+  .fb21-v10-button,
+  .fb21-lab-fab {
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    position: fixed !important;
+    transform: none !important;
+    font-size: 0.78rem !important;
+    padding: 9px 10px !important;
+    max-width: 44vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fb21-v10-button { left: 10px !important; bottom: 10px !important; }
+  .fb21-lab-fab { left: 10px !important; bottom: 58px !important; }
+  .fb21-coach-launcher { right: 10px !important; bottom: 10px !important; }
+  .fb21-v06-btn { right: 10px !important; bottom: 58px !important; }
+  .fb21-guide-fab { right: 10px !important; bottom: 106px !important; }
+  .fb21-audio-btn { right: 10px !important; bottom: 154px !important; }
+  .fb21-v07-button { right: 10px !important; bottom: 202px !important; }
+
+  .fb21-install-strip {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 256px !important;
+    transform: none !important;
+    width: auto !important;
+  }
+
+  .fb21-coach,
+  .fb21-audio-panel {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 256px !important;
+    width: auto !important;
+    max-height: calc(100vh - 280px) !important;
+  }
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FocusBridge21 app icon">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0%" stop-color="#b9a7ff" stop-opacity="0.92"/>
+      <stop offset="42%" stop-color="#31285d"/>
+      <stop offset="100%" stop-color="#070712"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd7a6"/>
+      <stop offset="55%" stop-color="#b9a7ff"/>
+      <stop offset="100%" stop-color="#7df2b3"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="178" fill="none" stroke="url(#ring)" stroke-width="10" opacity="0.78"/>
+  <circle cx="256" cy="256" r="132" fill="none" stroke="#f5f0ff" stroke-width="5" stroke-dasharray="18 14" opacity="0.55"/>
+  <circle cx="256" cy="256" r="84" fill="none" stroke="#ffd7a6" stroke-width="6" opacity="0.68"/>
+  <path d="M148 266 C194 210 221 195 256 195 C291 195 318 210 364 266" fill="none" stroke="#f5f0ff" stroke-width="11" stroke-linecap="round" opacity="0.86"/>
+  <path d="M148 310 C196 256 222 242 256 242 C290 242 316 256 364 310" fill="none" stroke="#b9a7ff" stroke-width="10" stroke-linecap="round" opacity="0.82"/>
+  <circle cx="256" cy="256" r="24" fill="#ffd7a6" opacity="0.95"/>
+  <text x="256" y="410" fill="#f5f0ff" text-anchor="middle" font-family="Georgia, serif" font-size="46" font-weight="700" letter-spacing="5">FB21</text>
+</svg>

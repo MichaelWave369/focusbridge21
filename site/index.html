@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FocusBridge21</title>
+  <meta name="description" content="Sovereign threshold-training cockpit for original audio, guided practice, safe return, and local session receipts." />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070712;
+      --panel: rgba(255,255,255,.06);
+      --line: rgba(255,255,255,.14);
+      --text: #f3efff;
+      --muted: rgba(243,239,255,.74);
+      --accent: #b9a7ff;
+      --warm: #ffd7a6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(154,124,255,.24), transparent 36rem),
+        radial-gradient(circle at 80% 70%, rgba(255,180,120,.13), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 80px 0 48px; text-align: center; }
+    .eyebrow { color: var(--warm); text-transform: uppercase; letter-spacing: .16em; font-size: .8rem; font-weight: 700; }
+    h1 { font-size: clamp(3rem, 9vw, 7rem); line-height: .92; margin: 16px 0; letter-spacing: -.06em; }
+    .subtitle { font-size: clamp(1.08rem, 2vw, 1.45rem); color: var(--muted); max-width: 820px; margin: 0 auto 28px; }
+    .actions { display:flex; gap: 12px; flex-wrap: wrap; justify-content:center; margin-top: 28px; }
+    a.button {
+      display:inline-flex; align-items:center; justify-content:center;
+      padding: 13px 18px; border-radius: 999px; text-decoration:none;
+      border: 1px solid var(--line); color: var(--text); background: var(--panel); font-weight: 700;
+    }
+    a.button.primary { background: linear-gradient(135deg, rgba(185,167,255,.32), rgba(255,215,166,.16)); border-color: rgba(185,167,255,.55); }
+    .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 26px 0; }
+    .card { border: 1px solid var(--line); background: var(--panel); border-radius: 24px; padding: 22px; box-shadow: 0 20px 70px rgba(0,0,0,.24); }
+    .card h2, .card h3 { margin-top:0; line-height:1.12; }
+    .card p { color: var(--muted); }
+    .wide { grid-column: span 2; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #d9d0ff; }
+    .portal { height: 300px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+    .ring { position:absolute; border-radius:50%; border:1px solid rgba(230,220,255,.30); box-shadow:0 0 28px rgba(185,167,255,.18); }
+    .r1 { width:260px; height:260px; animation: spin 72s linear infinite; }
+    .r2 { width:210px; height:210px; animation: spinR 96s linear infinite; border-style:dashed; }
+    .r3 { width:150px; height:150px; animation: pulse 18s ease-in-out infinite; }
+    .core { font-family: Georgia, serif; letter-spacing:.12em; font-size:.78rem; color:#fff; text-align:center; opacity:.9; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spinR { to { transform: rotate(-360deg); } }
+    @keyframes pulse { 0%,100% { transform: scale(.96); opacity:.55; } 50% { transform: scale(1.04); opacity:.8; } }
+    code { background: rgba(255,255,255,.08); padding: .16rem .35rem; border-radius: .4rem; }
+    pre { overflow:auto; border-radius:18px; border:1px solid var(--line); background: rgba(0,0,0,.32); padding: 18px; }
+    footer { padding: 42px 0 70px; color: var(--muted); text-align:center; }
+    @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } .wide { grid-column: span 1; } header { padding-top: 52px; } }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <div class="eyebrow">Parallax / PHI369 prototype</div>
+    <h1>FocusBridge21</h1>
+    <p class="subtitle">A local-first threshold-training cockpit for original audio, guided practice, safe return, and append-only Signal Ledger receipts.</p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/MichaelWave369/focusbridge21">View on GitHub</a>
+      <a class="button" href="https://github.com/MichaelWave369/focusbridge21/blob/main/docs/FocusBridge21_Master_Spec_v0.2.md">Read the spec</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="grid">
+      <article class="card wide">
+        <h2>Not a magic gate button. A practice cockpit.</h2>
+        <p>FocusBridge21 does not promise Focus 21, OBE, therapy, diagnosis, or proprietary signal recreation. It trains capacities: readiness, body-asleep stability, expanded awareness, time-release, stable witness, clean return, and integration.</p>
+        <p class="mono">We do not promise the gate. We train the capacities that make the gate safer, clearer, and more repeatable.</p>
+      </article>
+      <article class="card portal" aria-label="Slow non-flashing portal visual">
+        <div class="ring r1"></div>
+        <div class="ring r2"></div>
+        <div class="ring r3"></div>
+        <div class="core">SLOW<br/>SAFE<br/>RETURN</div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card"><h3>Readiness Gate</h3><p>Checks mood, sleep, stress, groundedness, environment, headphones, and safety acknowledgement before practice.</p></article>
+      <article class="card"><h3>Original Audio</h3><p>Generates transparent binaural WAV sessions locally with gentle ramps and optional noise layers.</p></article>
+      <article class="card"><h3>Signal Ledger</h3><p>Writes append-only JSONL receipts so the practitioner can learn personal patterns over time.</p></article>
+      <article class="card"><h3>Safety + Return</h3><p>Prominent RETURN NOW grounding protocol, low default intensity, and slow non-flashing visuals.</p></article>
+      <article class="card"><h3>8-Week Protocol</h3><p>Capacity-focused training arc from body-asleep practice toward threshold / bridge sessions.</p></article>
+      <article class="card"><h3>Local First</h3><p>No cloud required. Runtime data stays on the machine unless intentionally exported.</p></article>
+    </section>
+
+    <section class="card">
+      <h2>Run locally</h2>
+      <pre><code>git clone https://github.com/MichaelWave369/focusbridge21.git
+cd focusbridge21
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py</code></pre>
+      <p>MIT licensed. Public prototype. Claim-disciplined. Receipt-driven.</p>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    FocusBridge21 v0.1 — built for sovereign practice, honest receipts, and clean return.
+  </footer>
+</body>
+</html>

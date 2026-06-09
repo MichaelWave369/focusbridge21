@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v0-8-guidance-lab";
+const CACHE_NAME = "focusbridge21-v0-9-audio-lab";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,12 +12,14 @@ const APP_SHELL = [
   "./docs/fb21-v06-lab.css",
   "./docs/fb21-v07-masterylab.css",
   "./docs/fb21-v08-guidancelab.css",
+  "./docs/fb21-v09-audiolab.css",
   "./docs/fb21-react.js",
   "./docs/fb21-pwa-coach.js",
   "./docs/fb21-pattern-lab.js",
   "./docs/fb21-v06-lab.js",
   "./docs/fb21-v07-masterylab.js",
   "./docs/fb21-v08-guidancelab.js",
+  "./docs/fb21-v09-audiolab.js",
   "./docs/icon.svg",
   "./docs/FocusBridge21_Master_Spec_v0.2.md",
   "https://unpkg.com/react@18/umd/react.production.min.js",

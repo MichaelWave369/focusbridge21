@@ -14,10 +14,13 @@ The browser React/PWA prototype can run from the repo root or from `/docs` with 
 
 ### Current live version
 
-**FocusBridge21 v1.0 Release Hub**
+**FocusBridge21 v1.1 Command Hub**
 
 The live app includes:
 
+- Unified **Command Hub** that replaces the scattered floating launcher stack with one clean cockpit entry point.
+- Command Hub stats: receipts, streak, average coherence, and average return quality.
+- Command Hub recommendations for the best next tool based on local receipts.
 - Guided Session Flow Wizard: readiness → recommendation → cockpit → return → journal → ledger.
 - Smooth quick-start cards: 2-min demo, gentle reset, Bridge preview, training session.
 - Readiness Gate Score with safer automatic preset/duration suggestions.
@@ -118,12 +121,12 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 .
 ├── index.html
 ├── 404.html
-├── manifest.webmanifest
-├── service-worker.js
 ├── app.py
 ├── requirements.txt
 ├── README.md
 ├── LICENSE
+├── manifest.webmanifest
+├── service-worker.js
 ├── docs/
 │   ├── index.html
 │   ├── styles.css
@@ -135,6 +138,8 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── fb21-v08-guidancelab.css
 │   ├── fb21-v09-audiolab.css
 │   ├── fb21-v10-releasehub.css
+│   ├── fb21-v10-layout-fix.css
+│   ├── fb21-v11-commandhub.css
 │   ├── fb21-react.js
 │   ├── fb21-pwa-coach.js
 │   ├── fb21-pattern-lab.js
@@ -143,7 +148,7 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── fb21-v08-guidancelab.js
 │   ├── fb21-v09-audiolab.js
 │   ├── fb21-v10-releasehub.js
-│   ├── icon.svg
+│   ├── fb21-v11-commandhub.js
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/
     └── index.html

@@ -14,10 +14,16 @@ The browser React/PWA prototype can run from the repo root or from `/docs` with 
 
 ### Current live version
 
-**FocusBridge21 v1.1 Command Hub**
+**FocusBridge21 v1.2 Experience Layer**
 
 The live app includes:
 
+- v1.2 Experience Guide bar for onboarding and safer first-run use.
+- First-run orientation tour: readiness, short sessions, RETURN NOW, local ledger, and beginner mode.
+- Beginner Mode toggle that hides advanced lab launchers for a calmer practice cockpit.
+- Advanced Mode toggle that restores the full lab stack.
+- Privacy & Data Center for local storage visibility, private backup export, cache refresh, and local data clearing.
+- Practice Snapshot with release readiness, streak, average return, average coherence, average resistance, receipts, and best-next-move guidance.
 - Unified **Command Hub** that replaces the scattered floating launcher stack with one clean cockpit entry point.
 - Command Hub stats: receipts, streak, average coherence, and average return quality.
 - Command Hub recommendations for the best next tool based on local receipts.
@@ -121,12 +127,12 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 .
 ├── index.html
 ├── 404.html
+├── manifest.webmanifest
+├── service-worker.js
 ├── app.py
 ├── requirements.txt
 ├── README.md
 ├── LICENSE
-├── manifest.webmanifest
-├── service-worker.js
 ├── docs/
 │   ├── index.html
 │   ├── styles.css
@@ -140,6 +146,7 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── fb21-v10-releasehub.css
 │   ├── fb21-v10-layout-fix.css
 │   ├── fb21-v11-commandhub.css
+│   ├── fb21-v12-experience.css
 │   ├── fb21-react.js
 │   ├── fb21-pwa-coach.js
 │   ├── fb21-pattern-lab.js
@@ -149,6 +156,8 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── fb21-v09-audiolab.js
 │   ├── fb21-v10-releasehub.js
 │   ├── fb21-v11-commandhub.js
+│   ├── fb21-v12-experience.js
+│   ├── icon.svg
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/
     └── index.html

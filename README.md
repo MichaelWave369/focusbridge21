@@ -14,7 +14,7 @@ The browser React prototype can run from the repo root or from `/docs` with no b
 
 ### Current live version
 
-**React Pages v0.6 Studio Lab**
+**React Pages v0.7 Mastery Lab**
 
 The live app includes:
 
@@ -44,6 +44,7 @@ The live app includes:
 - **Studio Lab overlay** with Today view, Private Backup Vault, Weekly Review export, 7-day smooth plan, Comfort Profiles, and quick tone checks.
 - Full local backup/restore for FocusBridge21 browser data.
 - Comfort profiles that apply safer builder defaults and reload the app cleanly.
+- **Mastery Lab overlay** with capacity map, milestones, best-condition analysis, local coach card, audio recipe library, custom comfort builder, 14-day plan, calendar export, and mastery report export.
 
 Recommended GitHub Pages setting:
 
@@ -125,10 +126,12 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── pwa-coach.css
 │   ├── pattern-lab.css
 │   ├── fb21-v06-lab.css
+│   ├── fb21-v07-masterylab.css
 │   ├── fb21-react.js
 │   ├── fb21-pwa-coach.js
 │   ├── fb21-pattern-lab.js
 │   ├── fb21-v06-lab.js
+│   ├── fb21-v07-masterylab.js
 │   ├── icon.svg
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/

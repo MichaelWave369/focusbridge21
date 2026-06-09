@@ -1,0 +1,198 @@
+.fb21-audio-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 332px;
+  z-index: 70;
+  border: 1px solid rgba(125, 242, 179, 0.44);
+  background: linear-gradient(135deg, rgba(125, 242, 179, 0.18), rgba(185, 167, 255, 0.16));
+  color: var(--text, #f5f0ff);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+}
+
+.fb21-audio-panel {
+  position: fixed;
+  right: 18px;
+  bottom: 390px;
+  width: min(680px, calc(100vw - 28px));
+  max-height: min(82vh, 820px);
+  overflow: auto;
+  z-index: 75;
+  border: 1px solid rgba(125, 242, 179, 0.26);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(125, 242, 179, 0.13), transparent 20rem),
+    radial-gradient(circle at 92% 18%, rgba(255, 215, 166, 0.10), transparent 20rem),
+    rgba(7, 7, 18, 0.94);
+  color: var(--text, #f5f0ff);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 30px 110px rgba(0, 0, 0, 0.48);
+  padding: 18px;
+}
+
+.fb21-audio-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fb21-audio-head h2,
+.fb21-audio-section h3 {
+  margin: 0 0 6px;
+}
+
+.fb21-audio-x {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text, #f5f0ff);
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+}
+
+.fb21-audio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.fb21-audio-section {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 14px;
+}
+
+.fb21-audio-section.wide {
+  grid-column: 1 / -1;
+}
+
+.fb21-audio-field {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.fb21-audio-field label {
+  color: var(--muted, rgba(245, 240, 255, 0.74));
+  font-weight: 800;
+  font-size: 0.86rem;
+}
+
+.fb21-audio-field select,
+.fb21-audio-field input[type="range"],
+.fb21-audio-field input[type="number"],
+.fb21-audio-field textarea {
+  width: 100%;
+}
+
+.fb21-audio-field select,
+.fb21-audio-field input[type="number"],
+.fb21-audio-field textarea {
+  color: var(--text, #f5f0ff);
+  background: rgba(0, 0, 0, 0.30);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 13px;
+  padding: 9px 10px;
+}
+
+.fb21-audio-field textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.fb21-audio-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.fb21-audio-pillrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.fb21-audio-pill {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--muted, rgba(245, 240, 255, 0.74));
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.fb21-audio-pill.good { color: var(--good, #7df2b3); border-color: rgba(125, 242, 179, 0.30); }
+.fb21-audio-pill.warn { color: var(--warn, #ffe08a); border-color: rgba(255, 224, 138, 0.32); }
+.fb21-audio-pill.hot { color: var(--danger, #ff9696); border-color: rgba(255, 150, 150, 0.32); }
+
+.fb21-audio-meter {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.fb21-audio-meter span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(125, 242, 179, 0.70), rgba(255, 215, 166, 0.72));
+  transition: width .2s ease;
+}
+
+.fb21-audio-recipe-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.fb21-audio-recipe {
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.20);
+  color: var(--text, #f5f0ff);
+}
+
+.fb21-audio-recipe strong,
+.fb21-audio-recipe span {
+  display: block;
+}
+
+.fb21-audio-recipe span {
+  color: var(--muted, rgba(245, 240, 255, 0.74));
+  font-size: .83rem;
+  margin-top: 3px;
+}
+
+.fb21-audio-status {
+  border: 1px solid rgba(185, 167, 255, 0.24);
+  background: rgba(185, 167, 255, 0.09);
+  color: var(--muted, rgba(245, 240, 255, 0.74));
+  border-radius: 16px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+@media (max-width: 920px) {
+  .fb21-audio-btn {
+    bottom: 356px;
+    right: 12px;
+  }
+  .fb21-audio-panel {
+    right: 10px;
+    bottom: 410px;
+  }
+  .fb21-audio-grid,
+  .fb21-audio-recipe-list {
+    grid-template-columns: 1fr;
+  }
+}

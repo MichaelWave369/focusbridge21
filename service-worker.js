@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v1-0-1-layout-hotfix";
+const CACHE_NAME = "focusbridge21-v1-1-command-hub";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -15,6 +15,7 @@ const APP_SHELL = [
   "./docs/fb21-v09-audiolab.css",
   "./docs/fb21-v10-releasehub.css",
   "./docs/fb21-v10-layout-fix.css",
+  "./docs/fb21-v11-commandhub.css",
   "./docs/fb21-react.js",
   "./docs/fb21-pwa-coach.js",
   "./docs/fb21-pattern-lab.js",
@@ -23,6 +24,7 @@ const APP_SHELL = [
   "./docs/fb21-v08-guidancelab.js",
   "./docs/fb21-v09-audiolab.js",
   "./docs/fb21-v10-releasehub.js",
+  "./docs/fb21-v11-commandhub.js",
   "./docs/icon.svg",
   "./docs/FocusBridge21_Master_Spec_v0.2.md",
   "https://unpkg.com/react@18/umd/react.production.min.js",

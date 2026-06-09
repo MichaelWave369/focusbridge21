@@ -2,9 +2,10 @@
   const { useEffect, useMemo, useRef, useState } = React;
   const h = React.createElement;
 
-  const VERSION = "React Pages v0.2 Smooth Cockpit";
+  const VERSION = "React Pages v0.3 Smooth Flow";
   const LS_KEY = "focusbridge21-ledger-v1";
-  const PREF_KEY = "focusbridge21-preferences-v2";
+  const PREF_KEY = "focusbridge21-preferences-v3";
+  const DOC_PREFIX = window.location.pathname.includes("/docs") ? "" : "docs/";
 
   const PRESETS = {
     Foundation: {
@@ -15,7 +16,8 @@
       mid: 5.5,
       end: 9.5,
       noise: "pink",
-      intention: "Relax the body, stay gently awake, and return cleanly."
+      intention: "Relax the body, stay gently awake, and return cleanly.",
+      coach: "Body heavy. Mind gently awake. Nothing to chase."
     },
     Expansion: {
       gate: 12,
@@ -25,7 +27,8 @@
       mid: 5.0,
       end: 9.0,
       noise: "pink",
-      intention: "Widen awareness while staying calm, grounded, and observant."
+      intention: "Widen awareness while staying calm, grounded, and observant.",
+      coach: "Awareness widens, while the witness stays soft and steady."
     },
     "No-Time": {
       gate: 15,
@@ -35,7 +38,8 @@
       mid: 4.2,
       end: 8.5,
       noise: "brown",
-      intention: "Rest in spaciousness while keeping a stable witness and clear return."
+      intention: "Rest in spaciousness while keeping a stable witness and clear return.",
+      coach: "Let clock pressure dissolve. Keep one clean return anchor."
     },
     Bridge: {
       gate: 21,
@@ -45,7 +49,8 @@
       mid: 4.6,
       end: 9.0,
       noise: "pink",
-      intention: "Stable witness at the threshold, no forcing, clean return, honest receipt."
+      intention: "Stable witness at the threshold, no forcing, clean return, honest receipt.",
+      coach: "No forcing. Stable witness. Clean return. Honest receipt."
     }
   };
 
@@ -57,11 +62,11 @@
   ];
 
   const PHASES = [
-    { name: "Prepare", ratio: 0.12, cue: "Safety, intention, breath, headphones, return anchor." },
-    { name: "Relax", ratio: 0.25, cue: "Body-asleep stability and physical softening." },
-    { name: "Expand", ratio: 0.23, cue: "Spatial widening and observer mode." },
-    { name: "Threshold", ratio: 0.25, cue: "Stable witness at the bridge without forcing." },
-    { name: "Return", ratio: 0.15, cue: "Clean return, orientation, integration." }
+    { name: "Prepare", ratio: 0.12, cue: "Safety, intention, breath, headphones, return anchor.", coach: "Settle. Lower volume. Remember: return is always available." },
+    { name: "Relax", ratio: 0.25, cue: "Body-asleep stability and physical softening.", coach: "Let the body become heavy while the mind remains gently awake." },
+    { name: "Expand", ratio: 0.23, cue: "Spatial widening and observer mode.", coach: "Awareness can widen without leaving safety." },
+    { name: "Threshold", ratio: 0.25, cue: "Stable witness at the bridge without forcing.", coach: "No chasing. Stable witness only." },
+    { name: "Return", ratio: 0.15, cue: "Clean return, orientation, integration.", coach: "Return to breath, room, hands, and feet." }
   ];
 
   const GUIDANCE = {
@@ -92,6 +97,10 @@
     return Math.max(min, Math.min(max, n));
   }
 
+  function todayKey(d = new Date()) {
+    return d.toISOString().slice(0, 10);
+  }
+
   function readJson(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key) || ""); }
     catch { return fallback; }
@@ -101,21 +110,10 @@
     localStorage.setItem(key, JSON.stringify(value));
   }
 
-  function loadLedger() {
-    return readJson(LS_KEY, []);
-  }
-
-  function saveLedger(rows) {
-    writeJson(LS_KEY, rows);
-  }
-
-  function loadPrefs() {
-    return readJson(PREF_KEY, null);
-  }
-
-  function savePrefs(prefs) {
-    writeJson(PREF_KEY, prefs);
-  }
+  function loadLedger() { return readJson(LS_KEY, []); }
+  function saveLedger(rows) { writeJson(LS_KEY, rows); }
+  function loadPrefs() { return readJson(PREF_KEY, null); }
+  function savePrefs(prefs) { writeJson(PREF_KEY, prefs); }
 
   function readinessScore(form) {
     let score = 0;
@@ -136,35 +134,43 @@
     let recommendation = "Readiness is low. Prefer rest, grounding, breath, or a short Foundation session.";
     let suggestedPreset = "Foundation";
     let suggestedDuration = 5;
+    let suggestedMode = "Neutral";
 
     if (form.destabilized || !form.safe || !form.ack) {
       level = "Red";
       recommendation = "Do not do threshold work right now. Choose rest, grounding, or very short Foundation only.";
-    } else if (score >= 75) {
+      suggestedDuration = 2;
+    } else if (score >= 82) {
       level = "Green";
-      recommendation = "Good readiness for normal practice. Stay conservative and keep RETURN NOW visible.";
+      recommendation = "Strong readiness. Bridge Preview or a short Bridge session is reasonable. Keep RETURN NOW visible.";
       suggestedPreset = "Bridge";
+      suggestedDuration = 15;
+      suggestedMode = "Resonance Architect";
+    } else if (score >= 70) {
+      level = "Green";
+      recommendation = "Good readiness. Expansion or Bridge Preview can work; stay conservative.";
+      suggestedPreset = "Expansion";
       suggestedDuration = 15;
     } else if (score >= 50) {
       level = "Yellow";
       recommendation = "Use a gentle session. Prefer Foundation or Expansion. Avoid pushing threshold work today.";
+      suggestedPreset = "Foundation";
       suggestedDuration = 5;
     }
 
     if (Number(form.sleep) <= 3 || Number(form.stress) >= 8 || Number(form.grounded) <= 4) {
       suggestedPreset = "Foundation";
       suggestedDuration = 5;
+      suggestedMode = "Neutral";
     }
-    return { score, level, recommendation, suggestedPreset, suggestedDuration };
+    return { score, level, recommendation, suggestedPreset, suggestedDuration, suggestedMode };
   }
 
   function currentPhase(elapsed, duration) {
     let cursor = 0;
     for (const phase of PHASES) {
       const len = duration * phase.ratio;
-      if (elapsed <= cursor + len) {
-        return { ...phase, phaseStart: cursor, phaseEnd: cursor + len };
-      }
+      if (elapsed <= cursor + len) return { ...phase, phaseStart: cursor, phaseEnd: cursor + len };
       cursor += len;
     }
     const last = PHASES[PHASES.length - 1];
@@ -282,6 +288,40 @@
     setTimeout(() => ctx.close(), 2300);
   }
 
+  function computeTracker(ledger) {
+    const dates = new Set(ledger.map(r => (r.timestamp || "").slice(0, 10)).filter(Boolean));
+    let streak = 0;
+    const d = new Date();
+    for (;;) {
+      const key = todayKey(d);
+      if (!dates.has(key)) break;
+      streak += 1;
+      d.setDate(d.getDate() - 1);
+    }
+    const sessions = ledger.length;
+    const week = clamp(Math.floor(sessions / 4) + 1, 1, 8);
+    const focus = week <= 2 ? "Body-Asleep" : week <= 4 ? "Expansion" : week <= 6 ? "Time-Release" : "Bridge";
+    const next = week <= 2 ? "Foundation 5–15 min" : week <= 4 ? "Expansion 15 min" : week <= 6 ? "No-Time 15–25 min" : "Bridge Preview 5–15 min";
+    return { streak, sessions, week, focus, next };
+  }
+
+  function patternInsights(ledger) {
+    if (!ledger.length) return ["No receipts yet. Run a 2-minute demo or gentle reset, then write the first receipt."];
+    const insights = [];
+    const best = [...ledger].sort((a, b) => (b.post?.overall_coherence || 0) - (a.post?.overall_coherence || 0))[0];
+    if (best) insights.push(`Best coherence so far: ${best.preset}, ${best.duration_min} min, readiness ${best.readiness?.score ?? "—"}.`);
+    const highReturn = ledger.filter(r => (r.post?.return_quality || 0) >= 8);
+    if (highReturn.length) {
+      const counts = highReturn.reduce((acc, r) => { acc[r.preset] = (acc[r.preset] || 0) + 1; return acc; }, {});
+      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+      if (top) insights.push(`Cleanest returns currently cluster around ${top[0]} sessions.`);
+    }
+    const highFear = ledger.filter(r => (r.during?.fear_or_resistance || 0) >= 7).length;
+    if (highFear) insights.push("High fear/resistance appeared in at least one receipt. Prefer Foundation and shorter sessions until return feels easy again.");
+    if (ledger.length < 3) insights.push("Add 2–3 more receipts before trusting pattern suggestions.");
+    return insights.slice(0, 4);
+  }
+
   function RangeField({ label, value, min = 1, max = 10, step = 1, onChange }) {
     return h("div", { className: "field" },
       h("label", null, `${label}: ${value}`),
@@ -297,9 +337,23 @@
     );
   }
 
+  function FlowStepper({ step, setStep }) {
+    const steps = [
+      ["build", "Readiness"],
+      ["recommend", "Recommend"],
+      ["cockpit", "Cockpit"],
+      ["return", "Return"],
+      ["journal", "Journal"],
+      ["ledger", "Ledger"]
+    ];
+    return h("div", { className: "flow-stepper" }, steps.map(([id, label], idx) =>
+      h("button", { key: id, className: `flow-step ${step === id ? "active" : ""}`, onClick: () => setStep(id) }, h("span", null, idx + 1), label)
+    ));
+  }
+
   function App() {
     const prefs = loadPrefs() || {};
-    const [tab, setTab] = useState("build");
+    const [step, setStep] = useState(prefs.step || "build");
     const [presetName, setPresetName] = useState(prefs.presetName || "Bridge");
     const [durationMin, setDurationMin] = useState(prefs.durationMin || 5);
     const [guidanceMode, setGuidanceMode] = useState(prefs.guidanceMode || "Neutral");
@@ -321,9 +375,10 @@
     const [readiness, setReadiness] = useState(null);
     const [running, setRunning] = useState(false);
     const [elapsed, setElapsed] = useState(0);
-    const [returnMode, setReturnMode] = useState(false);
+    const [returnTimer, setReturnTimer] = useState(60);
+    const [groundedEnough, setGroundedEnough] = useState(false);
     const [ledger, setLedger] = useState(loadLedger());
-    const [toast, setToast] = useState("Ready. Start short, stay gentle, write the receipt.");
+    const [toast, setToast] = useState("Ready. Smooth Flow guides you: readiness → recommendation → cockpit → return → journal → ledger.");
     const [metrics, setMetrics] = useState({
       depth: 5,
       relaxation: 5,
@@ -347,10 +402,12 @@
     const phase = useMemo(() => currentPhase(elapsed, durationSec), [elapsed, durationSec]);
     const progress = durationSec ? clamp((elapsed / durationSec) * 100, 0, 100) : 0;
     const phaseProgress = phase.phaseEnd > phase.phaseStart ? clamp(((elapsed - phase.phaseStart) / (phase.phaseEnd - phase.phaseStart)) * 100, 0, 100) : 0;
+    const tracker = useMemo(() => computeTracker(ledger), [ledger]);
+    const insights = useMemo(() => patternInsights(ledger), [ledger]);
 
     useEffect(() => {
-      savePrefs({ presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, pre });
-    }, [presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, pre]);
+      savePrefs({ step, presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, pre });
+    }, [step, presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, pre]);
 
     useEffect(() => {
       if (!running) return;
@@ -362,6 +419,19 @@
       return () => clearInterval(id);
     }, [running, durationSec]);
 
+    useEffect(() => {
+      if (step !== "return" || groundedEnough || returnTimer <= 0) return;
+      const id = setInterval(() => setReturnTimer(t => Math.max(0, t - 1)), 1000);
+      return () => clearInterval(id);
+    }, [step, groundedEnough, returnTimer]);
+
+    function setPresetClean(name) {
+      setPresetName(name);
+      setBase(PRESETS[name].base);
+      setNoise(PRESETS[name].noise);
+      setPre({ ...pre, intention: PRESETS[name].intention });
+    }
+
     function applyQuick(run) {
       stopSession(false, false);
       setPresetName(run.preset);
@@ -370,30 +440,43 @@
       setBase(PRESETS[run.preset].base);
       setNoise(PRESETS[run.preset].noise);
       setPre({ ...pre, intention: PRESETS[run.preset].intention });
-      setToast(`${run.title} loaded. Calculate readiness, then start.`);
-      setTab("build");
+      setToast(`${run.title} loaded. Calculate readiness, then continue.`);
+      setStep("build");
     }
 
-    function calcReadiness() {
+    function calcReadiness(goNext = true) {
       const r = readinessScore(pre);
       setReadiness(r);
       setToast(`Readiness ${r.score}/100: ${r.level}. ${r.recommendation}`);
       if (r.level !== "Green") {
         setPresetName(r.suggestedPreset);
         setDurationMin(r.suggestedDuration);
+        setGuidanceMode(r.suggestedMode);
         setBase(PRESETS[r.suggestedPreset].base);
         setNoise(PRESETS[r.suggestedPreset].noise);
       }
+      if (goNext) setStep("recommend");
+      return r;
+    }
+
+    function acceptRecommendation() {
+      const r = readiness || calcReadiness(false);
+      setPresetName(r.suggestedPreset);
+      setDurationMin(r.suggestedDuration);
+      setGuidanceMode(r.suggestedMode);
+      setBase(PRESETS[r.suggestedPreset].base);
+      setNoise(PRESETS[r.suggestedPreset].noise);
+      setPre({ ...pre, intention: PRESETS[r.suggestedPreset].intention });
+      setToast(`${r.suggestedPreset} ${r.suggestedDuration}-minute recommendation loaded.`);
     }
 
     async function startSession() {
       if (!pre.ack) {
         setToast("Safety acknowledgement required before audio starts.");
+        setStep("build");
         return;
       }
-      if (!readiness) {
-        setReadiness(readinessScore(pre));
-      }
+      if (!readiness) calcReadiness(false);
       stopAudioOnly();
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (!AudioContext) {
@@ -408,10 +491,11 @@
         scheduleBinaural(ctx, preset, { base, volume, noise, noiseAmount }, durationSec, refs);
         startStamp.current = Date.now();
         setElapsed(0);
-        setReturnMode(false);
+        setReturnTimer(60);
+        setGroundedEnough(false);
         setRunning(true);
         setToast(`${presetName} session started. RETURN NOW is always available.`);
-        setTab("cockpit");
+        setStep("cockpit");
       } catch (err) {
         setToast(`Audio start failed: ${err.message || err}`);
       }
@@ -433,12 +517,15 @@
       stopAudioOnly();
       setRunning(false);
       if (setReturn) {
-        setReturnMode(true);
+        setReturnTimer(60);
+        setGroundedEnough(false);
         setToast("RETURN NOW active. Ground first, journal after stable.");
+        setStep("return");
       } else if (completed) {
-        setReturnMode(true);
-        setToast("Session complete. Move through Return, then journal your receipt.");
-        setTab("journal");
+        setReturnTimer(60);
+        setGroundedEnough(false);
+        setToast("Session complete. Auto-return has started. Ground first, then journal.");
+        setStep("return");
       }
     }
 
@@ -463,7 +550,7 @@
         guidance_mode: guidanceMode,
         readiness: readiness || readinessScore(pre),
         pre,
-        audio_params: { engine: "browser_web_audio_binaural_v0.2", base_hz: base, beat_start_hz: preset.start, beat_mid_hz: preset.mid, beat_end_hz: preset.end, noise, noise_amount: noiseAmount, master_volume: volume },
+        audio_params: { engine: "browser_web_audio_binaural_v0.3", base_hz: base, beat_start_hz: preset.start, beat_mid_hz: preset.mid, beat_end_hz: preset.end, noise, noise_amount: noiseAmount, master_volume: volume },
         during: { perceived_depth: metrics.depth, body_relaxation: metrics.relaxation, stable_witness_presence: metrics.witness, imagery_vividness: metrics.imagery, time_distortion: metrics.time, mental_clarity: metrics.clarity, fear_or_resistance: metrics.fear },
         post: { return_quality: metrics.returnQuality, memory_retention: metrics.memory, grounding_feeling: metrics.grounding, overall_coherence: metrics.coherence },
         notes: metrics.notes,
@@ -473,9 +560,9 @@
       const next = [receipt, ...ledger];
       setLedger(next);
       saveLedger(next);
-      setToast("Receipt saved locally. Pattern learning begins with honest entries.");
+      setToast("Receipt saved locally. Ledger insights updated.");
       setMetrics({ ...metrics, notes: "", fragments: "" });
-      setTab("ledger");
+      setStep("ledger");
     }
 
     function exportJson() {
@@ -518,32 +605,26 @@
     }, [ledger]);
 
     const scoreClass = readiness ? (readiness.level === "Green" ? "score-green" : readiness.level === "Yellow" ? "score-yellow" : "score-red") : "";
+    const canJournal = groundedEnough || returnTimer <= 0;
 
     return h(React.Fragment, null,
       h("header", { className: "hero wrap" },
         h("div", { className: "eyebrow" }, "Parallax / PHI369 live prototype"),
         h("h1", null, "FocusBridge21"),
-        h("p", { className: "subtitle" }, "A smooth browser cockpit for readiness, original Web Audio binaural practice, RETURN NOW grounding, and local Signal Ledger receipts."),
-        h("div", { className: "hero-kpis" },
-          h("span", null, "Local-first"),
-          h("span", null, "Web Audio"),
-          h("span", null, "No cloud ledger"),
-          h("span", null, VERSION)
-        ),
+        h("p", { className: "subtitle" }, "Smooth Flow guides the whole practice: readiness → recommendation → cockpit → auto-return → journal → ledger."),
+        h("div", { className: "hero-kpis" }, h("span", null, "Local-first"), h("span", null, "Web Audio"), h("span", null, "No cloud ledger"), h("span", null, VERSION)),
         h("div", { className: "top-actions" },
           h("a", { className: "link-button primary", href: "https://github.com/MichaelWave369/focusbridge21" }, "GitHub repo"),
-          h("a", { className: "link-button", href: "docs/FocusBridge21_Master_Spec_v0.2.md" }, "Master spec"),
+          h("a", { className: "link-button", href: `${DOC_PREFIX}FocusBridge21_Master_Spec_v0.2.md` }, "Master spec"),
           h("button", { className: "button", onClick: testAudio }, "Stereo test")
         )
       ),
       h("main", { className: "wrap" },
         h("section", { className: "notice smooth-notice" }, h("strong", null, "Safety first: "), "This is a meditative training prototype, not medical care, therapy, a guaranteed Focus 21 switch, or an OBE guarantee. Do not use while driving or operating machinery. Start short, keep volume low, and use RETURN NOW whenever needed."),
         h("div", { className: "toast" }, toast),
-        h("div", { className: "tabs" },
-          [["build", "1 Build"], ["cockpit", "2 Cockpit"], ["journal", "3 Journal"], ["ledger", "4 Ledger"], ["protocol", "8-Week Protocol"]].map(([id, label]) => h("button", { key: id, className: `tab ${tab === id ? "active" : ""}`, onClick: () => setTab(id) }, label))
-        ),
+        h(FlowStepper, { step, setStep }),
 
-        tab === "build" && h("section", null,
+        step === "build" && h("section", null,
           h("div", { className: "quick-grid" }, QUICK_RUNS.map(run => h("button", { key: run.title, className: "quick-card", onClick: () => applyQuick(run) }, h("strong", null, run.title), h("span", null, `${run.preset} • ${run.duration} min`), h("em", null, run.note)))) ,
           h("section", { className: "app-grid" },
             h("div", { className: "panel" },
@@ -560,12 +641,12 @@
               h("label", { className: "checkline" }, h("input", { type: "checkbox", checked: pre.ack, onChange: e => setPre({ ...pre, ack: e.target.checked }) }), "I understand the safety notes and will not use this in unsafe contexts."),
               h("label", { className: "checkline" }, h("input", { type: "checkbox", checked: pre.destabilized, onChange: e => setPre({ ...pre, destabilized: e.target.checked }) }), "Recent destabilizing meditation or altered-state experience."),
               h("div", { className: "field" }, h("label", null, "Session intention"), h("textarea", { value: pre.intention, onChange: e => setPre({ ...pre, intention: e.target.value }) })),
-              h("div", { className: "top-actions left" }, h("button", { className: "button primary", onClick: calcReadiness }, "Calculate Readiness Gate"), h("button", { className: "button ghost", onClick: testAudio }, "Stereo test")),
+              h("div", { className: "top-actions left" }, h("button", { className: "button primary", onClick: () => calcReadiness(true) }, "Calculate + Continue"), h("button", { className: "button ghost", onClick: testAudio }, "Stereo test")),
               readiness && h("div", { className: "score-box" }, h("div", { className: `score-number ${scoreClass}` }, readiness.score), h("div", null, h("strong", null, readiness.level), h("div", { className: "muted" }, readiness.recommendation), h("div", { className: "soft small" }, `Suggested: ${readiness.suggestedPreset}, ${readiness.suggestedDuration} min`)))
             ),
             h("div", { className: "panel" },
-              h("h2", null, "Session Builder"),
-              h("div", { className: "field" }, h("label", null, "Preset"), h("select", { value: presetName, onChange: e => { const name = e.target.value; setPresetName(name); setBase(PRESETS[name].base); setNoise(PRESETS[name].noise); setPre({ ...pre, intention: PRESETS[name].intention }); } }, Object.keys(PRESETS).map(name => h("option", { key: name, value: name }, name)))) ,
+              h("h2", null, "Manual Session Builder"),
+              h("div", { className: "field" }, h("label", null, "Preset"), h("select", { value: presetName, onChange: e => setPresetClean(e.target.value) }, Object.keys(PRESETS).map(name => h("option", { key: name, value: name }, name)))) ,
               h("p", { className: "muted" }, preset.desc),
               h("div", { className: "form-grid" },
                 h("div", { className: "field" }, h("label", null, "Duration"), h("select", { value: durationMin, onChange: e => setDurationMin(Number(e.target.value)) }, [2, 5, 15, 25, 35, 45].map(d => h("option", { key: d, value: d }, `${d} minutes`)))),
@@ -574,16 +655,30 @@
                 h("div", { className: "field" }, h("label", null, "Noise"), h("select", { value: noise, onChange: e => setNoise(e.target.value) }, ["none", "pink", "brown", "white"].map(v => h("option", { key: v, value: v }, v)))),
                 h("div", { className: "field" }, h("label", null, `Noise amount: ${noiseAmount}`), h("input", { type: "range", min: 0, max: 0.25, step: 0.01, value: noiseAmount, onChange: e => setNoiseAmount(Number(e.target.value)) })),
                 h("div", { className: "field" }, h("label", null, `Master volume: ${volume}`), h("input", { type: "range", min: 0.02, max: 0.5, step: 0.01, value: volume, onChange: e => setVolume(Number(e.target.value)) }))
-              ),
-              h("div", { className: "start-strip" },
-                h("div", null, h("strong", null, `${presetName} • Gate ${preset.gate}`), h("div", { className: "soft small" }, `${durationMin} minutes • ${noise} noise • ${guidanceMode}`)),
-                h("button", { className: "button primary big", onClick: startSession }, "Start smooth session")
               )
             )
           )
         ),
 
-        tab === "cockpit" && h("section", { className: "app-grid" },
+        step === "recommend" && h("section", { className: "app-grid" },
+          h("div", { className: "panel recommendation-card" },
+            h("h2", null, "Recommended Session"),
+            readiness ? h(React.Fragment, null,
+              h("div", { className: "score-box" }, h("div", { className: `score-number ${scoreClass}` }, readiness.score), h("div", null, h("strong", null, `${readiness.level} readiness`), h("div", { className: "muted" }, readiness.recommendation))),
+              h("div", { className: "recommended-big" }, `${readiness.suggestedPreset} • ${readiness.suggestedDuration} min`),
+              h("p", { className: "muted" }, PRESETS[readiness.suggestedPreset].desc),
+              h("div", { className: "top-actions left" }, h("button", { className: "button primary big", onClick: () => { acceptRecommendation(); startSession(); } }, "Accept + Start"), h("button", { className: "button", onClick: acceptRecommendation }, "Load recommendation"), h("button", { className: "button ghost", onClick: () => setStep("build") }, "Adjust manually"))
+            ) : h("p", { className: "muted" }, "Calculate readiness first." )
+          ),
+          h("div", { className: "panel" },
+            h("h2", null, "Practice Tracker"),
+            h("div", { className: "stat-grid two" }, h(StatCard, { label: "Streak", value: tracker.streak, note: "days" }), h(StatCard, { label: "Protocol week", value: tracker.week, note: tracker.focus }), h(StatCard, { label: "Receipts", value: tracker.sessions }), h(StatCard, { label: "Next practice", value: tracker.next })),
+            h("h3", null, "Pattern hints"),
+            h("ul", null, insights.map(x => h("li", { key: x }, x)))
+          )
+        ),
+
+        step === "cockpit" && h("section", { className: "app-grid" },
           h("div", { className: "panel portal-panel" },
             h("div", { className: "portal" }, [1, 2, 3, 4, 5].map(i => h("div", { key: i, className: `ring r${i}` })), h("div", { className: "core" }, h("span", null, presetName.toUpperCase()), h("span", null, `GATE ${preset.gate}`), h("span", null, running ? "LIVE" : "READY"))),
             h("div", { className: "progress-wrap" }, h("div", { className: "progress-bar", style: { width: `${progress}%` } })),
@@ -592,17 +687,27 @@
           h("div", { className: "panel sticky-return" },
             h("h2", null, "Live Cockpit"),
             h("div", { className: "timer" }, fmtTime(Math.max(0, durationSec - elapsed))),
-            h("p", { className: "muted" }, `${phase.name}: ${phase.cue}`),
+            h("div", { className: "coach-card" }, h("div", { className: "coach-phase" }, phase.name), h("div", { className: "coach-line" }, phase.coach), h("div", { className: "soft small" }, preset.coach)),
             h("div", { className: "phase-pills" }, PHASES.map(p => h("span", { key: p.name, className: `phase-pill ${p.name === phase.name ? "active" : ""}` }, p.name))),
             h("div", { className: "top-actions left" }, h("button", { className: "button primary", onClick: startSession }, running ? "Restart" : "Start"), h("button", { className: "button", onClick: () => stopSession(false, false) }, "Stop"), h("button", { className: "button danger", onClick: () => stopSession(true, false) }, "RETURN NOW")),
-            h("div", { className: "return-box" }, h("h3", null, returnMode ? "RETURN NOW active" : "Return protocol ready"), h("ol", null, ["Stop audio and open your eyes.", "Feel feet, hands, breath, and room.", "Name three things you see.", "Name three things you hear.", "Name three things you feel.", "Drink water. Move gently. Journal after grounded."].map(x => h("li", { key: x }, x)))),
+            h("div", { className: "return-box" }, h("h3", null, "Return protocol ready"), h("ol", null, ["Stop audio and open your eyes.", "Feel feet, hands, breath, and room.", "Name three things you see.", "Name three things you hear.", "Name three things you feel.", "Drink water. Move gently. Journal after grounded."].map(x => h("li", { key: x }, x)))),
             h("h3", null, "Guidance"),
-            h("ul", null, GUIDANCE[guidanceMode][phase.name].map(x => h("li", { key: x }, x))),
-            h("button", { className: "button ghost", onClick: () => setTab("journal") }, "Open journal")
+            h("ul", null, GUIDANCE[guidanceMode][phase.name].map(x => h("li", { key: x }, x)))
           )
         ),
 
-        tab === "journal" && h("section", { className: "panel" },
+        step === "return" && h("section", { className: "return-screen panel" },
+          h("div", { className: "return-orb" }, fmtTime(returnTimer)),
+          h("h2", null, "Auto-Return"),
+          h("p", { className: "muted" }, "Audio is stopped. Take one full minute to orient before journaling."),
+          h("div", { className: "return-grid" },
+            ["Open your eyes.", "Feel your feet.", "Feel your hands.", "Name 3 things you see.", "Name 3 things you hear.", "Name 3 things you feel.", "Drink water.", "Move gently."].map(x => h("div", { key: x, className: "return-step" }, x))
+          ),
+          h("label", { className: "checkline center" }, h("input", { type: "checkbox", checked: groundedEnough, onChange: e => setGroundedEnough(e.target.checked) }), "I feel grounded enough to journal."),
+          h("div", { className: "top-actions" }, h("button", { className: "button primary big", disabled: !canJournal, onClick: () => setStep("journal") }, canJournal ? "Continue to Journal" : "Journal unlocks after return"), h("button", { className: "button ghost", onClick: () => setStep("build") }, "Back to Builder"))
+        ),
+
+        step === "journal" && h("section", { className: "panel" },
           h("h2", null, "Post-Session Journal Receipt"),
           h("p", { className: "muted" }, "Rate capacities, not fantasies. The Signal Ledger learns through honest receipts."),
           h("div", { className: "metric-grid" },
@@ -620,24 +725,20 @@
           ),
           h("div", { className: "field" }, h("label", null, "Notes"), h("textarea", { value: metrics.notes, onChange: e => setMetrics({ ...metrics, notes: e.target.value }) })),
           h("div", { className: "field" }, h("label", null, "Dreamlike fragments / symbolic material"), h("textarea", { value: metrics.fragments, onChange: e => setMetrics({ ...metrics, fragments: e.target.value }) })),
-          h("div", { className: "top-actions left" }, h("button", { className: "button primary", onClick: writeReceipt }, "Write Local Browser Receipt"), h("button", { className: "button ghost", onClick: () => setTab("build") }, "Back to builder"))
+          h("div", { className: "top-actions left" }, h("button", { className: "button primary", onClick: writeReceipt }, "Write Local Browser Receipt"), h("button", { className: "button ghost", onClick: () => setStep("build") }, "Back to builder"))
         ),
 
-        tab === "ledger" && h("section", { className: "panel" },
+        step === "ledger" && h("section", { className: "panel" },
           h("h2", null, "Signal Ledger"),
           h("p", { className: "muted" }, `Local browser receipts: ${ledger.length}. This data lives in localStorage on this device/browser unless exported.`),
-          h("div", { className: "stat-grid" },
-            h(StatCard, { label: "Receipts", value: stats.count }),
-            h(StatCard, { label: "Avg witness", value: stats.avgWitness }),
-            h(StatCard, { label: "Avg return", value: stats.avgReturn }),
-            h(StatCard, { label: "Avg coherence", value: stats.avgCoherence })
-          ),
+          h("div", { className: "stat-grid" }, h(StatCard, { label: "Receipts", value: stats.count }), h(StatCard, { label: "Avg witness", value: stats.avgWitness }), h(StatCard, { label: "Avg return", value: stats.avgReturn }), h(StatCard, { label: "Avg coherence", value: stats.avgCoherence })),
+          h("div", { className: "notice" }, h("strong", null, "Pattern insights: "), h("ul", null, insights.map(x => h("li", { key: x }, x)))),
           stats.best && h("div", { className: "notice" }, h("strong", null, "Best coherence receipt: "), `${stats.best.preset} • ${stats.best.duration_min} min • readiness ${stats.best.readiness?.score ?? "—"} • base ${stats.best.audio_params?.base_hz ?? "—"} Hz • noise ${stats.best.audio_params?.noise ?? "—"}`),
-          h("div", { className: "top-actions left" }, h("button", { className: "button", onClick: exportJson, disabled: !ledger.length }, "Export JSON"), h("button", { className: "button", onClick: exportCsv, disabled: !ledger.length }, "Export CSV"), h("button", { className: "button danger", onClick: clearLedger, disabled: !ledger.length }, "Clear local ledger")),
+          h("div", { className: "top-actions left" }, h("button", { className: "button", onClick: exportJson, disabled: !ledger.length }, "Export JSON"), h("button", { className: "button", onClick: exportCsv, disabled: !ledger.length }, "Export CSV"), h("button", { className: "button danger", onClick: clearLedger, disabled: !ledger.length }, "Clear local ledger"), h("button", { className: "button primary", onClick: () => setStep("build") }, "New session")),
           ledger.length === 0 ? h("p", { className: "soft" }, "No receipts yet.") : h("div", { className: "ledger-table-wrap" }, h("table", null, h("thead", null, h("tr", null, ["Time", "Preset", "Gate", "Ready", "Depth", "Witness", "Fear", "Return", "Coherence", "Notes"].map(x => h("th", { key: x }, x)))), h("tbody", null, ledger.map(r => h("tr", { key: r.session_id }, h("td", null, new Date(r.timestamp).toLocaleString()), h("td", null, r.preset), h("td", null, r.target_gate), h("td", null, r.readiness?.score ?? ""), h("td", null, r.during?.perceived_depth), h("td", null, r.during?.stable_witness_presence), h("td", null, r.during?.fear_or_resistance), h("td", null, r.post?.return_quality), h("td", null, r.post?.overall_coherence), h("td", null, r.notes || ""))))))
         ),
 
-        tab === "protocol" && h("section", { className: "panel" },
+        step === "protocol" && h("section", { className: "panel" },
           h("h2", null, "8-Week Mastery Protocol"),
           h("div", { className: "protocol-grid" },
             h("div", { className: "panel tight" }, h("h3", null, "Weeks 1–2"), h("p", null, "Body-asleep mastery. Metrics: body relaxation, return quality, grounding.")),
@@ -648,7 +749,7 @@
           h("p", { className: "mono" }, "The better question is not only: Did I reach Focus 21? It is: Which capacities were present, and how cleanly did I return?")
         )
       ),
-      h("footer", { className: "wrap" }, "FocusBridge21 v0.2 — smooth, browser-local, MIT licensed, safety-first, receipt-driven.")
+      h("footer", { className: "wrap" }, "FocusBridge21 v0.3 — Smooth Flow, browser-local, MIT licensed, safety-first, receipt-driven.")
     );
   }
 

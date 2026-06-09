@@ -1,0 +1,230 @@
+.fb21-guide-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 274px;
+  z-index: 9997;
+  border: 1px solid rgba(255, 215, 166, 0.44);
+  background: linear-gradient(135deg, rgba(255, 215, 166, 0.22), rgba(185, 167, 255, 0.18));
+  color: #fff7eb;
+  border-radius: 999px;
+  padding: 12px 14px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.32);
+}
+
+.fb21-guide-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10003;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(2, 2, 8, 0.78);
+  backdrop-filter: blur(14px);
+}
+
+.fb21-guide-modal.open {
+  display: flex;
+}
+
+.fb21-guide-shell {
+  width: min(1180px, 100%);
+  max-height: min(88vh, 940px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(circle at 25% 12%, rgba(255, 215, 166, 0.16), transparent 28rem),
+    radial-gradient(circle at 82% 25%, rgba(185, 167, 255, 0.18), transparent 26rem),
+    rgba(8, 8, 20, 0.96);
+  color: #f7f1ff;
+  border-radius: 28px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.48);
+  padding: 20px;
+}
+
+.fb21-guide-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.fb21-guide-head h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  letter-spacing: -0.03em;
+}
+
+.fb21-guide-grid {
+  display: grid;
+  grid-template-columns: 0.82fr 1.18fr;
+  gap: 14px;
+}
+
+.fb21-guide-panel {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.055);
+  border-radius: 22px;
+  padding: 16px;
+}
+
+.fb21-guide-panel h3 {
+  margin: 0 0 8px;
+}
+
+.fb21-guide-field {
+  display: grid;
+  gap: 6px;
+  margin: 11px 0;
+}
+
+.fb21-guide-field label {
+  color: rgba(247, 241, 255, 0.72);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.fb21-guide-field select,
+.fb21-guide-field input,
+.fb21-guide-field textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.28);
+  color: #f7f1ff;
+  border-radius: 14px;
+  padding: 10px 11px;
+}
+
+.fb21-guide-field textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.fb21-guide-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.fb21-guide-btn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.065);
+  color: #f7f1ff;
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-weight: 850;
+}
+
+.fb21-guide-btn.primary {
+  background: linear-gradient(135deg, rgba(185, 167, 255, 0.25), rgba(255, 215, 166, 0.17));
+  border-color: rgba(185, 167, 255, 0.48);
+}
+
+.fb21-guide-btn.warn {
+  background: rgba(140, 30, 30, 0.34);
+  border-color: rgba(255, 160, 160, 0.44);
+}
+
+.fb21-guide-check {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  color: rgba(247, 241, 255, 0.78);
+  padding: 7px 0;
+}
+
+.fb21-guide-status {
+  border-radius: 18px;
+  padding: 12px;
+  margin: 12px 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.fb21-guide-status.good {
+  border-color: rgba(125, 242, 179, 0.36);
+  color: #baffd5;
+}
+
+.fb21-guide-status.wait {
+  border-color: rgba(255, 224, 138, 0.34);
+  color: #ffeab2;
+}
+
+.fb21-guide-script {
+  display: grid;
+  gap: 10px;
+}
+
+.fb21-guide-cue {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.fb21-guide-cue strong {
+  color: #ffd7a6;
+}
+
+.fb21-guide-time {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-right: 7px;
+  color: rgba(247, 241, 255, 0.66);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.fb21-guide-mini {
+  color: rgba(247, 241, 255, 0.66);
+  font-size: 0.88rem;
+}
+
+.fb21-guide-progress {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  margin: 10px 0;
+}
+
+.fb21-guide-progress > span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(125, 242, 179, 0.68), rgba(255, 215, 166, 0.7));
+  transition: width 0.2s ease;
+}
+
+.fb21-guide-badge {
+  display: inline-flex;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.055);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: rgba(247, 241, 255, 0.74);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+@media (max-width: 920px) {
+  .fb21-guide-grid {
+    grid-template-columns: 1fr;
+  }
+  .fb21-guide-fab {
+    right: 12px;
+    bottom: 332px;
+    padding: 10px 12px;
+  }
+}

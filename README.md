@@ -8,7 +8,7 @@ It is inspired by the broad idea of focus-level training, but it is independent 
 
 ## Live GitHub Pages app
 
-The browser React prototype lives in `/docs` and is designed to run directly from GitHub Pages with no build step:
+The browser React prototype can run from the repo root or from `/docs` with no build step:
 
 **https://michaelwave369.github.io/focusbridge21/**
 
@@ -26,11 +26,13 @@ The live app includes:
 - JSON and CSV ledger export.
 - 8-week mastery protocol.
 
-To publish it, set GitHub Pages to:
+Recommended GitHub Pages setting:
 
 ```text
-Settings → Pages → Source: Deploy from branch → main → /docs
+Settings → Pages → Source: Deploy from branch → main → /(root)
 ```
+
+The app shell also exists in `/docs`, so `main → /docs` can work too. If the site shows a 404, switch Pages from GitHub Actions to "Deploy from branch" and choose `main` with `/(root)`, then wait a couple minutes for Pages to publish.
 
 ## What it is not
 
@@ -89,6 +91,8 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 
 ```text
 .
+├── index.html
+├── 404.html
 ├── app.py
 ├── requirements.txt
 ├── README.md

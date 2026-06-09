@@ -14,7 +14,7 @@ The browser React prototype can run from the repo root or from `/docs` with no b
 
 ### Current live version
 
-**React Pages v0.7 Mastery Lab**
+**React Pages v0.8 Guidance Lab + Voice Guide**
 
 The live app includes:
 
@@ -45,6 +45,8 @@ The live app includes:
 - Full local backup/restore for FocusBridge21 browser data.
 - Comfort profiles that apply safer builder defaults and reload the app cleanly.
 - **Mastery Lab overlay** with capacity map, milestones, best-condition analysis, local coach card, audio recipe library, custom comfort builder, 14-day plan, calendar export, and mastery report export.
+- **Guidance Lab overlay** with preflight checklist, script builder, browser-local voice guide, voice/rate/pitch controls, script copy/export, and local coach hints.
+- Sparse guidance modes: Minimal Zen, Neutral, Resonance Architect, and Return Only.
 
 Recommended GitHub Pages setting:
 
@@ -113,12 +115,12 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 .
 ├── index.html
 ├── 404.html
-├── service-worker.js
-├── manifest.webmanifest
 ├── app.py
 ├── requirements.txt
 ├── README.md
 ├── LICENSE
+├── manifest.webmanifest
+├── service-worker.js
 ├── docs/
 │   ├── index.html
 │   ├── styles.css
@@ -127,12 +129,13 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── pattern-lab.css
 │   ├── fb21-v06-lab.css
 │   ├── fb21-v07-masterylab.css
+│   ├── fb21-v08-guidancelab.css
 │   ├── fb21-react.js
 │   ├── fb21-pwa-coach.js
 │   ├── fb21-pattern-lab.js
 │   ├── fb21-v06-lab.js
 │   ├── fb21-v07-masterylab.js
-│   ├── icon.svg
+│   ├── fb21-v08-guidancelab.js
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/
     └── index.html

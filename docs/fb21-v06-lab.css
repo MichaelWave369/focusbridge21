@@ -1,0 +1,182 @@
+.fb21-v06-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 154px;
+  z-index: 9998;
+  border: 1px solid rgba(255, 215, 166, .45);
+  background: linear-gradient(135deg, rgba(255, 215, 166, .20), rgba(185, 167, 255, .18));
+  color: #f5f0ff;
+  border-radius: 999px;
+  padding: 12px 15px;
+  font-weight: 900;
+  box-shadow: 0 18px 58px rgba(0,0,0,.34);
+}
+
+.fb21-v06-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(0,0,0,.62);
+  backdrop-filter: blur(10px);
+}
+
+.fb21-v06-backdrop.open { display: flex; }
+
+.fb21-v06-modal {
+  width: min(1060px, 100%);
+  max-height: min(86vh, 920px);
+  overflow: auto;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 28px;
+  background: radial-gradient(circle at 30% 0%, rgba(185,167,255,.18), transparent 28rem), rgba(9,9,22,.96);
+  color: #f5f0ff;
+  box-shadow: 0 35px 110px rgba(0,0,0,.55);
+}
+
+.fb21-v06-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  background: rgba(9,9,22,.94);
+  backdrop-filter: blur(14px);
+}
+
+.fb21-v06-head h2 { margin: 0 0 4px; line-height: 1.1; }
+.fb21-v06-head p { margin: 0; color: rgba(245,240,255,.72); }
+
+.fb21-v06-close {
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: #f5f0ff;
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+}
+
+.fb21-v06-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 20px 0;
+}
+
+.fb21-v06-tab {
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.045);
+  color: rgba(245,240,255,.78);
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-weight: 800;
+}
+
+.fb21-v06-tab.active {
+  color: #fff;
+  border-color: rgba(255,215,166,.52);
+  background: rgba(255,215,166,.12);
+}
+
+.fb21-v06-body { padding: 18px 20px 22px; }
+
+.fb21-v06-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.fb21-v06-grid.two { grid-template-columns: repeat(2, 1fr); }
+
+.fb21-v06-card {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px;
+  background: rgba(255,255,255,.055);
+  padding: 16px;
+}
+
+.fb21-v06-card h3 { margin: 0 0 8px; line-height: 1.15; }
+.fb21-v06-card p, .fb21-v06-card li { color: rgba(245,240,255,.74); }
+.fb21-v06-card ul { padding-left: 1.15rem; margin-bottom: 0; }
+
+.fb21-v06-kpi {
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 950;
+  color: #ffd7a6;
+}
+
+.fb21-v06-actions {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.fb21-v06-action {
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.07);
+  color: #f5f0ff;
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-weight: 850;
+}
+
+.fb21-v06-action.primary {
+  border-color: rgba(185,167,255,.55);
+  background: linear-gradient(135deg, rgba(185,167,255,.28), rgba(255,215,166,.12));
+}
+
+.fb21-v06-action.warn {
+  border-color: rgba(255,150,150,.42);
+  background: rgba(140,25,25,.22);
+}
+
+.fb21-v06-select,
+.fb21-v06-file {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  background: rgba(0,0,0,.25);
+  color: #f5f0ff;
+  padding: 10px 11px;
+  margin-top: 6px;
+}
+
+.fb21-v06-report {
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .9rem;
+  color: rgba(245,240,255,.82);
+}
+
+.fb21-v06-pillrow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fb21-v06-pill {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  padding: 7px 9px;
+  color: rgba(245,240,255,.77);
+  background: rgba(0,0,0,.20);
+  font-size: .86rem;
+  font-weight: 750;
+}
+
+@media (max-width: 860px) {
+  .fb21-v06-grid,
+  .fb21-v06-grid.two { grid-template-columns: 1fr; }
+  .fb21-v06-btn { bottom: 96px; right: 14px; }
+  .fb21-v06-head { align-items: center; }
+}

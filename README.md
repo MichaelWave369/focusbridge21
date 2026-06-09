@@ -12,17 +12,25 @@ The browser React prototype can run from the repo root or from `/docs` with no b
 
 **https://michaelwave369.github.io/focusbridge21/**
 
+### Current live version
+
+**React Pages v0.2 Smooth Cockpit**
+
 The live app includes:
 
-- Readiness Gate Score.
+- Smooth quick-start cards: 2-min demo, gentle reset, Bridge preview, training session.
+- Readiness Gate Score with safer automatic preset/duration suggestions.
 - Foundation, Expansion, No-Time, and Bridge presets.
 - Browser Web Audio binaural session generator.
+- Stereo headphone test.
 - Optional pink, brown, or white noise layer.
 - Slow non-flashing sacred-geometry cockpit visual.
+- Live timer, phase model, and progress bar.
 - Neutral and Resonance Architect guidance modes.
-- RETURN NOW grounding protocol.
+- Sticky RETURN NOW grounding protocol.
 - Post-session journal receipt.
 - Browser-local Signal Ledger using `localStorage`.
+- Ledger stats cards and best-coherence receipt hint.
 - JSON and CSV ledger export.
 - 8-week mastery protocol.
 
@@ -100,6 +108,7 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 ├── docs/
 │   ├── index.html
 │   ├── styles.css
+│   ├── upgrade.css
 │   ├── fb21-react.js
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/

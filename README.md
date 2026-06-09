@@ -8,13 +8,13 @@ It is inspired by the broad idea of focus-level training, but it is independent 
 
 ## Live GitHub Pages app
 
-The browser React prototype can run from the repo root or from `/docs` with no build step:
+The browser React/PWA prototype can run from the repo root or from `/docs` with no build step:
 
 **https://michaelwave369.github.io/focusbridge21/**
 
 ### Current live version
 
-**React Pages v0.9 Audio Lab + Calibration Deck**
+**FocusBridge21 v1.0 Release Hub**
 
 The live app includes:
 
@@ -41,14 +41,15 @@ The live app includes:
 - Pattern Lab overlay with best-condition analysis, recommendation logic, receipt cards, breath pacer, and 7-day plan generator.
 - Clean shareable/downloadable session receipt cards with private notes hidden by default.
 - Breath Pacer for pre-session grounding or RETURN NOW support.
-- **Studio Lab overlay** with Today view, Private Backup Vault, Weekly Review export, 7-day smooth plan, Comfort Profiles, and quick tone checks.
+- Studio Lab overlay with Today view, Private Backup Vault, Weekly Review export, 7-day smooth plan, Comfort Profiles, and quick tone checks.
 - Full local backup/restore for FocusBridge21 browser data.
 - Comfort profiles that apply safer builder defaults and reload the app cleanly.
-- **Mastery Lab overlay** with capacity map, milestones, best-condition analysis, local coach card, audio recipe library, custom comfort builder, 14-day plan, calendar export, and mastery report export.
-- **Guidance Lab overlay** with preflight checklist, script builder, browser-local voice guide, voice/rate/pitch controls, script copy/export, and local coach hints.
+- Mastery Lab overlay with capacity map, milestones, best-condition analysis, local coach card, audio recipe library, custom comfort builder, 14-day plan, calendar export, and mastery report export.
+- Guidance Lab overlay with preflight checklist, script builder, browser-local voice guide, voice/rate/pitch controls, script copy/export, and local coach hints.
 - Sparse guidance modes: Minimal Zen, Neutral, Resonance Architect, and Return Only.
-- **Audio Lab overlay** with carrier/base Hz calibration, comfort meter, recipe library, tone checks, 18-second mix preview, and local pattern-based audio recommendations.
+- Audio Lab overlay with carrier/base Hz calibration, comfort meter, recipe library, tone checks, 18-second mix preview, and local pattern-based audio recommendations.
 - Downloadable audio recipe JSON and copyable calibration notes.
+- **v1.0 Release Hub** with release readiness score, safety charter, data health center, private backup, launch packet, Markdown release report, roadmap, and v1.0 completion checklist.
 
 Recommended GitHub Pages setting:
 
@@ -117,12 +118,12 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 .
 ├── index.html
 ├── 404.html
+├── manifest.webmanifest
+├── service-worker.js
 ├── app.py
 ├── requirements.txt
 ├── README.md
 ├── LICENSE
-├── manifest.webmanifest
-├── service-worker.js
 ├── docs/
 │   ├── index.html
 │   ├── styles.css
@@ -133,6 +134,7 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── fb21-v07-masterylab.css
 │   ├── fb21-v08-guidancelab.css
 │   ├── fb21-v09-audiolab.css
+│   ├── fb21-v10-releasehub.css
 │   ├── fb21-react.js
 │   ├── fb21-pwa-coach.js
 │   ├── fb21-pattern-lab.js
@@ -140,6 +142,7 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── fb21-v07-masterylab.js
 │   ├── fb21-v08-guidancelab.js
 │   ├── fb21-v09-audiolab.js
+│   ├── fb21-v10-releasehub.js
 │   ├── icon.svg
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/

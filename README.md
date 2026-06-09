@@ -14,23 +14,26 @@ The browser React prototype can run from the repo root or from `/docs` with no b
 
 ### Current live version
 
-**React Pages v0.2 Smooth Cockpit**
+**React Pages v0.3 Smooth Flow**
 
 The live app includes:
 
+- Guided Session Flow Wizard: readiness → recommendation → cockpit → return → journal → ledger.
 - Smooth quick-start cards: 2-min demo, gentle reset, Bridge preview, training session.
 - Readiness Gate Score with safer automatic preset/duration suggestions.
+- Recommended Session card that can load and start the safest session for the current state.
+- Practice Tracker with streak, total receipts, current protocol week, and suggested next practice.
 - Foundation, Expansion, No-Time, and Bridge presets.
 - Browser Web Audio binaural session generator.
 - Stereo headphone test.
 - Optional pink, brown, or white noise layer.
 - Slow non-flashing sacred-geometry cockpit visual.
-- Live timer, phase model, and progress bar.
+- Live timer, phase model, coach card, and progress bar.
 - Neutral and Resonance Architect guidance modes.
-- Sticky RETURN NOW grounding protocol.
+- RETURN NOW and Auto-Return grounding screen with a 60-second return timer.
 - Post-session journal receipt.
 - Browser-local Signal Ledger using `localStorage`.
-- Ledger stats cards and best-coherence receipt hint.
+- Ledger stats cards, best-coherence receipt hint, and lightweight pattern insights.
 - JSON and CSV ledger export.
 - 8-week mastery protocol.
 

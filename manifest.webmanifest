@@ -1,0 +1,29 @@
+{
+  "name": "FocusBridge21",
+  "short_name": "FB21",
+  "description": "Sovereign threshold-training cockpit for readiness, Web Audio practice, RETURN NOW grounding, and local Signal Ledger receipts.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#070712",
+  "theme_color": "#070712",
+  "orientation": "portrait-primary",
+  "categories": ["health", "lifestyle", "productivity"],
+  "icons": [
+    {
+      "src": "docs/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Practice Cockpit",
+      "short_name": "Practice",
+      "description": "Open FocusBridge21 private practice cockpit.",
+      "url": "./"
+    }
+  ]
+}

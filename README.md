@@ -14,14 +14,14 @@ The browser React prototype can run from the repo root or from `/docs` with no b
 
 ### Current live version
 
-**React Pages v0.3 Smooth Flow**
+**React Pages v0.3.1 Smooth Flow**
 
 The live app includes:
 
 - Guided Session Flow Wizard: readiness → recommendation → cockpit → return → journal → ledger.
 - Smooth quick-start cards: 2-min demo, gentle reset, Bridge preview, training session.
 - Readiness Gate Score with safer automatic preset/duration suggestions.
-- Recommended Session card that can load and start the safest session for the current state.
+- Recommended Session card that loads the safest session for the current state.
 - Practice Tracker with streak, total receipts, current protocol week, and suggested next practice.
 - Foundation, Expansion, No-Time, and Bridge presets.
 - Browser Web Audio binaural session generator.

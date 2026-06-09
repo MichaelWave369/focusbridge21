@@ -1,0 +1,186 @@
+.fb21-coach-launcher {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9998;
+  border: 1px solid rgba(255, 215, 166, 0.38);
+  background: linear-gradient(135deg, rgba(185, 167, 255, 0.28), rgba(255, 215, 166, 0.13));
+  color: #f5f0ff;
+  border-radius: 999px;
+  padding: 12px 15px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.42);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 850;
+}
+
+.fb21-coach {
+  position: fixed;
+  right: 18px;
+  bottom: 76px;
+  z-index: 9999;
+  width: min(420px, calc(100vw - 28px));
+  max-height: min(760px, calc(100vh - 104px));
+  overflow: auto;
+  color: #f5f0ff;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(185, 167, 255, 0.20), transparent 18rem),
+    rgba(7, 7, 18, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 26px;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(18px);
+  padding: 16px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.fb21-coach[hidden] { display: none; }
+
+.fb21-coach-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fb21-coach-title {
+  font-size: 1.08rem;
+  line-height: 1.12;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.fb21-coach-subtitle {
+  color: rgba(245, 240, 255, 0.68);
+  font-size: 0.84rem;
+  margin-top: 4px;
+}
+
+.fb21-coach-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f0ff;
+  font-size: 1.05rem;
+}
+
+.fb21-coach-card {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.055);
+  border-radius: 20px;
+  padding: 13px;
+  margin: 10px 0;
+}
+
+.fb21-coach-card h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: #ffd7a6;
+}
+
+.fb21-coach-card p {
+  margin: 0;
+  color: rgba(245, 240, 255, 0.76);
+  font-size: 0.92rem;
+}
+
+.fb21-coach-pillrow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+
+.fb21-coach-pill {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: rgba(245, 240, 255, 0.70);
+  background: rgba(0, 0, 0, 0.18);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.fb21-coach-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.fb21-coach-btn {
+  border: 1px solid rgba(185, 167, 255, 0.42);
+  border-radius: 999px;
+  background: rgba(185, 167, 255, 0.15);
+  color: #f5f0ff;
+  padding: 9px 11px;
+  font-weight: 850;
+}
+
+.fb21-coach-btn.secondary {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.fb21-coach-btn:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.fb21-coach-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: rgba(245, 240, 255, 0.70);
+}
+
+.fb21-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7df2b3;
+  box-shadow: 0 0 14px rgba(125, 242, 179, 0.55);
+}
+
+.fb21-dot.offline {
+  background: #ffe08a;
+  box-shadow: 0 0 14px rgba(255, 224, 138, 0.45);
+}
+
+.fb21-install-strip {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 9997;
+  width: min(760px, calc(100vw - 28px));
+  border: 1px solid rgba(255, 215, 166, 0.30);
+  background: rgba(7, 7, 18, 0.94);
+  color: #f5f0ff;
+  border-radius: 22px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 22px 80px rgba(0,0,0,0.46);
+  backdrop-filter: blur(18px);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.fb21-install-strip[hidden] { display: none; }
+
+.fb21-install-copy strong,
+.fb21-install-copy span { display: block; }
+.fb21-install-copy span { color: rgba(245, 240, 255, 0.68); font-size: 0.86rem; }
+
+@media (max-width: 680px) {
+  .fb21-coach-launcher { right: 12px; bottom: 12px; }
+  .fb21-coach { right: 12px; bottom: 66px; }
+  .fb21-install-strip { align-items: stretch; flex-direction: column; }
+  .fb21-install-strip .fb21-coach-actions { margin-top: 0; width: 100%; }
+  .fb21-install-strip .fb21-coach-btn { flex: 1; }
+}

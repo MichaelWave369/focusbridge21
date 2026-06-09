@@ -1,0 +1,217 @@
+.fb21-v07-button {
+  position: fixed;
+  right: 18px;
+  bottom: 344px;
+  z-index: 9999;
+  border: 1px solid rgba(125, 242, 179, 0.38);
+  background: linear-gradient(135deg, rgba(125, 242, 179, 0.18), rgba(185, 167, 255, 0.16));
+  color: #f5f0ff;
+  border-radius: 999px;
+  padding: 11px 14px;
+  font-weight: 900;
+  box-shadow: 0 18px 55px rgba(0,0,0,.34);
+  backdrop-filter: blur(14px);
+}
+
+.fb21-v07-panel {
+  position: fixed;
+  inset: 18px;
+  z-index: 10000;
+  display: none;
+  color: #f5f0ff;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.fb21-v07-panel.open { display: block; }
+
+.fb21-v07-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.66);
+  backdrop-filter: blur(8px);
+  border-radius: 26px;
+}
+
+.fb21-v07-shell {
+  position: relative;
+  width: min(1120px, 100%);
+  max-height: calc(100vh - 36px);
+  margin: 0 auto;
+  overflow: auto;
+  border: 1px solid rgba(255,255,255,.14);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(125,242,179,.13), transparent 26rem),
+    radial-gradient(circle at 88% 14%, rgba(255,215,166,.12), transparent 27rem),
+    rgba(10,10,24,.94);
+  border-radius: 26px;
+  box-shadow: 0 30px 100px rgba(0,0,0,.45);
+}
+
+.fb21-v07-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+
+.fb21-v07-head h2 {
+  margin: 0 0 5px;
+  font-size: clamp(1.7rem, 4vw, 3rem);
+  letter-spacing: -.04em;
+}
+
+.fb21-v07-muted { color: rgba(245,240,255,.72); }
+.fb21-v07-soft { color: rgba(245,240,255,.55); }
+.fb21-v07-small { font-size: .88rem; }
+.fb21-v07-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+.fb21-v07-close,
+.fb21-v07-action,
+.fb21-v07-tab {
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: #f5f0ff;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-weight: 850;
+}
+
+.fb21-v07-action.primary {
+  border-color: rgba(125,242,179,.45);
+  background: rgba(125,242,179,.13);
+}
+
+.fb21-v07-action.warn {
+  border-color: rgba(255,215,166,.45);
+  background: rgba(255,215,166,.12);
+}
+
+.fb21-v07-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 22px 0;
+}
+
+.fb21-v07-tab.active {
+  border-color: rgba(255,215,166,.55);
+  background: rgba(255,215,166,.13);
+}
+
+.fb21-v07-body { padding: 18px 22px 24px; }
+
+.fb21-v07-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.fb21-v07-grid.three { grid-template-columns: repeat(3, 1fr); }
+.fb21-v07-grid.four { grid-template-columns: repeat(4, 1fr); }
+
+.fb21-v07-card {
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.055);
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.fb21-v07-card h3,
+.fb21-v07-card h4 { margin: 0 0 8px; }
+
+.fb21-v07-stat {
+  font-size: 2rem;
+  font-weight: 950;
+  line-height: 1;
+  color: #ffd7a6;
+}
+
+.fb21-v07-bar {
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.25);
+  overflow: hidden;
+  margin: 7px 0 12px;
+}
+
+.fb21-v07-bar span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(125,242,179,.58), rgba(255,215,166,.70));
+}
+
+.fb21-v07-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fb21-v07-badge {
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+  color: rgba(245,240,255,.62);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-weight: 850;
+  font-size: .86rem;
+}
+
+.fb21-v07-badge.on {
+  color: #07120d;
+  background: linear-gradient(135deg, rgba(125,242,179,.95), rgba(255,215,166,.92));
+  border-color: rgba(255,255,255,.28);
+}
+
+.fb21-v07-field { display: grid; gap: 6px; margin: 10px 0; }
+.fb21-v07-field label { color: rgba(245,240,255,.72); font-weight: 850; font-size: .9rem; }
+.fb21-v07-field input,
+.fb21-v07-field select,
+.fb21-v07-field textarea {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.28);
+  color: #f5f0ff;
+  border-radius: 14px;
+  padding: 10px 11px;
+}
+
+.fb21-v07-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+.fb21-v07-plan-row {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding: 10px 0;
+}
+
+.fb21-v07-recipe {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.045);
+  color: #f5f0ff;
+  border-radius: 18px;
+  padding: 14px;
+  transition: transform .15s ease, border-color .15s ease;
+}
+
+.fb21-v07-recipe:hover {
+  transform: translateY(-1px);
+  border-color: rgba(125,242,179,.42);
+}
+
+@media (max-width: 920px) {
+  .fb21-v07-button { bottom: 412px; right: 12px; }
+  .fb21-v07-panel { inset: 10px; }
+  .fb21-v07-grid,
+  .fb21-v07-grid.three,
+  .fb21-v07-grid.four { grid-template-columns: 1fr; }
+  .fb21-v07-plan-row { grid-template-columns: 1fr; }
+}

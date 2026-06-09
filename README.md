@@ -14,7 +14,7 @@ The browser React prototype can run from the repo root or from `/docs` with no b
 
 ### Current live version
 
-**React Pages v0.3.1 Smooth Flow**
+**React Pages v0.4 PWA + Smart Coach Starter**
 
 The live app includes:
 
@@ -36,6 +36,8 @@ The live app includes:
 - Ledger stats cards, best-coherence receipt hint, and lightweight pattern insights.
 - JSON and CSV ledger export.
 - 8-week mastery protocol.
+- PWA install support with manifest, app icon, theme color, and service-worker cache shell.
+- Floating Smart Coach overlay with next-practice hints, local pattern summary, offline/app status, and install helper.
 
 Recommended GitHub Pages setting:
 
@@ -104,6 +106,8 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 .
 ├── index.html
 ├── 404.html
+├── manifest.webmanifest
+├── service-worker.js
 ├── app.py
 ├── requirements.txt
 ├── README.md
@@ -112,7 +116,10 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── index.html
 │   ├── styles.css
 │   ├── upgrade.css
+│   ├── pwa-coach.css
 │   ├── fb21-react.js
+│   ├── fb21-pwa-coach.js
+│   ├── icon.svg
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/
     └── index.html

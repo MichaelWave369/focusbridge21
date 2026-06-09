@@ -14,7 +14,7 @@ The browser React prototype can run from the repo root or from `/docs` with no b
 
 ### Current live version
 
-**React Pages v0.4 PWA + Smart Coach Starter**
+**React Pages v0.5 Pattern Lab + Receipt Cards**
 
 The live app includes:
 
@@ -38,6 +38,9 @@ The live app includes:
 - 8-week mastery protocol.
 - PWA install support with manifest, app icon, theme color, and service-worker cache shell.
 - Floating Smart Coach overlay with next-practice hints, local pattern summary, offline/app status, and install helper.
+- Pattern Lab overlay with best-condition analysis, recommendation logic, receipt cards, breath pacer, and 7-day plan generator.
+- Clean shareable/downloadable session receipt cards with private notes hidden by default.
+- Breath Pacer for pre-session grounding or RETURN NOW support.
 
 Recommended GitHub Pages setting:
 
@@ -106,8 +109,8 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 .
 ├── index.html
 ├── 404.html
-├── manifest.webmanifest
 ├── service-worker.js
+├── manifest.webmanifest
 ├── app.py
 ├── requirements.txt
 ├── README.md
@@ -117,8 +120,10 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── styles.css
 │   ├── upgrade.css
 │   ├── pwa-coach.css
+│   ├── pattern-lab.css
 │   ├── fb21-react.js
 │   ├── fb21-pwa-coach.js
+│   ├── fb21-pattern-lab.js
 │   ├── icon.svg
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/

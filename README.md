@@ -14,7 +14,7 @@ The browser React prototype can run from the repo root or from `/docs` with no b
 
 ### Current live version
 
-**React Pages v0.5 Pattern Lab + Receipt Cards**
+**React Pages v0.6 Studio Lab**
 
 The live app includes:
 
@@ -41,6 +41,9 @@ The live app includes:
 - Pattern Lab overlay with best-condition analysis, recommendation logic, receipt cards, breath pacer, and 7-day plan generator.
 - Clean shareable/downloadable session receipt cards with private notes hidden by default.
 - Breath Pacer for pre-session grounding or RETURN NOW support.
+- **Studio Lab overlay** with Today view, Private Backup Vault, Weekly Review export, 7-day smooth plan, Comfort Profiles, and quick tone checks.
+- Full local backup/restore for FocusBridge21 browser data.
+- Comfort profiles that apply safer builder defaults and reload the app cleanly.
 
 Recommended GitHub Pages setting:
 
@@ -121,9 +124,11 @@ Visuals are slow and non-flashing by default. Keep volume low. Start short. Use 
 │   ├── upgrade.css
 │   ├── pwa-coach.css
 │   ├── pattern-lab.css
+│   ├── fb21-v06-lab.css
 │   ├── fb21-react.js
 │   ├── fb21-pwa-coach.js
 │   ├── fb21-pattern-lab.js
+│   ├── fb21-v06-lab.js
 │   ├── icon.svg
 │   └── FocusBridge21_Master_Spec_v0.2.md
 └── site/

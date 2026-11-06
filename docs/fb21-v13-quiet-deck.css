@@ -1,0 +1,122 @@
+/* FocusBridge21 v1.3 Quiet Deck: calm front door, original advanced app retained. */
+#fb21-quiet-root { display: none; }
+body.fb21-quiet-mode { margin: 0; background: #0a0d16; color: #f1f3fa; }
+body.fb21-quiet-mode > :not(#fb21-quiet-root) { display: none !important; }
+body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 100vh; }
+#fb21-quiet-root, #fb21-quiet-home { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+#fb21-quiet-root * { box-sizing: border-box; }
+#fb21-quiet-root button, #fb21-quiet-home { font: inherit; cursor: pointer; }
+#fb21-quiet-root button:focus-visible, #fb21-quiet-home:focus-visible,
+#fb21-quiet-root input:focus-visible, #fb21-quiet-root textarea:focus-visible {
+  outline: 3px solid #93e5d2; outline-offset: 4px;
+}
+#fb21-quiet-root button:disabled { opacity: .42; cursor: not-allowed; }
+#fb21-quiet-root .q-shell {
+  min-height: 100vh; background: radial-gradient(ellipse 60% 42% at 52% 27%, #1c2541 0%, #101626 55%, #0a0d16 100%);
+  display: flex; flex-direction: column; color: #f1f3fa;
+}
+#fb21-quiet-root .q-header {
+  width: min(1060px, calc(100% - 40px)); margin: 0 auto; display: flex; align-items: center;
+  justify-content: space-between; gap: 16px; padding: 27px 0 14px;
+}
+#fb21-quiet-root .q-brand { display: flex; align-items: center; gap: 12px; }
+#fb21-quiet-root .q-brand strong { display: block; font-size: 1rem; letter-spacing: .02em; }
+#fb21-quiet-root .q-brand small { display: block; color: #aeb9cc; letter-spacing: .15em; margin-top: 2px; font-size: .65rem; }
+#fb21-quiet-root .q-sigil {
+  width: 40px; height: 40px; border: 1px solid #8fcdbd66; border-radius: 14px;
+  display: grid; place-items: center; color: #a6e3d1; background: #9cd9cb14; font-size: 24px;
+}
+#fb21-quiet-root .q-text-button, #fb21-quiet-root .q-back {
+  border: 0; color: #c7d3e5; background: transparent; padding: 12px; border-radius: 12px;
+}
+#fb21-quiet-root .q-text-button:hover, #fb21-quiet-root .q-back:hover { color: #fff; background: #ffffff12; }
+#fb21-quiet-root .q-main { width: min(940px, calc(100% - 40px)); margin: auto; padding: 55px 0 70px; }
+#fb21-quiet-root .q-eyebrow {
+  color: #a8e3d5; font-size: .75rem; text-transform: uppercase; font-weight: 750;
+  letter-spacing: .18em; margin-bottom: 16px;
+}
+#fb21-quiet-root h1 { font-size: clamp(2.55rem, 7vw, 5rem); font-weight: 750; line-height: 1.06; letter-spacing: -.055em; margin: 0 0 22px; }
+#fb21-quiet-root h1 em { font-style: normal; color: #b4e8d9; }
+#fb21-quiet-root .q-lead { font-size: clamp(1.03rem, 2vw, 1.3rem); line-height: 1.7; color: #c5d0e2; max-width: 750px; margin: 0 0 36px; }
+#fb21-quiet-root .q-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+#fb21-quiet-root .q-choice {
+  text-align: left; border: 1px solid #56678380; border-radius: 22px; min-height: 270px;
+  padding: 24px 23px; display: flex; flex-direction: column; align-items: flex-start; gap: 13px;
+  color: #f1f3fa; background: linear-gradient(140deg, #1a2440db, #141b2cea);
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+#fb21-quiet-root .q-choice:hover { background: #273855; border-color: #9fdccc; transform: translateY(-2px); }
+#fb21-quiet-root .q-choice-icon { font-size: 2.1rem; color: #a7e6d5; line-height: 1; min-height: 36px; }
+#fb21-quiet-root .q-choice-kicker { font-size: .67rem; letter-spacing: .11em; font-weight: 800; color: #a9b9cd; }
+#fb21-quiet-root .q-choice strong { font-size: 1.38rem; letter-spacing: -.02em; }
+#fb21-quiet-root .q-choice > span:not(.q-choice-icon, .q-choice-kicker, .q-choice-link) { color: #bdcadd; font-size: .95rem; line-height: 1.55; }
+#fb21-quiet-root .q-choice-link { color: #afeddd; font-weight: 750; margin-top: auto; }
+#fb21-quiet-root .q-footnote { color: #aab9cc; line-height: 1.6; margin-top: 30px; font-size: .9rem; }
+#fb21-quiet-root .q-footer {
+  width: min(1060px, calc(100% - 40px)); margin: 0 auto; border-top: 1px solid #64738f40;
+  padding: 20px 0 28px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px;
+  color: #a7b6cc; font-size: .8rem; line-height: 1.5;
+}
+#fb21-quiet-root .q-panel {
+  border: 1px solid #65778e66; border-radius: 24px; background: #151e33f0;
+  box-shadow: 0 20px 70px #00000044; padding: clamp(22px, 5vw, 40px); max-width: 740px;
+}
+#fb21-quiet-root .q-panel h2 { font-size: 1.2rem; margin: 0 0 22px; }
+#fb21-quiet-root .q-durations { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+#fb21-quiet-root .q-duration {
+  color: #d9e7f4; border: 1px solid #7687a077; border-radius: 13px;
+  background: #202d45; padding: 14px 18px; min-width: 76px; font-weight: 650;
+}
+#fb21-quiet-root .q-duration.selected { background: #b1eadc; border-color: #b1eadc; color: #102025; }
+#fb21-quiet-root .q-detail { font-size: .91rem; color: #adbbcf; line-height: 1.6; }
+#fb21-quiet-root .q-check { display: flex; gap: 12px; align-items: flex-start; line-height: 1.55; padding: 15px 0; color: #e3eaf4; max-width: 640px; }
+#fb21-quiet-root .q-check input { width: 21px; height: 21px; flex: 0 0 21px; accent-color: #ace6d8; margin-top: 2px; }
+#fb21-quiet-root .q-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+#fb21-quiet-root .q-primary, #fb21-quiet-root .q-secondary, #fb21-quiet-root .q-return {
+  border-radius: 14px; padding: 14px 24px; font-weight: 750; min-height: 51px;
+}
+#fb21-quiet-root .q-primary { color: #102129; border: 1px solid #b9eedf; background: #b9eedf; }
+#fb21-quiet-root .q-primary:hover:not(:disabled) { background: #d0f7ea; }
+#fb21-quiet-root .q-secondary { color: #f0f4fa; background: #26344e; border: 1px solid #7085a083; }
+#fb21-quiet-root .q-secondary:hover { background: #354967; }
+#fb21-quiet-root .q-return { color: #ffe9e9; background: #59343f; border: 1px solid #bd8d9a; }
+#fb21-quiet-root .q-return:hover { background: #71434f; }
+#fb21-quiet-root .q-error { color: #ffc6c6; line-height: 1.5; }
+#fb21-quiet-root .q-running { max-width: 650px; margin: auto; text-align: center; }
+#fb21-quiet-root .q-orb {
+  margin: 36px auto 30px; width: min(46vw, 240px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #cffdf066, #74c0d255 45%, #8677cf33 75%, transparent);
+  display: grid; place-items: center; box-shadow: 0 0 100px #8cd6d02d; animation: fb21-q-breathe 10s ease-in-out infinite;
+}
+#fb21-quiet-root .q-orb-inner {
+  width: 66%; height: 66%; border: 1px solid #d6fbeb88; border-radius: 50%; box-shadow: inset 0 0 60px #c9f1ed33;
+}
+@keyframes fb21-q-breathe { 0%, 100% { transform: scale(.96); } 50% { transform: scale(1.04); } }
+#fb21-quiet-root .q-timer { font-size: clamp(3rem, 10vw, 5rem); letter-spacing: -.05em; font-variant-numeric: tabular-nums; font-weight: 650; }
+#fb21-quiet-root .q-cue { color: #d6e1ee; font-size: clamp(1.05rem, 2vw, 1.27rem); line-height: 1.7; min-height: 72px; margin: 22px auto; }
+#fb21-quiet-root .q-track { height: 5px; border-radius: 99px; background: #4b5972; overflow: hidden; max-width: 450px; margin: auto; }
+#fb21-quiet-root .q-track > div { height: 100%; background: #b9eedf; transition: width .2s linear; }
+#fb21-quiet-root .q-center { justify-content: center; }
+#fb21-quiet-root .q-note-label { display: block; color: #bfcddd; margin-bottom: 12px; }
+#fb21-quiet-root #q-note { display: block; width: 100%; border: 1px solid #6e819a; border-radius: 14px; background: #0d1425; color: #f4f7fc; padding: 16px; font: inherit; resize: vertical; line-height: 1.5; }
+#fb21-quiet-home {
+  position: fixed; z-index: 100100; bottom: 18px; left: 18px; border-radius: 99px;
+  padding: 13px 18px; background: #b6ebdc; border: 1px solid #dcfff3;
+  color: #15242e; box-shadow: 0 10px 32px #0007; font-weight: 750;
+}
+#fb21-quiet-home:hover { background: #d1faed; }
+#fb21-quiet-home[hidden], #fb21-quiet-root[hidden] { display: none !important; }
+@media (max-width: 720px) {
+  #fb21-quiet-root .q-header { padding-top: 17px; }
+  #fb21-quiet-root .q-main { padding: 35px 0 55px; }
+  #fb21-quiet-root .q-choices { grid-template-columns: 1fr; }
+  #fb21-quiet-root .q-choice { min-height: 185px; }
+  #fb21-quiet-root .q-brand strong { font-size: .9rem; }
+  #fb21-quiet-root .q-text-button { font-size: .86rem; text-align: right; }
+  #fb21-quiet-root .q-actions > button { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #fb21-quiet-root *, #fb21-quiet-root *::before, #fb21-quiet-root *::after {
+    animation: none !important; transition: none !important;
+  }
+}

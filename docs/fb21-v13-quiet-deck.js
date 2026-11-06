@@ -15,7 +15,7 @@
   const state = {
     screen: "home", mode: "settle", duration: 90, safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
-    audio: null, paused: false, interrupted: false, note: "", error: ""
+    audio: null, paused: false, interrupted: false, starting: false, note: "", error: ""
   };
 
   function safeText(value) {
@@ -114,20 +114,24 @@
     try { if (audio.context.state !== "closed") audio.context.close(); } catch {}
   }
   async function startSession() {
-    if (state.screen !== "prepare" || !state.safe ||
+    if (state.screen !== "prepare" || state.starting || !state.safe ||
         (state.mode === "listen" && !state.headphones)) return;
+    state.starting = true;
     state.error = "";
+    render();
     state.elapsedMs = 0;
     state.paused = false;
     if (state.mode === "listen") {
       try { await startAudio(); }
       catch (error) {
+        state.starting = false;
         state.error = "Audio could not start: " + (error.message || String(error)) +
           ". You can still choose Settle without audio.";
         render();
         return;
       }
     }
+    state.starting = false;
     state.screen = "running";
     state.lastTick = Date.now();
     clearInterval(state.timer);
@@ -277,7 +281,7 @@
           (state.headphones ? 'checked' : '') +
           '> <span>I have stereo headphones on at a low, comfortable volume.</span></label>' : '',
         '<div class="q-actions"><button type="button" class="q-primary" data-action="start" ',
-        (!state.safe || (listen && !state.headphones)) ? 'disabled' : '',
+        (!state.safe || (listen && !state.headphones) || state.starting) ? 'disabled' : '',
         '>Start my session</button>',
         listen ? '<button type="button" class="q-secondary" data-action="settle">No audio instead</button>' : '',
         '</div>',

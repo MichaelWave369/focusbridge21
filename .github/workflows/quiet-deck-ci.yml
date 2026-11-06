@@ -1,0 +1,26 @@
+name: Quiet Deck smoke tests
+
+on:
+  push:
+    branches: [main, "feat/quiet-deck-v13"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quiet-deck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify JavaScript syntax
+        run: |
+          for file in docs/*.js service-worker.js; do node --check "$file"; done
+      - name: Run Quiet Deck smoke tests
+        run: node --test tests/quiet-deck.test.mjs

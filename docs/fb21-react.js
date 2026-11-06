@@ -63,11 +63,21 @@
     if (pre.grounded <= 3) score -= 10;
     score = clamp(Math.round(score), 0, 100);
     let out = { score, level: "Red", preset: "Foundation", duration: 5, mode: "Neutral", text: "Readiness is low. Prefer rest, grounding, breath, or a short Foundation session." };
-    if (pre.destabilized || !pre.safe || !pre.ack) return { ...out, duration: 2, text: "Do not do threshold work right now. Choose grounding or very short Foundation only." };
+    if (pre.destabilized) return { ...out, duration: 2, text: "Audio practice is on hold because you marked a recent destabilizing experience. Choose no-audio grounding instead." };
+    if (!pre.safe || !pre.headphones || !pre.ack) return { ...out, duration: 2, text: "Complete the safety confirmations before any audio session. No audio will play while a required check is missing." };
     if (score >= 82) return { score, level: "Green", preset: "Bridge", duration: 15, mode: "Resonance Architect", text: "Strong readiness. Bridge Preview or a short Bridge session is reasonable. Keep RETURN NOW visible." };
     if (score >= 70) return { score, level: "Green", preset: "Expansion", duration: 15, mode: "Neutral", text: "Good readiness. Expansion or Bridge Preview can work; stay conservative." };
     if (score >= 50) return { score, level: "Yellow", preset: "Foundation", duration: 5, mode: "Neutral", text: "Use a gentle session. Prefer Foundation or Expansion. Avoid pushing threshold work today." };
     return out;
+  }
+
+  function audioBlockReasons(pre) {
+    const reasons = [];
+    if (!pre.safe) reasons.push("Confirm you are in a safe, quiet place.");
+    if (!pre.headphones) reasons.push("Confirm stereo headphones are connected at a comfortable volume.");
+    if (!pre.ack) reasons.push("Read and acknowledge the safety notes.");
+    if (pre.destabilized) reasons.push("You checked YES for a recent distressing or destabilizing experience. Audio is on hold; choose a no-audio grounding session instead.");
+    return reasons;
   }
 
   function phaseFor(elapsed, duration) {
@@ -194,6 +204,8 @@
     const [pre, setPre] = useState(prefs.pre || { mood: 7, sleep: 7, stress: 3, grounded: 7, safe: true, headphones: true, ack: false, destabilized: false, intention: PRESETS.Bridge.intention });
     const [ready, setReady] = useState(null);
     const [running, setRunning] = useState(false);
+    const [starting, setStarting] = useState(false);
+    const [playbackError, setPlaybackError] = useState("");
     const [elapsed, setElapsed] = useState(0);
     const [returnTimer, setReturnTimer] = useState(60);
     const [grounded, setGrounded] = useState(false);
@@ -210,8 +222,11 @@
     const phaseProg = phase.end > phase.start ? clamp(((elapsed - phase.start) / (phase.end - phase.start)) * 100, 0, 100) : 0;
     const track = useMemo(() => tracker(ledger), [ledger]);
     const hints = useMemo(() => insights(ledger), [ledger]);
+    const audioBlocks = audioBlockReasons(pre);
+    const canStartAudio = audioBlocks.length === 0;
 
     useEffect(() => { jwrite(PREF_KEY, { step, presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, surf, bass, beat, pre }); }, [step, presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, surf, bass, beat, pre]);
+    useEffect(() => { setReady(null); setPlaybackError(""); }, [pre]);
     useEffect(() => {
       if (!running) return;
       const id = setInterval(() => {
@@ -230,7 +245,7 @@
     function presetClean(name) { setPresetName(name); setBase(PRESETS[name].base); setNoise(PRESETS[name].noise); setPre({ ...pre, intention: PRESETS[name].intention }); }
     function applyQuick(q) { stop(false); setPresetName(q.preset); setDurationMin(q.duration); setGuidanceMode(q.mode); setBase(PRESETS[q.preset].base); setNoise(PRESETS[q.preset].noise); setPre({ ...pre, intention: PRESETS[q.preset].intention }); setStep("build"); setToast(`${q.title} loaded. Calculate readiness, then continue.`); }
     function calc(go = true) { const r = scoreReadiness(pre); setReady(r); setToast(`Readiness ${r.score}/100: ${r.level}. ${r.text}`); if (go) setStep("recommend"); return r; }
-    function loadRec() { const r = ready || calc(false); setPresetName(r.preset); setDurationMin(r.duration); setGuidanceMode(r.mode); setBase(PRESETS[r.preset].base); setNoise(PRESETS[r.preset].noise); setPre({ ...pre, intention: PRESETS[r.preset].intention }); setToast(`${r.preset} ${r.duration}-minute recommendation loaded. Press Start when ready.`); }
+    function loadRec() { const r = scoreReadiness(pre); setReady(r); setPresetName(r.preset); setDurationMin(r.duration); setGuidanceMode(r.mode); setBase(PRESETS[r.preset].base); setNoise(PRESETS[r.preset].noise); setPre({ ...pre, intention: PRESETS[r.preset].intention }); setToast(`${r.preset} ${r.duration}-minute recommendation loaded. Press Start when ready.`); }
 
     function stopAudio() {
       const refs = audio.current;
@@ -238,24 +253,50 @@
       try { refs.ctx && refs.ctx.state !== "closed" && refs.ctx.close(); } catch {}
       audio.current = { ctx: null, nodes: [] };
     }
-    function stop(toReturn = false) { stopAudio(); setRunning(false); if (toReturn) { setReturnTimer(60); setGrounded(false); setStep("return"); setToast("RETURN NOW active. Ground first, journal after stable."); } }
-    function finishSession() { stopAudio(); setRunning(false); setReturnTimer(60); setGrounded(false); setStep("return"); setToast("Session complete. Auto-return started. Ground first, then journal."); }
+    function stop(toReturn = false) { stopAudio(); setRunning(false); setStarting(false); if (toReturn) { setReturnTimer(60); setGrounded(false); setStep("return"); setToast("RETURN NOW active. Ground first, journal after stable."); } }
+    function finishSession() { stopAudio(); setRunning(false); setStarting(false); setReturnTimer(60); setGrounded(false); setStep("return"); setToast("Session complete. Auto-return started. Ground first, then journal."); }
 
     async function start() {
-      if (!pre.ack || !pre.safe || !pre.headphones || pre.destabilized) {
-        setStep("build"); setToast("Audio requires safety, headphone, and acknowledgment checks. If feeling unwell or destabilized, do not start."); return;
+      if (starting) return;
+      const blocks = audioBlockReasons(pre);
+      if (blocks.length) {
+        const message = "Audio not started: " + blocks.join(" ");
+        setPlaybackError(message);
+        setToast(message);
+        // Never silently bounce from Cockpit back to Readiness.
+        return;
       }
-      if (!ready) setReady(scoreReadiness(pre));
-      stopAudio();
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) { setToast("This browser does not support Web Audio."); return; }
+      if (!AC) {
+        setPlaybackError("This browser does not support Web Audio. Try a modern browser or Just settle without sound.");
+        return;
+      }
+      setStarting(true);
+      setPlaybackError("");
+      stopAudio();
+      let ctx;
       try {
-        const ctx = new AC(); await ctx.resume();
-        const refs = { ctx, nodes: [] }; audio.current = refs;
+        ctx = new AC();
+        audio.current = { ctx, nodes: [] };
+        await ctx.resume();
+        // The audio graph is created only after the browser has allowed the context to run.
+        if (ctx.state !== "running") throw new Error("Browser audio is suspended; check the tab's sound permissions and output device.");
+        const refs = audio.current;
         scheduleAudio(ctx, preset, { base, volume, noise, noiseAmount }, durSec, refs);
         if (window.FocusBridgeSoundscape) window.FocusBridgeSoundscape.schedule(ctx, { surf, bass, beat }, durSec, refs);
-        startStamp.current = Date.now(); setElapsed(0); setReturnTimer(60); setGrounded(false); setRunning(true); setStep("cockpit"); setToast(`${presetName} session started. RETURN NOW is always available.`);
-      } catch (e) { setToast(`Audio start failed: ${e.message || e}`); }
+        startStamp.current = Date.now();
+        setElapsed(0); setReturnTimer(60); setGrounded(false);
+        setRunning(true); setStep("cockpit");
+        setToast(`${presetName} audio is playing. Keep the device volume low; Return Now stops it.`);
+      } catch (e) {
+        stopAudio();
+        setRunning(false);
+        const message = "Audio could not start: " + (e.message || e) + ". Check tab mute, headphone output, and browser sound permissions.";
+        setPlaybackError(message);
+        setToast(message);
+      } finally {
+        setStarting(false);
+      }
     }
 
     function saveReceipt() {
@@ -266,11 +307,34 @@
     function download(blob, filename) { const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(u); }
     function exportJson() { download(new Blob([JSON.stringify(ledger, null, 2)], { type: "application/json" }), `focusbridge21-ledger-${Date.now()}.json`); }
     function exportCsv() { const head = ["timestamp","preset","gate","duration","readiness","depth","relaxation","witness","fear","return","coherence","notes"]; const rows = ledger.map(r => [r.timestamp,r.preset,r.target_gate,r.duration_min,r.readiness?.score ?? "",r.during?.perceived_depth ?? "",r.during?.body_relaxation ?? "",r.during?.stable_witness_presence ?? "",r.during?.fear_or_resistance ?? "",r.post?.return_quality ?? "",r.post?.overall_coherence ?? "",r.notes || ""]); const csv = [head, ...rows].map(row => row.map(v => `"${String(v ?? "").replaceAll('"','""')}"`).join(",")).join("\n"); download(new Blob([csv], { type: "text/csv" }), `focusbridge21-ledger-${Date.now()}.csv`); }
-    async function test() { try { await stereoTest(); setToast("Stereo test played: left tone then right tone."); } catch(e) { setToast(`Stereo test failed: ${e.message || e}`); } }
+    async function test() {
+      const blocks = audioBlockReasons(pre);
+      if (blocks.length) {
+        const message = "Sound test on hold: " + blocks.join(" ");
+        setPlaybackError(message); setToast(message); return;
+      }
+      try {
+        await stereoTest();
+        setPlaybackError("");
+        setToast("Stereo sound test started: left, then right. If silent, check the tab's mute setting and Windows headphone output.");
+      } catch(e) {
+        const message = "Stereo test failed: " + (e.message || e);
+        setPlaybackError(message); setToast(message);
+      }
+    }
 
     const avg = k => { const vals = ledger.map(r => k.split(".").reduce((o, p) => o?.[p], r)).filter(v => typeof v === "number"); return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : "—"; };
     const best = [...ledger].filter(r => Number.isFinite(r.post?.overall_coherence)).sort((a,b)=>b.post.overall_coherence-a.post.overall_coherence)[0];
     const scoreClass = ready ? (ready.level === "Green" ? "score-green" : ready.level === "Yellow" ? "score-yellow" : "score-red") : "";
+    const audioGuidance = audioBlocks.length
+      ? h("div", { className:"fb21-audio-status blocked", role:"alert" },
+          h("strong", null, "Audio not ready"), 
+          h("p", null, "The sound engine is paused until these checks are resolved:"),
+          h("ul", null, audioBlocks.map(text => h("li", { key:text }, text))),
+          h(Button, { cls:"button ghost", onClick:()=>setStep("build") }, "Review readiness checks"))
+      : h("div", { className:"fb21-audio-status ready", role:"status" },
+          h("strong", null, running ? "Audio running" : starting ? "Starting browser audio…" : "Checks complete — audio ready"),
+          h("p", null, running ? "Your session is active. RETURN NOW ends all sound." : "Use Start to play through the selected headphone output. If silent, try the stereo sound test."));
     const canJournal = grounded || returnTimer <= 0;
 
     const flow = [["build","Readiness"],["recommend","Recommend"],["cockpit","Cockpit"],["return","Return"],["journal","Journal"],["ledger","Ledger"],["protocol","Protocol"]];
@@ -295,9 +359,10 @@
               h("label", { className:"checkline" }, h("input", { type:"checkbox", checked:pre.safe, onChange:e=>setPre({...pre,safe:e.target.checked}) }), "I am in a safe, quiet environment."),
               h("label", { className:"checkline" }, h("input", { type:"checkbox", checked:pre.headphones, onChange:e=>setPre({...pre,headphones:e.target.checked}) }), "Stereo headphones are working and volume is low."),
               h("label", { className:"checkline" }, h("input", { type:"checkbox", checked:pre.ack, onChange:e=>setPre({...pre,ack:e.target.checked}) }), "I understand the safety notes and will not use this in unsafe contexts."),
-              h("label", { className:"checkline" }, h("input", { type:"checkbox", checked:pre.destabilized, onChange:e=>setPre({...pre,destabilized:e.target.checked}) }), "Recent destabilizing meditation or altered-state experience."),
+              h("label", { className:"checkline fb21-risk-check" }, h("input", { type:"checkbox", checked:pre.destabilized, onChange:e=>setPre({...pre,destabilized:e.target.checked}) }), h("span", null, "YES, I recently had a distressing or destabilizing meditation / altered-state experience.", h("small", null, "Check only if this happened. Leave unchecked otherwise. A YES pauses audio sessions."))),
               h("div", { className:"field" }, h("label", null, "Session intention"), h("textarea", { value:pre.intention, onChange:e=>setPre({...pre,intention:e.target.value}) })),
-              h("div", { className:"top-actions left" }, h(Button, { cls:"button primary", onClick:()=>calc(true) }, "Calculate + Continue"), h(Button, { cls:"button ghost", onClick:test }, "Stereo test")),
+              h("div", { className:"top-actions left" }, h(Button, { cls:"button primary", onClick:()=>calc(true) }, "Calculate + Continue"), h(Button, { cls:"button ghost", onClick:test, disabled:!canStartAudio }, "Stereo test")), 
+              audioBlocks.length > 0 && h("div", { className:"fb21-audio-status blocked", role:"alert" }, h("strong", null, "Audio on hold"), h("p", null, audioBlocks.join(" "))),
               ready && h("div", { className:"score-box" }, h("div", { className:`score-number ${scoreClass}` }, ready.score), h("div", null, h("strong", null, ready.level), h("div", { className:"muted" }, ready.text), h("div", { className:"soft small" }, `Suggested: ${ready.preset}, ${ready.duration} min`)))) ,
             h("div", { className:"panel" }, h("h2", null, "Manual Session Builder"), h("div", { className:"field" }, h("label", null, "Preset"), h("select", { value:presetName, onChange:e=>presetClean(e.target.value) }, Object.keys(PRESETS).map(n=>h("option", { key:n, value:n }, n)))), h("p", { className:"muted" }, preset.desc), h("div", { className:"form-grid" },
               h("div", { className:"field" }, h("label", null, "Duration"), h("select", { value:durationMin, onChange:e=>setDurationMin(Number(e.target.value)) }, [2,5,15,25,35,45].map(d=>h("option", { key:d, value:d }, `${d} minutes`)))),
@@ -318,9 +383,13 @@
           )
         ),
 
-        step === "recommend" && h("section", { className:"app-grid" }, h("div", { className:"panel recommendation-card" }, h("h2", null, "Recommended Session"), ready ? h(React.Fragment, null, h("div", { className:"score-box" }, h("div", { className:`score-number ${scoreClass}` }, ready.score), h("div", null, h("strong", null, `${ready.level} readiness`), h("div", { className:"muted" }, ready.text))), h("div", { className:"recommended-big" }, `${ready.preset} • ${ready.duration} min`), h("p", { className:"muted" }, PRESETS[ready.preset].desc), h("div", { className:"top-actions left" }, h(Button, { cls:"button primary big", onClick:loadRec }, "Load recommendation"), h(Button, { cls:"button", onClick:start }, "Start loaded session"), h(Button, { cls:"button ghost", onClick:()=>setStep("build") }, "Adjust manually"))) : h("p", { className:"muted" }, "Calculate readiness first.")), h("div", { className:"panel" }, h("h2", null, "Practice Tracker"), h("div", { className:"stat-grid two" }, h(Stat, { label:"Streak", value:track.streak, note:"days" }), h(Stat, { label:"Protocol week", value:track.week, note:track.focus }), h(Stat, { label:"Receipts", value:track.sessions }), h(Stat, { label:"Next practice", value:track.next })), h("h3", null, "Pattern hints"), h("ul", null, hints.map(x=>h("li", { key:x }, x))))),
+        step === "recommend" && h("section", { className:"app-grid" }, h("div", { className:"panel recommendation-card" }, h("h2", null, "Recommended Session"), ready ? h(React.Fragment, null, h("div", { className:"score-box" }, h("div", { className:`score-number ${scoreClass}` }, ready.score), h("div", null, h("strong", null, `${ready.level} readiness`), h("div", { className:"muted" }, ready.text))), h("div", { className:"recommended-big" }, `${ready.preset} • ${ready.duration} min`), h("p", { className:"muted" }, PRESETS[ready.preset].desc), h("div", { className:"top-actions left" }, h(Button, { cls:"button primary big", onClick:loadRec }, "Load recommendation"), h(Button, { cls:"button", onClick:start, disabled:!canStartAudio || starting }, "Start loaded session"), h(Button, { cls:"button ghost", onClick:()=>setStep("build") }, "Adjust manually"))) : h("p", { className:"muted" }, "Calculate readiness first.")), h("div", { className:"panel" }, h("h2", null, "Practice Tracker"), h("div", { className:"stat-grid two" }, h(Stat, { label:"Streak", value:track.streak, note:"days" }), h(Stat, { label:"Protocol week", value:track.week, note:track.focus }), h(Stat, { label:"Receipts", value:track.sessions }), h(Stat, { label:"Next practice", value:track.next })), h("h3", null, "Pattern hints"), h("ul", null, hints.map(x=>h("li", { key:x }, x))))),
 
-        step === "cockpit" && h("section", { className:"app-grid" }, h("div", { className:"panel portal-panel" }, h("div", { className:"portal" }, [1,2,3,4,5].map(i=>h("div", { key:i, className:`ring r${i}` })), h("div", { className:"core" }, h("span", null, presetName.toUpperCase()), h("span", null, `GATE ${preset.gate}`), h("span", null, running ? "LIVE" : "READY"))), h("div", { className:"progress-wrap" }, h("div", { className:"progress-bar", style:{width:`${prog}%`} })), h("div", { className:"soft small" }, `Session progress ${Math.round(prog)}% • Phase progress ${Math.round(phaseProg)}%`)), h("div", { className:"panel sticky-return" }, h("h2", null, "Live Cockpit"), h("div", { className:"timer" }, fmt(Math.max(0, durSec-elapsed))), h("div", { className:"coach-card" }, h("div", { className:"coach-phase" }, phase.name), h("div", { className:"coach-line" }, phase.coach), h("div", { className:"soft small" }, preset.coach)), h("div", { className:"phase-pills" }, PHASES.map(p=>h("span", { key:p.name, className:`phase-pill ${p.name===phase.name?"active":""}` }, p.name))), h("div", { className:"top-actions left" }, h(Button, { cls:"button primary", onClick:start }, running ? "Restart" : "Start"), h(Button, { onClick:()=>stop(false) }, "Stop"), h(Button, { cls:"button danger", onClick:()=>stop(true) }, "RETURN NOW")), h("div", { className:"return-box" }, h("h3", null, "Return protocol ready"), h("ol", null, ["Stop audio and open your eyes.","Feel feet, hands, breath, and room.","Name three things you see.","Name three things you hear.","Name three things you feel.","Drink water. Move gently. Journal after grounded."].map(x=>h("li", { key:x }, x)))), h("h3", null, "Guidance"), h("ul", null, GUIDANCE[guidanceMode][phase.name].map(x=>h("li", { key:x }, x))))),
+        step === "cockpit" && h("section", { className:"app-grid" }, h("div", { className:"panel portal-panel" }, h("div", { className:"portal" }, [1,2,3,4,5].map(i=>h("div", { key:i, className:`ring r${i}` })), h("div", { className:"core" }, h("span", null, presetName.toUpperCase()), h("span", null, `GATE ${preset.gate}`), h("span", null, running ? "LIVE" : "READY"))), h("div", { className:"progress-wrap" }, h("div", { className:"progress-bar", style:{width:`${prog}%`} })), h("div", { className:"soft small" }, `Session progress ${Math.round(prog)}% • Phase progress ${Math.round(phaseProg)}%`)), h("div", { className:"panel sticky-return" }, h("h2", null, "Live Cockpit"), h("div", { className:"timer" }, fmt(Math.max(0, durSec-elapsed))), h("div", { className:"coach-card" }, h("div", { className:"coach-phase" }, phase.name), h("div", { className:"coach-line" }, phase.coach), h("div", { className:"soft small" }, preset.coach)), h("div", { className:"phase-pills" }, PHASES.map(p=>h("span", { key:p.name, className:`phase-pill ${p.name===phase.name?"active":""}` }, p.name))), h("div", { className:"top-actions left" }, h(Button, { cls:"button primary", onClick:start, disabled:!canStartAudio || starting }, starting ? "Starting…" : running ? "Restart" : "Start"), h(Button, { onClick:()=>stop(false) }, "Stop"), h(Button, { cls:"button danger", onClick:()=>stop(true) }, "RETURN NOW")),
+              audioGuidance,
+              playbackError && h("div", { className:"fb21-audio-status blocked", role:"alert" }, playbackError),
+              h("div", { className:"top-actions left" }, h(Button, { cls:"button ghost", onClick:test, disabled:!canStartAudio || running || starting }, "Test left / right sound (2s)")),
+              h("div", { className:"return-box" }, h("h3", null, "Return protocol ready"), h("ol", null, ["Stop audio and open your eyes.","Feel feet, hands, breath, and room.","Name three things you see.","Name three things you hear.","Name three things you feel.","Drink water. Move gently. Journal after grounded."].map(x=>h("li", { key:x }, x)))), h("h3", null, "Guidance"), h("ul", null, GUIDANCE[guidanceMode][phase.name].map(x=>h("li", { key:x }, x))))),
 
         step === "return" && h("section", { className:"return-screen panel" }, h("div", { className:"return-orb" }, fmt(returnTimer)), h("h2", null, "Auto-Return"), h("p", { className:"muted" }, "Audio is stopped. Take one full minute to orient before journaling."), h("div", { className:"return-grid" }, ["Open your eyes.","Feel your feet.","Feel your hands.","Name 3 things you see.","Name 3 things you hear.","Name 3 things you feel.","Drink water.","Move gently."].map(x=>h("div", { key:x, className:"return-step" }, x))), h("label", { className:"checkline center" }, h("input", { type:"checkbox", checked:grounded, onChange:e=>setGrounded(e.target.checked) }), "I feel grounded enough to journal."), h("div", { className:"top-actions" }, h(Button, { cls:"button primary big", disabled:!canJournal, onClick:()=>setStep("journal") }, canJournal ? "Continue to Journal" : "Journal unlocks after return"), h(Button, { cls:"button ghost", onClick:()=>setStep("build") }, "Back to Builder"))),
 

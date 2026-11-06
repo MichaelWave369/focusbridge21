@@ -89,7 +89,7 @@ test("page entrypoints and cache include new engine before React", () => {
     const reactAt = html.indexOf("fb21-react.js");
     assert.ok(engineAt > 0 && engineAt < reactAt);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v1-4-original-soundscape/);
+  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback)/);
   assert.match(read("service-worker.js"), /fb21-soundscape.js/);
   assert.doesNotMatch(read("docs/fb21-react.js"), /Parallax \/ PHI369 live prototype/);
 });

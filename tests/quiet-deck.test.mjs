@@ -87,11 +87,12 @@ function harness({ withAudio = false } = {}) {
   });
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
+  const setMix = (key, value) => root.listeners.input({ target: { id: "q-mix-" + key, value, setAttribute() {} } });
   const advance = (milliseconds) => {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, advance, storage, classes, contexts, session,
+  return { root, click, check, note, setMix, advance, storage, classes, contexts, session,
     get reloads() { return reloads; } };
 }
 
@@ -103,7 +104,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape)/);
+  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -149,4 +150,17 @@ test("stereo mode requires both confirmations and stops its sound on return", as
   assert.match(app.root.innerHTML, /Return now/);
   app.click("return");
   assert.equal(app.contexts[0].state, "closed", "Web Audio context closes on return");
+});
+
+test("all soundscape layers off and stereo tones disabled cannot masquerade as playback", () => {
+  const app = harness({ withAudio: true });
+  app.click("listen");
+  for (const layer of ["surf", "bass", "beat"]) app.setMix(layer, 0);
+  app.check("q-tones", false);
+  assert.match(app.root.innerHTML, /All sound layers are off/);
+  app.check("q-safe", true);
+  app.check("q-headphones", true);
+  app.click("start");
+  assert.doesNotMatch(app.root.innerHTML, /Return now/);
+  assert.equal(app.contexts.length, 0);
 });

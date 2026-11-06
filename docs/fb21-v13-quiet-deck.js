@@ -132,9 +132,13 @@
     }
     try { if (audio.context.state !== "closed") audio.context.close(); } catch {}
   }
+  function allSoundOff() {
+    return !state.tones && !state.surf && !state.bass && !state.beat;
+  }
+
   async function startSession() {
     if (state.screen !== "prepare" || state.starting || !state.safe ||
-        (state.mode === "listen" && !state.headphones)) return;
+        (state.mode === "listen" && (!state.headphones || allSoundOff()))) return;
     state.starting = true;
     state.error = "";
     render();
@@ -306,11 +310,12 @@
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
         '<label class="q-check"><input type="checkbox" id="q-safe" ',
         state.safe ? 'checked' : '', '> <span>I am somewhere safe, feel steady, and am not dizzy, faint, or unwell.</span></label>',
+        listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf or enable stereo tones, or choose Just settle for a deliberately silent session.</p>' : '',
         listen ? '<label class="q-check"><input type="checkbox" id="q-headphones" ' +
           (state.headphones ? 'checked' : '') +
           '> <span>I have stereo headphones on at a low, comfortable volume.</span></label>' : '',
         '<div class="q-actions"><button type="button" class="q-primary" data-action="start" ',
-        (!state.safe || (listen && !state.headphones) || state.starting) ? 'disabled' : '',
+        (!state.safe || (listen && (!state.headphones || allSoundOff())) || state.starting) ? 'disabled' : '',
         '>Start my session</button>',
         listen ? '<button type="button" class="q-secondary" data-action="settle">No audio instead</button>' : '',
         '</div>',
@@ -320,7 +325,7 @@
     } else if (state.screen === "running") {
       const remaining = formatTime(state.duration - state.elapsedMs / 1000);
       content = [
-        '<div class="q-running"><div class="q-eyebrow">', state.mode === "listen" ? 'LISTEN & DRIFT' : 'JUST SETTLE', '</div>',
+        '<div class="q-running"><div class="q-eyebrow">', state.mode === "listen" ? 'LISTEN & DRIFT · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         '<div class="q-orb" aria-hidden="true"><div class="q-orb-inner"></div></div>',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
         '<p id="fb21-q-cue" class="q-cue">', state.paused ? 'Paused. Return whenever you like.' : cue(), '</p>',

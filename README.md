@@ -6,6 +6,21 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v1.5 Playback clarity and safety feedback
+
+The full cockpit now explains exactly why a session cannot start, **without unexpectedly navigating away from Cockpit**.
+
+- If the `YES, I recently had a distressing or destabilizing meditation / altered-state experience` checkbox is checked, audio remains blocked and the interface clearly explains the hold. Leave it unchecked only if the statement does not apply.
+- Safe location, stereo headphones, and safety acknowledgement must all be confirmed. The Start button is disabled while any requirement is missing, with a visible `Review readiness checks` action.
+- The readiness gate no longer recommends an audio Foundation session while a stop condition is active. Changing the readiness answers invalidates stale recommendations.
+- A stereo sound test is available next to the Cockpit controls when safety prerequisites are complete. A status message distinguishes a successfully started Web Audio context from a suspended/blocked context; it cannot verify physical sound output or operating-system mute settings.
+- Failed audio start cleans up nodes and keeps you in the current step with an actionable diagnostic.
+- Quiet Deck now describes `Just settle` as **intentionally silent** and prevents an `Listen & drift` session from claiming playback when the stereo tones and every soundscape layer are off.
+- PWA cache version was bumped to ensure older cached JavaScript is replaced.
+- Added automated regression tests for safety-blocked start, successful audio graph startup, suspended audio contexts, and silent Quiet Deck mixes.
+
+After deployment, reload the page once to activate the updated service worker. If you still see the old code, close the tab, reopen the site, and reload. Avoid clearing browser storage unless you have exported private Signal Ledger data.
+
 ## v1.4 Original Ocean Soundscape
 
 **Original, locally generated sound, not a Hemi-Sync recording or a claim of brainwave entrainment.**

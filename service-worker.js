@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v1-2-experience-layer";
+const CACHE_NAME = "focusbridge21-v1-3-quiet-deck";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -27,6 +27,8 @@ const APP_SHELL = [
   "./docs/fb21-v10-releasehub.js",
   "./docs/fb21-v11-commandhub.js",
   "./docs/fb21-v12-experience.js",
+  "./docs/fb21-v13-quiet-deck.js",
+  "./docs/fb21-v13-quiet-deck.css",
   "./docs/icon.svg",
   "./docs/FocusBridge21_Master_Spec_v0.2.md",
   "https://unpkg.com/react@18/umd/react.production.min.js",
@@ -57,11 +59,13 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+          if (response.ok && new URL(request.url).origin === self.location.origin) {
+            const copy = response.clone();
+            event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));
+          }
           return response;
         })
-        .catch(() => caches.match("./index.html"))
+        .catch(async () => (await caches.match(request)) || (await caches.match("./index.html")))
     );
     return;
   }

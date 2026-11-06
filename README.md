@@ -6,6 +6,31 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v1.3 Quiet Deck: a comfortable way in
+
+The default landing experience is now **Quiet Deck**, a small, accessible front door to the complete existing laboratory. All v1.2 features, including the guided readiness flow, full audio builder, Command Hub, Labs, return protocol, and Signal Ledger, remain available via **All tools & labs**. From the full app, use the fixed **Quiet Deck** button to get back.
+
+- **Just settle:** 60 seconds, 90 seconds, 2 minutes, or 5 minutes with no audio and no forced breathing cadence.
+- **Listen & drift:** opt-in gentle, original Web Audio stereo tones (180 Hz left, 188 Hz right). Stereo headphones are required; start at low volume. This is exploratory audio, not a verified Focus-state induction.
+- **Simple controls:** pause/resume, Return now at any time, a grounded return screen, and an optional one-question reflection.
+- **Existing ledger:** optional Quiet Deck reflections are saved locally in the same browser Signal Ledger used by the original app. Opening the full lab reloads the application to pick up these new entries.
+- **Advanced without losing features:** the existing v1.2 React/PWA cockpit and lab modules are unchanged, and both the repository root and `/docs` support the new entry.
+- **Comfort:** responsive layout, keyboard focus indicators, reduced-motion support, and a clear no-audio path.
+
+### Safety and claims
+
+Quiet Deck deliberately avoids promising Hemi-Sync, Monroe Focus 21, astral projection, medical benefits, or neurological state changes. It does not use copyrighted proprietary recordings or scripts. Do not use audio sessions when dizzy, faint, unwell, or in an unsafe environment. If you have concerning symptoms, prioritize rest or appropriate medical care instead of an altered-state experiment.
+
+### Manual check before merging
+
+1. Load both `/` and `/docs/`; confirm Quiet Deck appears on each.
+2. Start **Just settle** for 60 seconds and confirm the timer, pause/resume, finish, and Return now.
+3. Confirm **Listen & drift** cannot start until both safety and headphone confirmations are checked; test at low volume using stereo headphones.
+4. Write a note, save it, open **All tools & labs**, and confirm the Signal Ledger includes the Quiet Deck receipt.
+5. Confirm existing readiness, audio presets, Command Hub, labs, and their data are still available.
+6. Return to Quiet Deck and verify that reloading the full lab ends any active audio.
+7. Check at mobile width, on keyboard-only navigation, with reduced motion, and with network offline after first load.
+
 ## Live GitHub Pages app
 
 The browser React/PWA prototype can run from the repo root or from `/docs` with no build step:
@@ -14,7 +39,7 @@ The browser React/PWA prototype can run from the repo root or from `/docs` with 
 
 ### Current live version
 
-**FocusBridge21 v1.2 Experience Layer**
+**FocusBridge21 v1.3 Quiet Deck + preserved v1.2 Experience Layer**
 
 The live app includes:
 

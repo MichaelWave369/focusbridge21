@@ -82,7 +82,7 @@
   }
 
   function bestReceipt(rows) {
-    return [...rows].sort((a, b) => (b.post?.overall_coherence || 0) - (a.post?.overall_coherence || 0))[0] || null;
+    return [...rows].filter(r => Number.isFinite(r.post?.overall_coherence)).sort((a, b) => b.post.overall_coherence - a.post.overall_coherence)[0] || null;
   }
 
   function computeStats() {
@@ -109,6 +109,7 @@
 
   function recommendation(stats) {
     if (!stats.count) return { title: "Run 2-min demo", note: "Start with a short smoke test, then write one receipt." };
+    if (stats.returnQ === null && stats.witness === null) return { title: "Keep exploring", note: "Quiet Deck notes are saved without made-up scores. Try a gentle lab session if you want more detailed metrics." };
     if ((stats.returnQ ?? 0) < 6 || (stats.fear ?? 0) > 4) return { title: "Gentle reset", note: "Return quality or resistance suggests Foundation, 5 minutes, low volume." };
     if ((stats.witness ?? 0) >= 7 && (stats.returnQ ?? 0) >= 7) return { title: "Bridge preview", note: "Witness and return are stable. Keep it short and receipt-driven." };
     return { title: "Training session", note: "Build capacity with Expansion or Foundation, then review patterns." };
@@ -172,7 +173,7 @@
     const panel = document.querySelector(".fb21-command-panel");
     if (!panel) return;
 
-    const recommendedKey = !stats.count ? "coach" : (stats.returnQ ?? 0) < 6 ? "studio" : (stats.witness ?? 0) >= 7 ? "mastery" : "pattern";
+    const recommendedKey = !stats.count || (stats.returnQ === null && stats.witness === null) ? "coach" : (stats.returnQ ?? 0) < 6 ? "studio" : (stats.witness ?? 0) >= 7 ? "mastery" : "pattern";
     const grouped = TOOLS.reduce((acc, tool) => {
       (acc[tool.group] ||= []).push(tool);
       return acc;

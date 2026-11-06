@@ -158,7 +158,7 @@
   function insights(ledger) {
     if (!ledger.length) return ["No receipts yet. Run a 2-minute demo or gentle reset, then write the first receipt."];
     const list = [];
-    const best = [...ledger].sort((a, b) => (b.post?.overall_coherence || 0) - (a.post?.overall_coherence || 0))[0];
+    const best = [...ledger].filter(r => Number.isFinite(r.post?.overall_coherence)).sort((a, b) => b.post.overall_coherence - a.post.overall_coherence)[0];
     if (best) list.push(`Best coherence so far: ${best.preset}, ${best.duration_min} min, readiness ${best.readiness?.score ?? "—"}.`);
     const good = ledger.filter(r => (r.post?.return_quality || 0) >= 8);
     if (good.length) {
@@ -167,6 +167,7 @@
       if (top) list.push(`Cleanest returns currently cluster around ${top[0]} sessions.`);
     }
     if (ledger.some(r => (r.during?.fear_or_resistance || 0) >= 7)) list.push("High fear/resistance appeared in a receipt. Prefer Foundation and shorter sessions until return feels easy again.");
+    if (!best) list.push("Quiet Deck reflections are saved, but do not carry invented coherence scores.");
     if (ledger.length < 3) list.push("Add 2–3 more receipts before trusting pattern suggestions.");
     return list;
   }
@@ -262,7 +263,7 @@
     async function test() { try { await stereoTest(); setToast("Stereo test played: left tone then right tone."); } catch(e) { setToast(`Stereo test failed: ${e.message || e}`); } }
 
     const avg = k => { const vals = ledger.map(r => k.split(".").reduce((o, p) => o?.[p], r)).filter(v => typeof v === "number"); return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : "—"; };
-    const best = [...ledger].sort((a,b)=>(b.post?.overall_coherence||0)-(a.post?.overall_coherence||0))[0];
+    const best = [...ledger].filter(r => Number.isFinite(r.post?.overall_coherence)).sort((a,b)=>b.post.overall_coherence-a.post.overall_coherence)[0];
     const scoreClass = ready ? (ready.level === "Green" ? "score-green" : ready.level === "Yellow" ? "score-yellow" : "score-red") : "";
     const canJournal = grounded || returnTimer <= 0;
 

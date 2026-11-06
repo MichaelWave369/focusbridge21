@@ -120,3 +120,19 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
     animation: none !important; transition: none !important;
   }
 }
+
+/* v1.4 optional original soundscape mixer */
+#fb21-quiet-root .q-mixer { border-block: 1px solid #64738f50; margin: 20px 0; padding: 22px 0 14px; }
+#fb21-quiet-root .q-mixer h2 { margin: 0 0 6px; }
+#fb21-quiet-root .q-mix-row {
+  display: grid; grid-template-columns: minmax(140px, 1fr) minmax(130px, 1.3fr) 44px;
+  align-items: center; gap: 14px; margin: 20px 0; color: #f1f3fa;
+}
+#fb21-quiet-root .q-mix-row strong { display: block; font-size: .96rem; }
+#fb21-quiet-root .q-mix-row small { color: #abb9cf; display: block; margin-top: 4px; line-height: 1.35; }
+#fb21-quiet-root .q-mix-row input[type="range"] { width: 100%; accent-color: #b9eedf; cursor: pointer; }
+#fb21-quiet-root .q-mix-row output { color: #c0efdf; font-size: .87rem; text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) {
+  #fb21-quiet-root .q-mix-row { grid-template-columns: 1fr 50px; row-gap: 8px; }
+  #fb21-quiet-root .q-mix-row > span { grid-column: 1 / -1; }
+}

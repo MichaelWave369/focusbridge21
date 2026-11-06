@@ -82,7 +82,12 @@
       right.frequency.value = 188;
       leftGain.gain.value = 0.5;
       rightGain.gain.value = 0.5;
-      volume.gain.value = 0.035;
+      const startAt = context.currentTime;
+      const endAt = startAt + state.duration;
+      volume.gain.setValueAtTime(0.0001, startAt);
+      volume.gain.linearRampToValueAtTime(0.035, startAt + 1.5);
+      volume.gain.setValueAtTime(0.035, endAt - 2);
+      volume.gain.linearRampToValueAtTime(0.0001, endAt);
       left.connect(leftGain).connect(merger, 0, 0);
       right.connect(rightGain).connect(merger, 0, 1);
       merger.connect(volume).connect(context.destination);
@@ -90,6 +95,9 @@
       await context.resume();
       left.start();
       right.start();
+      // Hardware-side end time prevents tones running indefinitely in a suspended tab.
+      left.stop(endAt + 0.1);
+      right.stop(endAt + 0.1);
     } catch (error) {
       stopAudio();
       throw error;
@@ -136,7 +144,7 @@
   function tick() {
     if (state.screen !== "running") return;
     const now = Date.now();
-    if (!state.paused) state.elapsedMs += Math.max(0, Math.min(now - state.lastTick, 1000));
+    if (!state.paused) state.elapsedMs += Math.max(0, now - state.lastTick);
     state.lastTick = now;
     if (state.elapsedMs >= state.duration * 1000) {
       state.elapsedMs = state.duration * 1000;

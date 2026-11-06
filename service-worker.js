@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v1-3-quiet-deck";
+const CACHE_NAME = "focusbridge21-v1-4-original-soundscape";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ const APP_SHELL = [
   "./docs/fb21-v10-layout-fix.css",
   "./docs/fb21-v11-commandhub.css",
   "./docs/fb21-v12-experience.css",
+  "./docs/fb21-soundscape.js",
   "./docs/fb21-react.js",
   "./docs/fb21-pwa-coach.js",
   "./docs/fb21-pattern-lab.js",

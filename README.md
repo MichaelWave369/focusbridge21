@@ -14,7 +14,7 @@ The default landing experience is now **Quiet Deck**, a small, accessible front 
 - **Listen & drift:** opt-in gentle, original Web Audio stereo tones (180 Hz left, 188 Hz right). Stereo headphones are required; start at low volume. This is exploratory audio, not a verified Focus-state induction.
 - **Simple controls:** pause/resume, Return now at any time, a grounded return screen, and an optional one-question reflection.
 - **Existing ledger:** optional Quiet Deck reflections are saved locally in the same browser Signal Ledger used by the original app. Opening the full lab reloads the application to pick up these new entries.
-- **Advanced without losing features:** the existing v1.2 React/PWA cockpit and lab modules are unchanged, and both the repository root and \`/docs\` support the new entry.
+- **Advanced without losing features:** the existing v1.2 React/PWA cockpit and lab modules are unchanged, and both the repository root and `/docs` support the new entry.
 - **Comfort:** responsive layout, keyboard focus indicators, reduced-motion support, and a clear no-audio path.
 
 ### Safety and claims
@@ -23,7 +23,7 @@ Quiet Deck deliberately avoids promising Hemi-Sync, Monroe Focus 21, astral proj
 
 ### Manual check before merging
 
-1. Load both \`/\` and \`/docs/\`; confirm Quiet Deck appears on each.
+1. Load both `/` and `/docs/`; confirm Quiet Deck appears on each.
 2. Start **Just settle** for 60 seconds and confirm the timer, pause/resume, finish, and Return now.
 3. Confirm **Listen & drift** cannot start until both safety and headphone confirmations are checked; test at low volume using stereo headphones.
 4. Write a note, save it, open **All tools & labs**, and confirm the Signal Ledger includes the Quiet Deck receipt.

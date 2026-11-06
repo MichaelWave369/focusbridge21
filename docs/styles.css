@@ -385,3 +385,35 @@ footer {
 .fb21-soundscape-panel h3 { margin: 0 0 8px; }
 .fb21-soundscape-panel .form-grid { margin-top: 16px; }
 .fb21-soundscape-panel .top-actions { flex-wrap: wrap; }
+
+/* v1.5: clear inline status for audio safety and browser playback */
+.fb21-audio-status {
+  border-radius: 15px;
+  border: 1px solid rgba(161, 199, 202, .42);
+  background: rgba(40, 91, 89, .20);
+  padding: 15px 19px;
+  margin: 14px 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.fb21-audio-status.blocked {
+  background: rgba(107, 52, 54, .23);
+  border-color: rgba(234, 144, 131, .54);
+}
+.fb21-audio-status strong { display: block; margin-bottom: 5px; }
+.fb21-audio-status p { margin: 0 0 8px; }
+.fb21-audio-status ul { padding-left: 22px; margin: 8px 0 14px; }
+.fb21-risk-check {
+  border: 1px solid rgba(232, 147, 129, .40);
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(96, 42, 47, .12);
+}
+.fb21-risk-check small {
+  display: block;
+  font-weight: normal;
+  font-size: .82rem;
+  color: #e9b4aa;
+  margin-top: 4px;
+}
+.fb21-audio-status .button { margin-top: 8px; }

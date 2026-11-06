@@ -2,6 +2,15 @@
 (() => {
   "use strict";
   const LEDGER_KEY = "focusbridge21-ledger-v1";
+  const MIX_KEY = "focusbridge21-quiet-soundscape-v14";
+  const readMix = () => {
+    try { return JSON.parse(localStorage.getItem(MIX_KEY) || "{}"); } catch { return {}; }
+  };
+  const mix = readMix();
+  const level = (x, fallback) => Number.isFinite(Number(x)) && x !== undefined && x !== null ? Math.max(0, Math.min(100, Number(x))) : fallback;
+  const saveMix = () => {
+    try { localStorage.setItem(MIX_KEY, JSON.stringify({ surf: state.surf, bass: state.bass, beat: state.beat, tones: state.tones })); } catch {}
+  };
   const LAB_ONCE_KEY = "focusbridge21-open-lab-once-v13";
   const root = document.createElement("div");
   root.id = "fb21-quiet-root";
@@ -15,7 +24,8 @@
   const state = {
     screen: "home", mode: "settle", duration: 90, safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
-    audio: null, paused: false, interrupted: false, starting: false, note: "", error: ""
+    audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
+    surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0), tones: mix.tones !== false
   };
 
   function safeText(value) {
@@ -88,16 +98,25 @@
       volume.gain.linearRampToValueAtTime(0.035, startAt + 1.5);
       volume.gain.setValueAtTime(0.035, endAt - 2);
       volume.gain.linearRampToValueAtTime(0.0001, endAt);
-      left.connect(leftGain).connect(merger, 0, 0);
-      right.connect(rightGain).connect(merger, 0, 1);
-      merger.connect(volume).connect(context.destination);
-      nodes.push(left, right, leftGain, rightGain, merger, volume);
+      if (state.tones) {
+        left.connect(leftGain).connect(merger, 0, 0);
+        right.connect(rightGain).connect(merger, 0, 1);
+        merger.connect(volume).connect(context.destination);
+        nodes.push(left, right, leftGain, rightGain, merger, volume);
+      }
       await context.resume();
-      left.start();
-      right.start();
-      // Hardware-side end time prevents tones running indefinitely in a suspended tab.
-      left.stop(endAt + 0.1);
-      right.stop(endAt + 0.1);
+      if (state.tones) {
+        left.start();
+        right.start();
+        // Hardware-side end time prevents tones running indefinitely in a suspended tab.
+        left.stop(endAt + 0.1);
+        right.stop(endAt + 0.1);
+      }
+      if (window.FocusBridgeSoundscape) {
+        window.FocusBridgeSoundscape.schedule(context,
+          { surf: state.surf, bass: state.bass, beat: state.beat },
+          state.duration, state.audio);
+      }
     } catch (error) {
       stopAudio();
       throw error;
@@ -204,7 +223,11 @@
       duration_min: state.duration / 60,
       actual_elapsed_sec: elapsed,
       guidance_mode: "Quiet Deck " + state.mode,
-      audio_params: { engine: state.mode === "listen" ? "browser-stereo-tones-8hz" : "none" },
+      audio_params: { engine: state.mode === "listen" ? "original-browser-soundscape-v14" : "none",
+        stereo_tones: state.mode === "listen" && state.tones,
+        surf: state.mode === "listen" ? state.surf : 0,
+        bass: state.mode === "listen" ? state.bass : 0,
+        beat: state.mode === "listen" ? state.beat : 0 },
       notes: state.note.trim(),
       claim_boundary: "Self-reported session; not evidence of a neurological or out-of-body state"
     };
@@ -272,6 +295,12 @@
           : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         '<section class="q-panel" aria-label="Session setup">',
         '<h2>How long feels comfortable?</h2><div class="q-durations">', choices, '</div>',
+        listen ? '<div class="q-mixer"><h2>Make it sound like your place</h2>' +
+          '<p class="q-detail">An original, gentle soundscape. Every layer is optional, and the mix stays on this device.</p>' +
+          [['surf','Ocean surf','Slow, overlapping shoreline waves'],['bass','Warm sub-bass','A quiet 62 Hz foundation'],['beat','Soft pulse','A gentle 40 BPM anchor']]
+            .map(([key, label, desc]) => '<label class="q-mix-row" for="q-mix-' + key + '"><span><strong>' + label + '</strong><small>' + desc + '</small></span>' +
+            '<input type="range" min="0" max="100" step="5" id="q-mix-' + key + '" value="' + state[key] + '" aria-valuetext="' + state[key] + ' percent"><output id="q-mix-value-' + key + '">' + state[key] + '%</output></label>').join('') +
+          '<label class="q-check"><input type="checkbox" id="q-tones" ' + (state.tones ? 'checked' : '') + '> <span>Include gentle stereo tones (optional)</span></label></div>' : '',
         '<p class="q-detail">', listen
           ? 'Use stereo headphones, keep volume low, and stop immediately if you feel uncomfortable.'
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
@@ -345,9 +374,19 @@
   root.addEventListener("change", (event) => {
     if (event.target.id === "q-safe") { state.safe = event.target.checked; render(); }
     if (event.target.id === "q-headphones") { state.headphones = event.target.checked; render(); }
+    if (event.target.id === "q-tones") { state.tones = event.target.checked; saveMix(); render(); }
   });
   root.addEventListener("input", (event) => {
     if (event.target.id === "q-note") state.note = event.target.value;
+    const match = /^q-mix-(surf|bass|beat)$/.exec(event.target.id || "");
+    if (match) {
+      const key = match[1];
+      state[key] = level(event.target.value, 0);
+      const display = root.querySelector("#q-mix-value-" + key);
+      if (display) display.textContent = state[key] + "%";
+      event.target.setAttribute("aria-valuetext", state[key] + " percent");
+      saveMix();
+    }
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && state.screen === "running" &&

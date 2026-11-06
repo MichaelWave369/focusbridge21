@@ -23,4 +23,4 @@ jobs:
         run: |
           for file in docs/*.js service-worker.js; do node --check "$file"; done
       - name: Run Quiet Deck smoke tests
-        run: node --test tests/quiet-deck.test.mjs
+        run: node --test tests/*.test.mjs

@@ -188,6 +188,9 @@
     const [noise, setNoise] = useState(prefs.noise || "pink");
     const [noiseAmount, setNoiseAmount] = useState(prefs.noiseAmount ?? .04);
     const [volume, setVolume] = useState(prefs.volume ?? .16);
+    const [surf, setSurf] = useState(prefs.surf ?? 0);
+    const [bass, setBass] = useState(prefs.bass ?? 0);
+    const [beat, setBeat] = useState(prefs.beat ?? 0);
     const [pre, setPre] = useState(prefs.pre || { mood: 7, sleep: 7, stress: 3, grounded: 7, safe: true, headphones: true, ack: false, destabilized: false, intention: PRESETS.Bridge.intention });
     const [ready, setReady] = useState(null);
     const [running, setRunning] = useState(false);
@@ -208,7 +211,7 @@
     const track = useMemo(() => tracker(ledger), [ledger]);
     const hints = useMemo(() => insights(ledger), [ledger]);
 
-    useEffect(() => { jwrite(PREF_KEY, { step, presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, pre }); }, [step, presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, pre]);
+    useEffect(() => { jwrite(PREF_KEY, { step, presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, surf, bass, beat, pre }); }, [step, presetName, durationMin, guidanceMode, base, noise, noiseAmount, volume, surf, bass, beat, pre]);
     useEffect(() => {
       if (!running) return;
       const id = setInterval(() => {
@@ -239,7 +242,9 @@
     function finishSession() { stopAudio(); setRunning(false); setReturnTimer(60); setGrounded(false); setStep("return"); setToast("Session complete. Auto-return started. Ground first, then journal."); }
 
     async function start() {
-      if (!pre.ack) { setStep("build"); setToast("Safety acknowledgement required before audio starts."); return; }
+      if (!pre.ack || !pre.safe || !pre.headphones || pre.destabilized) {
+        setStep("build"); setToast("Audio requires safety, headphone, and acknowledgment checks. If feeling unwell or destabilized, do not start."); return;
+      }
       if (!ready) setReady(scoreReadiness(pre));
       stopAudio();
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -248,12 +253,13 @@
         const ctx = new AC(); await ctx.resume();
         const refs = { ctx, nodes: [] }; audio.current = refs;
         scheduleAudio(ctx, preset, { base, volume, noise, noiseAmount }, durSec, refs);
+        if (window.FocusBridgeSoundscape) window.FocusBridgeSoundscape.schedule(ctx, { surf, bass, beat }, durSec, refs);
         startStamp.current = Date.now(); setElapsed(0); setReturnTimer(60); setGrounded(false); setRunning(true); setStep("cockpit"); setToast(`${presetName} session started. RETURN NOW is always available.`);
       } catch (e) { setToast(`Audio start failed: ${e.message || e}`); }
     }
 
     function saveReceipt() {
-      const receipt = { session_id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), timestamp: new Date().toISOString(), app: VERSION, preset: presetName, target_gate: preset.gate, duration_min: durationMin, actual_elapsed_sec: elapsed, guidance_mode: guidanceMode, readiness: ready || scoreReadiness(pre), pre, audio_params: { engine: "browser_web_audio_binaural_v0.3.1", base_hz: base, beat_start_hz: preset.start, beat_mid_hz: preset.mid, beat_end_hz: preset.end, noise, noise_amount: noiseAmount, master_volume: volume }, during: { perceived_depth: metrics.depth, body_relaxation: metrics.relaxation, stable_witness_presence: metrics.witness, imagery_vividness: metrics.imagery, time_distortion: metrics.time, mental_clarity: metrics.clarity, fear_or_resistance: metrics.fear }, post: { return_quality: metrics.returnQuality, memory_retention: metrics.memory, grounding_feeling: metrics.grounding, overall_coherence: metrics.coherence }, notes: metrics.notes, dreamlike_fragments: metrics.fragments, claim_boundary: "subjective self-report; local training receipt; no medical or objective-state claim" };
+      const receipt = { session_id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), timestamp: new Date().toISOString(), app: VERSION, preset: presetName, target_gate: preset.gate, duration_min: durationMin, actual_elapsed_sec: elapsed, guidance_mode: guidanceMode, readiness: ready || scoreReadiness(pre), pre, audio_params: { engine: "browser_web_audio_binaural_v0.3.1", base_hz: base, beat_start_hz: preset.start, beat_mid_hz: preset.mid, beat_end_hz: preset.end, noise, noise_amount: noiseAmount, master_volume: volume, surf, bass, beat, soundscape_engine: "original-procedural-v14" }, during: { perceived_depth: metrics.depth, body_relaxation: metrics.relaxation, stable_witness_presence: metrics.witness, imagery_vividness: metrics.imagery, time_distortion: metrics.time, mental_clarity: metrics.clarity, fear_or_resistance: metrics.fear }, post: { return_quality: metrics.returnQuality, memory_retention: metrics.memory, grounding_feeling: metrics.grounding, overall_coherence: metrics.coherence }, notes: metrics.notes, dreamlike_fragments: metrics.fragments, claim_boundary: "subjective self-report; local training receipt; no medical or objective-state claim" };
       const next = [receipt, ...ledger]; setLedger(next); jwrite(LS_KEY, next); setMetrics({ ...metrics, notes: "", fragments: "" }); setStep("ledger"); setToast("Receipt saved locally. Ledger insights updated.");
     }
 
@@ -271,7 +277,7 @@
 
     return h(React.Fragment, null,
       h("header", { className: "hero wrap" },
-        h("div", { className: "eyebrow" }, "Parallax / PHI369 live prototype"), h("h1", null, "FocusBridge21"),
+        h("div", { className: "eyebrow" }, "PHI369 LABS · ORIGINAL FOCUS EXPERIMENTS"), h("h1", null, "FocusBridge21"),
         h("p", { className: "subtitle" }, "Smooth Flow guides the whole practice: readiness → recommendation → cockpit → auto-return → journal → ledger."),
         h("div", { className: "hero-kpis" }, h("span", null, "Local-first"), h("span", null, "Web Audio"), h("span", null, "No cloud ledger"), h("span", null, VERSION)),
         h("div", { className: "top-actions" }, h("a", { className: "link-button primary", href: "https://github.com/MichaelWave369/focusbridge21" }, "GitHub repo"), h("a", { className: "link-button", href: `${DOC_PREFIX}FocusBridge21_Master_Spec_v0.2.md` }, "Master spec"), h(Button, { onClick: test }, "Stereo test"))
@@ -297,7 +303,18 @@
               h("div", { className:"field" }, h("label", null, "Duration"), h("select", { value:durationMin, onChange:e=>setDurationMin(Number(e.target.value)) }, [2,5,15,25,35,45].map(d=>h("option", { key:d, value:d }, `${d} minutes`)))),
               h("div", { className:"field" }, h("label", null, "Guidance mode"), h("select", { value:guidanceMode, onChange:e=>setGuidanceMode(e.target.value) }, ["Neutral","Resonance Architect"].map(x=>h("option", { key:x, value:x }, x)))),
               h(Range, { label:"Carrier/base Hz", value:base, min:120, max:440, step:5, onChange:setBase }), h("div", { className:"field" }, h("label", null, "Noise"), h("select", { value:noise, onChange:e=>setNoise(e.target.value) }, ["none","pink","brown","white"].map(x=>h("option", { key:x, value:x }, x)))),
-              h(Range, { label:"Noise amount", value:noiseAmount, min:0, max:.25, step:.01, onChange:setNoiseAmount }), h(Range, { label:"Master volume", value:volume, min:.02, max:.5, step:.01, onChange:setVolume })))
+              h(Range, { label:"Noise amount", value:noiseAmount, min:0, max:.25, step:.01, onChange:setNoiseAmount }), h(Range, { label:"Master volume", value:volume, min:.02, max:.5, step:.01, onChange:setVolume })),
+              h("div", { className:"fb21-soundscape-panel" },
+                h("h3", null, "Original Soundscape Mixer"),
+                h("p", { className:"muted" }, "Ocean surf, warm 62 Hz bass, and a soft 40 BPM pulse. Each is optional and saved locally. Keep volume low."),
+                h("div", { className:"form-grid" },
+                  h(Range, { label:"Ocean surf (%)", value:surf, min:0, max:100, step:5, onChange:setSurf }),
+                  h(Range, { label:"Sub-bass (%)", value:bass, min:0, max:100, step:5, onChange:setBass }),
+                  h(Range, { label:"Soft pulse (%)", value:beat, min:0, max:100, step:5, onChange:setBeat })),
+                h("div", { className:"top-actions left" },
+                  h(Button, { cls:"button", onClick:()=>{ setSurf(70); setBass(12); setBeat(0); } }, "Ocean calm"),
+                  h(Button, { cls:"button", onClick:()=>{ setSurf(60); setBass(30); setBeat(12); } }, "Deep drift"),
+                  h(Button, { cls:"button ghost", onClick:()=>{ setSurf(0); setBass(0); setBeat(0); } }, "All off"))))
           )
         ),
 

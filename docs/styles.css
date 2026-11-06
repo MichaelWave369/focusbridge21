@@ -372,3 +372,16 @@ footer {
   }
   .portal-panel { min-height: 350px; }
 }
+
+
+/* Original Soundscape Mixer: advanced cockpit controls */
+.fb21-soundscape-panel {
+  border: 1px solid rgba(137, 193, 192, .28);
+  border-radius: 16px;
+  background: rgba(35, 68, 83, .16);
+  padding: 18px 20px;
+  margin-top: 20px;
+}
+.fb21-soundscape-panel h3 { margin: 0 0 8px; }
+.fb21-soundscape-panel .form-grid { margin-top: 16px; }
+.fb21-soundscape-panel .top-actions { flex-wrap: wrap; }

@@ -6,6 +6,39 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v1.4 Original Ocean Soundscape
+
+**Original, locally generated sound, not a Hemi-Sync recording or a claim of brainwave entrainment.**
+
+The FocusBridge21 **Quiet Deck > Listen & drift** setup now includes an independent three-layer soundscape mixer alongside the optional stereo tones. The original advanced **Manual Session Builder** also has the mixer without removing any existing noise presets or labs.
+
+| Layer | How it works | Default in Quiet Deck |
+| --- | --- | --- |
+| Ocean surf | Three filtered, overlapping waves of locally generated textured noise with gentle swells and foam | 68% |
+| Warm sub-bass | Very quiet 62 Hz sine foundation plus an even quieter 124 Hz harmonic | 14% |
+| Soft pulse | Subtle 72 Hz envelopes every 1.5 seconds (40 BPM), not a sharp kick drum | Off |
+| Stereo tones | Original low-level binaural stereo tones | On, but optional |
+
+- Each layer has a 0–100% level. **All off** is possible; no added sounds are mandatory.
+- Mix levels are browser-local in the Quiet Deck and persisted with existing preferences in the advanced cockpit.
+- Original procedural audio buffers are generated in browser memory; no copyrighted Hemi-Sync media or network audio assets are used.
+- Sound nodes are registered for **Return now**, and oscillators/buffers also have a bounded scheduled stop time.
+- The PWA cache includes the new audio module for repeat offline access after a complete first load.
+- Previous full-app "Parallax" branding was replaced with PHI369 branding.
+- These sounds are for creative relaxation and personal practice. Rhythm may help some listeners and distract others, so start with all added layers quiet and adjust gently. Avoid boosting volume to "feel" sub-bass through headphones.
+- Do not use audio experiments when dizzy, near-fainting, ill, or otherwise unwell. Seek medical evaluation for concerning symptoms rather than interpreting them as meditative progress.
+
+### v1.4 manual QA
+
+1. Open both GitHub Pages routes; confirm soundscape engine loads and Quiet Deck opens.
+2. Listen & drift: surf at ~60%, bass at ~10%, pulse off; begin at low device volume; test Return now and pause.
+3. Turn stereo tones off and leave surf on; check that surf can play alone.
+4. Set surf, bass, and pulse to 0 and re-enable tones; verify tones-only works.
+5. Try gentle pulse at 10–20%; verify it stays subtle without harsh clicks or sudden loud transients.
+6. Open the advanced app. Confirm the Parallax text is gone, the old presets still work, and the soundscape sliders persist.
+7. Check at a narrow/mobile width and test after reloading the updated service worker.
+8. Verify any received Quiet Deck journal entries include mix settings but no fabricated physiological measurements.
+
 ## v1.3 Quiet Deck: a comfortable way in
 
 The default landing experience is now **Quiet Deck**, a small, accessible front door to the complete existing laboratory. All v1.2 features, including the guided readiness flow, full audio builder, Command Hub, Labs, return protocol, and Signal Ledger, remain available via **All tools & labs**. From the full app, use the fixed **Quiet Deck** button to get back.

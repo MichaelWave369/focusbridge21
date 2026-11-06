@@ -63,9 +63,10 @@
   function analyze() {
     const rows = readJson(LEDGER_KEY, []);
     const prefs = readJson(PREF_KEY, {});
+    const scored = rows.filter(r => Number.isFinite(r?.post?.overall_coherence) || Number.isFinite(r?.post?.return_quality) || Number.isFinite(r?.during?.stable_witness_presence));
     const sorted = [...rows].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     const latest = sorted[0] || null;
-    const best = [...rows].sort((a, b) => scoreReceipt(b) - scoreReceipt(a))[0] || null;
+    const best = [...scored].sort((a, b) => scoreReceipt(b) - scoreReceipt(a))[0] || null;
     const stats = {
       count: rows.length,
       streak: currentStreak(rows),
@@ -73,10 +74,10 @@
       avgReturn: avg(rows.map((r) => r?.post?.return_quality)),
       avgCoherence: avg(rows.map((r) => r?.post?.overall_coherence)),
       avgFear: avg(rows.map((r) => r?.during?.fear_or_resistance)),
-      bestPreset: groupBest(rows, (r) => r.preset),
-      bestDuration: groupBest(rows, (r) => r.duration_min ? `${r.duration_min} min` : null),
-      bestNoise: groupBest(rows, (r) => r?.audio_params?.noise),
-      bestBase: groupBest(rows, (r) => r?.audio_params?.base_hz ? `${r.audio_params.base_hz} Hz` : null),
+      bestPreset: groupBest(scored, (r) => r.preset),
+      bestDuration: groupBest(scored, (r) => r.duration_min ? `${r.duration_min} min` : null),
+      bestNoise: groupBest(scored, (r) => r?.audio_params?.noise),
+      bestBase: groupBest(scored, (r) => r?.audio_params?.base_hz ? `${r.audio_params.base_hz} Hz` : null),
       latest,
       best,
       prefs
@@ -84,11 +85,11 @@
 
     let reco = {
       title: "Start with the 2-minute demo",
-      body: "No receipts yet. Run a short Foundation demo, test RETURN NOW, then write one honest receipt.",
+      body: "No scored lab sessions yet. Quiet Deck reflections are saved without invented scores. Try a short Foundation session if you want to record detailed metrics.",
       mode: "Foundation • 2 min"
     };
 
-    if (stats.count > 0) {
+    if (scored.length > 0) {
       if ((stats.avgFear || 0) >= 5 || (stats.avgReturn || 0) < 5.5) {
         reco = {
           title: "Recommended next: Gentle Reset",

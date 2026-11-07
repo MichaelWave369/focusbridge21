@@ -25,7 +25,11 @@
   if (!profileMixes.drift) profileMixes.drift = mix;
   const level = (x, fallback) => Number.isFinite(Number(x)) && x !== undefined && x !== null ? Math.max(0, Math.min(100, Number(x))) : fallback;
   const saveMix = () => {
-    const values = { surf: state.surf, bass: state.bass, beat: state.beat, tones: state.tones, toneDifference: state.toneDifference };
+    const values = {
+      surf: state.surf, bass: state.bass, beat: state.beat,
+      rain: state.rain, wind: state.wind, hum: state.hum, humNote: state.humNote,
+      tones: state.tones, toneDifference: state.toneDifference
+    };
     try {
       localStorage.setItem(MIX_KEY, JSON.stringify(values)); // legacy Quiet Deck preference
       profileMixes[state.profile] = values;
@@ -81,7 +85,9 @@
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
     audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
-    surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0), tones: mix.tones !== false
+    surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0),
+    rain: level(mix.rain, 0), wind: level(mix.wind, 0), hum: level(mix.hum, 0),
+    humNote: "C4", tones: mix.tones !== false
   };
 
   function safeText(value) {
@@ -141,12 +147,20 @@
       state.surf = 0;
       state.bass = 0;
       state.beat = 0;
+      state.rain = 0;
+      state.wind = 0;
+      state.hum = 0;
       state.tones = true;
     } else if (mode !== "settle") {
       const saved = profileMixes[state.profile] || (mode === "listen" ? mix : profile);
       state.surf = level(saved.surf, profile.surf);
       state.bass = level(saved.bass, profile.bass);
       state.beat = level(saved.beat, profile.beat);
+      state.rain = level(saved.rain, 0);
+      state.wind = level(saved.wind, 0);
+      state.hum = level(saved.hum, 0);
+      state.humNote = (window.FocusBridgeSoundscape?.HUM_NOTES || [])
+        .some(note => note.name === saved.humNote) ? saved.humNote : "C4";
       state.tones = typeof saved.tones === "boolean" ? saved.tones : profile.tones;
       state.toneDifference = HOLISTIC_TONE_OPTIONS.includes(Number(saved.toneDifference))
         ? Number(saved.toneDifference) : profile.difference;
@@ -246,7 +260,9 @@
       }
       const ambienceStarted = window.FocusBridgeSoundscape
         ? window.FocusBridgeSoundscape.schedule(context,
-            { surf: state.surf, bass: state.bass, beat: state.beat, space: profile.space },
+            { surf: state.surf, bass: state.bass, beat: state.beat,
+              rain: state.rain, wind: state.wind, hum: state.hum,
+              humNote: state.humNote, space: profile.space },
             state.duration, state.audio)
         : false;
       if (!state.tones && !ambienceStarted)
@@ -267,7 +283,8 @@
     try { if (audio.context.state !== "closed") audio.context.close(); } catch {}
   }
   function allSoundOff() {
-    return !state.tones && !state.surf && !state.bass && !state.beat;
+    return !state.tones && !state.surf && !state.bass && !state.beat &&
+      !state.rain && !state.wind && !state.hum;
   }
   function headphoneRequired() {
     return state.mode === "listen" && state.tones;
@@ -410,7 +427,11 @@
         stereo_tones: state.mode === "listen" && state.tones && state.profile !== "rife",
         surf: state.mode === "listen" ? state.surf : 0,
         bass: state.mode === "listen" ? state.bass : 0,
-        beat: state.mode === "listen" ? state.beat : 0 },
+        beat: state.mode === "listen" ? state.beat : 0,
+        rain: state.mode === "listen" ? state.rain : 0,
+        wind: state.mode === "listen" ? state.wind : 0,
+        hum: state.mode === "listen" ? state.hum : 0,
+        hum_note: state.mode === "listen" && state.hum > 0 ? state.humNote : null },
       notes: state.note.trim(),
       claim_boundary: "Self-reported session; not evidence of a neurological or out-of-body state"
     };
@@ -427,7 +448,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.0</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.1</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',
@@ -603,9 +624,19 @@
           '</div>'
         ].join("") : listen ? '<div class="q-mixer"><h2>Make it sound like your place</h2>' +
           '<p class="q-detail">An original, gentle soundscape. Every layer is optional, and the mix stays on this device.</p>' +
-          [['surf','Ocean surf','Slow, overlapping shoreline waves'],['bass','Warm sub-bass','A quiet 62 Hz foundation'],['beat','Soft pulse','A gentle 40 BPM anchor']]
+          [['surf','Ocean surf','Slow, overlapping shoreline waves'],
+            ['bass','Warm sub-bass','A quiet 62 Hz foundation'],
+            ['beat','Soft pulse','A gentle 40 BPM anchor'],
+            ['rain','Rain','From light drizzle to a steady, hard downpour'],
+            ['wind','Wind','From a soft breeze to sustained gusts'],
+            ['hum','HUM','A soft musical hum, with selectable notes from C3 through C5']]
             .map(([key, label, desc]) => '<label class="q-mix-row" for="q-mix-' + key + '"><span><strong>' + label + '</strong><small>' + desc + '</small></span>' +
             '<input type="range" min="0" max="100" step="5" id="q-mix-' + key + '" value="' + state[key] + '" aria-valuetext="' + state[key] + ' percent"><output id="q-mix-value-' + key + '">' + state[key] + '%</output></label>').join('') +
+          '<div class="q-hum-note"><label for="q-hum-note">HUM pitch (C3–C5)</label><select id="q-hum-note">' +
+            (window.FocusBridgeSoundscape?.HUM_NOTES || []).map(note =>
+              '<option value="' + note.name + '"' + (state.humNote === note.name ? ' selected' : '') +
+              '>' + note.name + ' · ' + note.hz.toFixed(2) + ' Hz</option>').join('') +
+            '</select><p class="q-detail">25 equal-tempered musical notes. HUM is off when its slider is at 0%.</p></div>' +
           '<label class="q-check"><input type="checkbox" id="q-tones" ' + (state.tones ? 'checked' : '') + '> <span>Include gentle stereo tones (optional)</span></label>' +
           (PROFILES[state.profile].holistic ? '<div class="q-tone-palette"><label for="q-tone-palette">Exploratory stereo beat difference (not a symptom treatment)</label><select id="q-tone-palette" ' +
             (state.tones ? '' : 'disabled') + '>' +
@@ -620,7 +651,7 @@
               ? 'Sleep mode: no completion chime; tones (if enabled) gently fade by 30 minutes. Speakers are fine for ambience-only sleep. The browser/device must allow background audio.'
               : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
-        listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf or enable stereo tones, or choose Just settle for a deliberately silent session.</p>' : '',
+        listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf, Rain, Wind, HUM, or enable stereo tones; choose Just settle for silence.</p>' : '',
         '<div class="q-start-panel"><div class="q-setup-step">STEP 3 OF 3 · BEGIN</div>',
         '<p class="q-start-hint" role="status" id="q-readiness-hint">',
         canBegin ? '<span aria-hidden="true">✓ </span>' : '<span aria-hidden="true">○ </span>',
@@ -736,6 +767,13 @@
     if (event.target.id === "q-safe") { state.safe = event.target.checked; render(); }
     if (event.target.id === "q-headphones") { state.headphones = event.target.checked; render(); }
     if (event.target.id === "q-tones") { state.tones = event.target.checked; saveMix(); render(); }
+    if (event.target.id === "q-hum-note" && state.profile !== "rife") {
+      if ((window.FocusBridgeSoundscape?.HUM_NOTES || []).some(note => note.name === event.target.value)) {
+        state.humNote = event.target.value;
+        saveMix();
+        render();
+      }
+    }
     if (event.target.id === "q-rife-waveform") changeRifeSetting("waveform", event.target.value);
     if (event.target.id === "q-rife-motion") changeRifeSetting("motion", event.target.value);
     if (event.target.id === "q-tone-palette" && PROFILES[state.profile]?.holistic) {
@@ -752,7 +790,7 @@
       if (output) output.textContent = state.rife.intensity + "%";
       try { localStorage.setItem(RIFE_SETTINGS_KEY, JSON.stringify(state.rife)); } catch {}
     }
-    const match = /^q-mix-(surf|bass|beat)$/.exec(event.target.id || "");
+    const match = /^q-mix-(surf|bass|beat|rain|wind|hum)$/.exec(event.target.id || "");
     if (match) {
       const key = match[1];
       state[key] = level(event.target.value, 0);

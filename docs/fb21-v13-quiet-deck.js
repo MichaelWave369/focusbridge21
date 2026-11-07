@@ -15,6 +15,9 @@
     try { return JSON.parse(localStorage.getItem(MIX_KEY) || "{}"); } catch { return {}; }
   };
   const mix = readMix();
+  // Seed the original Listen & drift mixer once, before new profiles can
+  // overwrite the legacy flat preference key.
+  if (!profileMixes.drift) profileMixes.drift = mix;
   const level = (x, fallback) => Number.isFinite(Number(x)) && x !== undefined && x !== null ? Math.max(0, Math.min(100, Number(x))) : fallback;
   const saveMix = () => {
     const values = { surf: state.surf, bass: state.bass, beat: state.beat, tones: state.tones };
@@ -161,11 +164,13 @@
         left.stop(endAt + 0.1);
         right.stop(endAt + 0.1);
       }
-      if (window.FocusBridgeSoundscape) {
-        window.FocusBridgeSoundscape.schedule(context,
-          { surf: state.surf, bass: state.bass, beat: state.beat, space: profile.space },
-          state.duration, state.audio);
-      }
+      const ambienceStarted = window.FocusBridgeSoundscape
+        ? window.FocusBridgeSoundscape.schedule(context,
+            { surf: state.surf, bass: state.bass, beat: state.beat, space: profile.space },
+            state.duration, state.audio)
+        : false;
+      if (!state.tones && !ambienceStarted)
+        throw new Error("The soundscape engine did not start.");
     } catch (error) {
       stopAudio();
       throw error;

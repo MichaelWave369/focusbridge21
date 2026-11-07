@@ -696,7 +696,7 @@ test("Island shorter routes scale chapters and enabling binaural tones requires 
   app.click("start");
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(app.scheduled[0].seconds, 900);
-  app.advance(6 * 60 * 1000);
+  app.advance(5 * 60 * 1000);
   assert.match(app.root.innerHTML, /CHAPTER 4 OF 6/, "a scaled 15-minute journey still progresses");
   app.click("return");
   assert.equal(app.contexts[0].state, "closed");

@@ -6,6 +6,24 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v1.6 Extended Sessions and Original Audio Profiles
+
+The Quiet Deck now offers **Sleep Sanctuary**, **Deep Focus**, and **Threshold Explorer** in addition to **Just settle** and **Listen & drift**.
+
+- **Up to six hours** (360 minutes), with the previously hidden one-hour cap removed from the procedural soundscape scheduler.
+- **Sleep Sanctuary:** original ocean ambience with very quiet optional bass, stereo tones off by default, no completion chime, and a full-duration gentle fade. Optional tones fade away within the first 30 minutes. Surf-only playback works over speakers without a headphone confirmation.
+- **Deep Focus:** steady low-volume sound for work or study, 25–180 minutes.
+- **Threshold Explorer:** subtle, slow stereo movement for contemplative listening, 20–120 minutes. No claim of astral projection or a specific neurological state.
+- **Listen & drift** includes short exercises and longer 45-minute to six-hour options. **Just settle** remains silent and simple.
+- **Independent browser-local mixes** for each audio profile. Existing Quiet Deck preferences and Signal Ledger entries remain in place.
+- **Advanced Manual Session Builder** also exposes longer durations up to 360 minutes. Its existing safety gate and original audio design remain unchanged.
+- **Return now**, pause/resume, and bounded Web Audio stop times remain available.
+- **Original stereo spatial drift** in the surf layers is slow panning, not personalized 3D/HRTF simulation or EEG feedback.
+
+Long playback is best-effort: browsers and operating systems can suspend audio when a device sleeps or backgrounds a tab. Test your device awake before depending on overnight use. Keep sound very quiet for extended listening. For sleep, consider speakers with tones disabled rather than wearing headphones for hours.
+
+See [Extended Audio Profiles and evidence boundaries](docs/EXTENDED_AUDIO_PROFILES.md) for duration tables, practical QA, audio details, scientific references, and the future opt-in CFD visual-field concept.
+
 ## v1.5 Playback clarity and safety feedback
 
 The full cockpit now explains exactly why a session cannot start, **without unexpectedly navigating away from Cockpit**.
@@ -87,7 +105,7 @@ The browser React/PWA prototype can run from the repo root or from `/docs` with 
 
 ### Current live version
 
-**FocusBridge21 v1.3 Quiet Deck + preserved v1.2 Experience Layer**
+**FocusBridge21 v1.6 extended Quiet Deck + preserved v1.2 Experience Layer**
 
 The live app includes:
 

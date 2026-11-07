@@ -30,7 +30,7 @@
     return buffer;
   }
 
-  function makeLayer(ctx, buffer, type, frequency, volume, pan, t, seconds, refs, output) {
+  function makeLayer(ctx, buffer, type, frequency, volume, pan, t, seconds, refs, output, spatial = 0) {
     const src = ctx.createBufferSource();
     src.buffer = buffer;
     src.loop = true;
@@ -46,7 +46,17 @@
     src.connect(hp).connect(filter).connect(gain);
     const panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
     if (panner) {
-      panner.pan.value = pan;
+      panner.pan.setValueAtTime(pan, t);
+      // Deliberately subtle stereo wandering, never hard left/right movement.
+      // Fixed virtual positions remain the default when spatial is zero.
+      if (spatial > 0) {
+        let direction = 1;
+        for (let at = t + 45; at < t + seconds; at += 45) {
+          panner.pan.linearRampToValueAtTime(
+            Math.max(-0.65, Math.min(0.65, pan + direction * spatial)), at);
+          direction *= -1;
+        }
+      }
       gain.connect(panner).connect(output);
       register(refs, panner);
     } else {
@@ -111,8 +121,9 @@
     const bass = fraction(options.bass);
     const beat = fraction(options.beat);
     if (!surf && !bass && !beat) return false;
-    const duration = Math.max(5, Math.min(3600, Number(seconds) || 90));
+    const duration = Math.max(5, Math.min(21600, Number(seconds) || 90)); // bounded six-hour playback
     const now = ctx.currentTime;
+    const spatial = fraction(options.space) * 0.18; // at most 18% stereo-pan offset
     const master = ctx.createGain();
     const destination = options.destination || ctx.destination;
     master.gain.setValueAtTime(0.0001, now);
@@ -124,9 +135,9 @@
 
     if (surf) {
       const buffer = makeFoamNoise(ctx);
-      const undertow = makeLayer(ctx, buffer, "lowpass", 760, surf * 0.24, -0.28, now, duration, refs, master);
-      const shore = makeLayer(ctx, buffer, "lowpass", 1250, surf * 0.17, 0.28, now, duration, refs, master);
-      const foam = makeLayer(ctx, buffer, "bandpass", 1500, surf * 0.10, 0.05, now, duration, refs, master);
+      const undertow = makeLayer(ctx, buffer, "lowpass", 760, surf * 0.24, -0.28, now, duration, refs, master, spatial);
+      const shore = makeLayer(ctx, buffer, "lowpass", 1250, surf * 0.17, 0.28, now, duration, refs, master, spatial);
+      const foam = makeLayer(ctx, buffer, "bandpass", 1500, surf * 0.10, 0.05, now, duration, refs, master, spatial);
       waves(undertow.gain, undertow.volume, now, duration, 10.6, 0, 3.3, 6.9);
       waves(shore.gain, shore.volume, now, duration, 10.6, 4.4, 3.7, 6.6);
       waves(foam.gain, foam.volume, now, duration, 10.6, 2.8, 2.3, 4.7);

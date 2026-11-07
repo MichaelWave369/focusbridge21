@@ -24,11 +24,12 @@
     return Object.freeze({ frequency, waveform, motion, intensity: quiet });
   }
 
-  function schedule(context, rawOptions, rawSeconds, refs) {
+  // Preview is a separate, fixed-length user-initiated sound check. It is never a session.
+  function schedule(context, rawOptions, rawSeconds, refs, preview = false) {
     if (!context || !context.createOscillator || !context.createGain)
       throw new Error("Audio oscillators are unavailable in this browser.");
     const options = config(rawOptions);
-    const seconds = DURATIONS.includes(Number(rawSeconds)) ? Number(rawSeconds) : 300;
+    const seconds = preview === true ? 15 : DURATIONS.includes(Number(rawSeconds)) ? Number(rawSeconds) : 300;
     const at = context.currentTime;
     const end = at + Math.min(seconds, MAX_SECONDS);
     const oscillator = context.createOscillator();
@@ -40,6 +41,11 @@
     // Gentle +/- 2% movement is an audible pitch exploration, not RF radiation
     // or an asserted clinical pulse protocol. It is not used in steady mode.
     if (options.motion === "gentle-sweep") {
+      if (preview === true) {
+        // Short audition of a subtle sweep. Normal session modulation remains unchanged.
+        hz.linearRampToValueAtTime(options.frequency * 1.01, at + 7);
+        hz.linearRampToValueAtTime(options.frequency, end - 2);
+      }
       for (let offset = 30; offset < seconds; offset += 30) {
         const next = Math.min(offset, seconds - 2);
         hz.linearRampToValueAtTime(options.frequency * ((offset / 30) % 2 ? 1.02 : 0.98), at + next);

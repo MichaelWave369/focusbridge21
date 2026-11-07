@@ -2,6 +2,11 @@
 (() => {
   "use strict";
   const LEDGER_KEY = "focusbridge21-ledger-v1";
+  const PREVIEW_SECONDS = 15;
+  const PREVIEW_LAYERS = Object.freeze([
+    ["surf", "Ocean surf"], ["bass", "Sub-bass"], ["beat", "Soft pulse"],
+    ["rain", "Rain"], ["wind", "Wind"], ["hum", "HUM"]
+  ]);
   const MIX_KEY = "focusbridge21-quiet-soundscape-v14";
   const PROFILE_MIX_KEY = "focusbridge21-quiet-profile-mixes-v16";
   const RIFE_SETTINGS_KEY = "focusbridge21-rife-audio-lab-v1";
@@ -109,6 +114,9 @@
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
     audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
+    previewAudio: null, previewTimer: null, previewStarting: false,
+    previewActive: false, previewStartedAt: 0, previewNonce: 0,
+    previewMessage: "", previewError: "",
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0),
     rain: level(mix.rain, 0), wind: level(mix.wind, 0), hum: level(mix.hum, 0),
     humNote: "C4", tones: mix.tones !== false
@@ -132,18 +140,24 @@
     if (isQuiet) render();
   }
   function openLab() {
+    stopPreview("", false);
     stopAudio();
     clearInterval(state.timer);
     try { sessionStorage.setItem(LAB_ONCE_KEY, "1"); } catch {}
     window.location.reload(); // also rehydrates the existing React ledger after a Quiet Deck receipt
   }
   function returnToQuiet() {
+    stopPreview("", false);
+    stopAudio();
     try { sessionStorage.removeItem(LAB_ONCE_KEY); } catch {}
     window.location.reload(); // stops any ongoing React-session audio safely
   }
   homeButton.addEventListener("click", returnToQuiet);
 
   function selectMode(mode) {
+    stopPreview("", false);
+    state.previewMessage = "";
+    state.previewError = "";
     state.mode = mode === "settle" ? "settle" : "listen";
     state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
     const profile = PROFILES[state.profile];
@@ -199,6 +213,7 @@
     render();
   }
   function returnHome() {
+    stopPreview("", false);
     stopAudio();
     clearInterval(state.timer);
     state.screen = "home";
@@ -206,12 +221,14 @@
     render();
   }
   function openHolistic() {
+    stopPreview("", false);
     stopAudio();
     state.screen = "holistic";
     state.error = "";
     render();
   }
   function returnToChoices() {
+    stopPreview("", false);
     state.screen = PROFILES[state.profile]?.holistic ? "holistic" : "home";
     state.error = "";
     render();
@@ -219,23 +236,29 @@
 
   function changeRifeSetting(key, value) {
     if (state.profile !== "rife" || !window.FocusBridgeRife) return;
+    stopPreviewForChange();
     state.rife = window.FocusBridgeRife.config({ ...state.rife, [key]: value });
     try { localStorage.setItem(RIFE_SETTINGS_KEY, JSON.stringify(state.rife)); } catch {}
     render();
   }
 
-  async function startAudio() {
+  async function startAudio(preview = false) {
     const Context = window.AudioContext || window.webkitAudioContext;
     if (!Context) throw new Error("Web Audio is not supported by this browser.");
     const context = new Context();
     const nodes = [];
-    state.audio = { context, nodes };
+    const audio = { context, nodes };
+    if (preview) state.previewAudio = audio;
+    else state.audio = audio;
+    const seconds = preview ? PREVIEW_SECONDS : state.duration;
     try {
       if (state.profile === "rife") {
         await context.resume();
         if (context.state !== "running")
           throw new Error("The browser suspended audio. Check playback permissions.");
-        window.FocusBridgeRife.schedule(context, state.rife, state.duration, state.audio);
+        if ((preview ? state.previewAudio : state.audio) !== audio)
+          throw new Error("Audio request cancelled.");
+        window.FocusBridgeRife.schedule(context, state.rife, seconds, audio, preview);
         return;
       }
       const merger = context.createChannelMerger(2);
@@ -255,15 +278,15 @@
       const startAt = context.currentTime;
       // Sleep tones, when explicitly enabled, fade away after <= 30 minutes.
       // The ambience can continue for the full duration with no abrupt ending.
-      const toneSeconds = state.profile === "sleep" ? Math.min(1800, state.duration) : state.duration;
+      const toneSeconds = state.profile === "sleep" ? Math.min(1800, seconds) : seconds;
       const endAt = startAt + toneSeconds;
       volume.gain.setValueAtTime(0.0001, startAt);
       volume.gain.linearRampToValueAtTime(0.035, startAt + 1.5);
       volume.gain.setValueAtTime(0.035, endAt - 3);
       volume.gain.linearRampToValueAtTime(0.0001, endAt);
-      if (profile.sync) {
+      if (profile.sync && !preview) {
         window.FocusBridgeSync.scheduleToneJourney(right.frequency, profile.carrier, startAt, state.syncPlan);
-      }
+      } // A preview samples the opening Focus Sync stage only.
       if (state.profile === "explore" && toneSeconds > 300) {
         right.frequency.linearRampToValueAtTime(profile.carrier + 4.5, startAt + toneSeconds * .55);
         right.frequency.linearRampToValueAtTime(profile.carrier + profile.difference, endAt);
@@ -276,6 +299,8 @@
       }
       await context.resume();
       if (context.state !== "running") throw new Error("The browser suspended audio. Check playback permissions.");
+      if ((preview ? state.previewAudio : state.audio) !== audio)
+        throw new Error("Audio request cancelled.");
       if (state.tones) {
         left.start();
         right.start();
@@ -288,24 +313,78 @@
             { surf: state.surf, bass: state.bass, beat: state.beat,
               rain: state.rain, wind: state.wind, hum: state.hum,
               humNote: state.humNote, space: profile.space },
-            state.duration, state.audio)
+            seconds, audio)
         : false;
       if (!state.tones && !ambienceStarted)
         throw new Error("The soundscape engine did not start.");
     } catch (error) {
-      stopAudio();
+      if ((preview ? state.previewAudio : state.audio) === audio) stopAudio(preview);
+      else closeAudio(audio); // navigation may have replaced the preview while resume was pending
       throw error;
     }
   }
-  function stopAudio() {
-    if (!state.audio) return;
-    const audio = state.audio;
-    state.audio = null;
+  function closeAudio(audio) {
+    if (!audio) return;
     for (const node of audio.nodes) {
       try { if (typeof node.stop === "function") node.stop(); } catch {}
       try { node.disconnect(); } catch {}
     }
     try { if (audio.context.state !== "closed") audio.context.close(); } catch {}
+  }
+  function stopAudio(preview = false) {
+    const audio = preview ? state.previewAudio : state.audio;
+    if (preview) state.previewAudio = null;
+    else state.audio = null;
+    closeAudio(audio);
+  }
+  function stopPreview(message = "", rerender = true) {
+    const wasActive = state.previewActive || state.previewStarting || !!state.previewAudio;
+    state.previewNonce++;
+    clearInterval(state.previewTimer);
+    state.previewTimer = null;
+    state.previewActive = false;
+    state.previewStarting = false;
+    stopAudio(true);
+    state.previewMessage = message;
+    if (rerender && wasActive && state.screen === "prepare") render();
+  }
+  function stopPreviewForChange() {
+    if (state.previewAudio || state.previewStarting)
+      stopPreview("Settings changed. Preview your updated mix.", false);
+  }
+  async function startPreview() {
+    // Preview respects the same safety/readiness checks as full playback.
+    if (state.screen !== "prepare" || state.mode !== "listen" || state.starting ||
+        state.previewStarting || state.previewActive || !state.safe ||
+        (headphoneRequired() && !state.headphones) || allSoundOff()) return;
+    const nonce = ++state.previewNonce;
+    state.previewStarting = true;
+    state.previewError = "";
+    state.previewMessage = "";
+    render();
+    try {
+      await startAudio(true);
+      if (state.previewNonce !== nonce || state.screen !== "prepare") return;
+      state.previewStarting = false;
+      state.previewActive = true;
+      state.previewStartedAt = Date.now();
+      state.previewTimer = setInterval(() => {
+        if (!state.previewActive || state.previewNonce !== nonce) return;
+        const remaining = Math.max(0,
+          PREVIEW_SECONDS - (Date.now() - state.previewStartedAt) / 1000);
+        const display = root.querySelector("#q-preview-remaining");
+        if (display) display.textContent = Math.ceil(remaining) + " sec remaining";
+        if (remaining <= 0)
+          stopPreview("Preview finished. Adjust the mix or begin your session.");
+      }, 200);
+      render();
+    } catch (error) {
+      if (state.previewNonce !== nonce) return;
+      state.previewStarting = false;
+      state.previewActive = false;
+      state.previewError = "Preview could not play: " + (error.message || String(error));
+      render();
+    }
   }
   function allSoundOff() {
     return !state.tones && !state.surf && !state.bass && !state.beat &&
@@ -316,8 +395,9 @@
   }
 
   async function startSession() {
-    if (state.screen !== "prepare" || state.starting || !state.safe ||
+    if (state.screen !== "prepare" || state.starting || state.previewStarting || !state.safe ||
         (state.mode === "listen" && ((headphoneRequired() && !state.headphones) || allSoundOff()))) return;
+    stopPreview("", false); // no preview oscillator may overlap the committed session
     state.starting = true;
     state.error = "";
     render();
@@ -493,7 +573,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.2</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.3</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',
@@ -712,6 +792,53 @@
               (state.toneDifference === hz ? ' selected' : '') + '>' + hz + ' Hz</option>').join("") +
             '</select><p class="q-detail">Stereo headphones required for binaural tones. The Hz options are sound experiments, not medical prescriptions. Leave tones off if you are sound-sensitive.</p></div>' : '') +
           '</div>' : '',
+        listen ? [
+          '<section class="q-preview-panel" aria-label="Preview selected sounds before starting">',
+          '<div class="q-setup-step">SOUND CHECK · BEFORE YOUR SESSION</div>',
+          '<h2>Preview your selections</h2>',
+          '<p class="q-detail">Hear a 15-second sample of the sounds and tone you chose. Start with your device volume low; this does not start your session, change your settings, or save a receipt.</p>',
+          state.profile === "rife" ? [
+            '<div class="q-preview-rife"><strong>', state.rife.frequency, ' Hz · ',
+              safeText(state.rife.waveform), '</strong>',
+            '<span>', state.rife.motion === "steady" ? 'Steady pitch' : 'Gentle sweep',
+              ' · ', state.rife.intensity, '% of capped software gain</span></div>'
+          ].join("") : [
+            '<div class="q-preview-levels">',
+            PREVIEW_LAYERS.map(([key, label]) =>
+              '<div class="q-preview-level"><span>' + safeText(label) + '</span>' +
+              '<div class="q-preview-meter" aria-hidden="true"><div id="q-preview-meter-' + key + '" style="width:' +
+                state[key] + '%"></div></div>' +
+              '<strong id="q-preview-value-' + key + '">' + state[key] + '%</strong></div>').join(""),
+            '</div>',
+            state.hum ? '<p class="q-detail">HUM note: <strong>' + safeText(state.humNote) + '</strong></p>' : '',
+            state.tones ? [
+              '<p class="q-preview-stereo"><strong>Stereo tones enabled.</strong> ',
+              'Left ', PROFILES[state.profile].carrier, ' Hz; right ',
+              PROFILES[state.profile].carrier + (
+                PROFILES[state.profile].holistic ? state.toneDifference : PROFILES[state.profile].difference),
+              ' Hz.', state.profile === "sync" ? ' Preview plays the opening Focus Sync stage only.' : '',
+              ' Headphones are required.</p>'
+            ].join("") : '<p class="q-detail">Optional stereo tones are off.</p>'
+          ].join(""),
+          '<div class="q-actions">',
+          state.previewActive
+            ? '<button type="button" class="q-return" data-action="stop-preview">Stop preview now</button>'
+            : '<button type="button" class="q-secondary q-preview-button" data-action="preview" ' +
+              (!canBegin || state.starting || state.previewStarting ? 'disabled' : '') +
+              '>' + (state.previewStarting ? 'Starting sound check…' : '▶ Preview selected mix · 15 sec') + '</button>',
+          '</div>',
+          '<p class="q-preview-status" role="status" aria-live="polite">',
+          state.previewActive ? '<span id="q-preview-remaining">15 sec remaining</span> · Listening only, session not started.'
+            : safeText(state.previewMessage || (!state.safe
+              ? 'Complete the safety check above to enable preview.'
+              : needsHeadphones ? 'Confirm stereo headphones above to preview.'
+              : needsSound ? 'Enable at least one sound layer to preview.'
+              : 'Ready for your sound check.')),
+          '</p>',
+          state.previewError ? '<p role="alert" class="q-error">' + safeText(state.previewError) + '</p>' : '',
+          '<p class="q-detail">Percentages show mixer settings, <strong>not measured loudness or dB SPL</strong>. Your speakers, headphones, and system volume determine what you actually hear. Stop immediately if anything feels too loud or uncomfortable.</p>',
+          '</section>'
+        ].join("") : '',
         '<p class="q-detail">', listen
           ? (state.profile === "rife"
             ? 'This mode generates low-level audible tones only. It is not an RF, electromagnetic, or electrotherapy device and has no medical effectiveness claim. Stop immediately if unpleasant.'
@@ -725,7 +852,7 @@
         canBegin ? '<span aria-hidden="true">✓ </span>' : '<span aria-hidden="true">○ </span>',
         readinessHint, '</p>',
         '<div class="q-actions"><button type="button" class="q-primary" data-action="start" aria-describedby="q-readiness-hint" ',
-        (!canBegin || state.starting) ? 'disabled' : '',
+        (!canBegin || state.starting || state.previewStarting) ? 'disabled' : '',
         '>', state.starting ? 'Starting…' : 'Start my session', '</button>',
         !canBegin ? '<button type="button" class="q-secondary" data-action="review">Show me what to check ↑</button>' : '',
         listen ? '<button type="button" class="q-secondary" data-action="settle">No audio instead</button>' : '',
@@ -813,8 +940,14 @@
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();
     else if (action === "holistic") openHolistic();
-    else if (action === "duration") { state.duration = Number(button.dataset.seconds); render(); }
+    else if (action === "duration") {
+      stopPreviewForChange();
+      state.duration = Number(button.dataset.seconds); render();
+    }
+    else if (action === "preview") startPreview();
+    else if (action === "stop-preview") stopPreview("Preview stopped. Adjust your mix or listen again.");
     else if (action === "island-reset" && state.screen === "prepare" && state.profile === "lost") {
+      stopPreviewForChange();
       const profile = PROFILES.lost;
       for (const key of ["surf", "bass", "beat", "rain", "wind", "hum"]) state[key] = profile[key];
       state.humNote = profile.humNote;
@@ -830,6 +963,7 @@
     else if (action === "sync-pace" && state.screen === "prepare" && state.profile === "sync") {
       const minutes = Number(button.dataset.minutes);
       if (window.FocusBridgeSync.PACES.includes(minutes)) {
+        stopPreviewForChange();
         state.syncMinutes = minutes;
         state.syncPlan = window.FocusBridgeSync.timeline(minutes);
         state.duration = state.syncPlan.totalSeconds;
@@ -850,11 +984,21 @@
     else if (action === "save") saveReflection();
   });
   root.addEventListener("change", (event) => {
-    if (event.target.id === "q-safe") { state.safe = event.target.checked; render(); }
-    if (event.target.id === "q-headphones") { state.headphones = event.target.checked; render(); }
-    if (event.target.id === "q-tones") { state.tones = event.target.checked; saveMix(); render(); }
+    if (event.target.id === "q-safe") {
+      if (!event.target.checked) stopPreviewForChange();
+      state.safe = event.target.checked; render();
+    }
+    if (event.target.id === "q-headphones") {
+      if (!event.target.checked) stopPreviewForChange();
+      state.headphones = event.target.checked; render();
+    }
+    if (event.target.id === "q-tones") {
+      stopPreviewForChange();
+      state.tones = event.target.checked; saveMix(); render();
+    }
     if (event.target.id === "q-hum-note" && state.profile !== "rife") {
       if ((window.FocusBridgeSoundscape?.HUM_NOTES || []).some(note => note.name === event.target.value)) {
+        stopPreviewForChange();
         state.humNote = event.target.value;
         saveMix();
         render();
@@ -864,33 +1008,55 @@
     if (event.target.id === "q-rife-motion") changeRifeSetting("motion", event.target.value);
     if (event.target.id === "q-tone-palette" && PROFILES[state.profile]?.holistic) {
       const hz = Number(event.target.value);
-      if (HOLISTIC_TONE_OPTIONS.includes(hz)) { state.toneDifference = hz; saveMix(); render(); }
+      if (HOLISTIC_TONE_OPTIONS.includes(hz)) {
+        stopPreviewForChange();
+        state.toneDifference = hz; saveMix(); render();
+      }
     }
   });
   root.addEventListener("input", (event) => {
     if (event.target.id === "q-note") state.note = event.target.value;
     if (event.target.id === "q-rife-intensity" && state.profile === "rife") {
+      const wasPreviewing = !!state.previewAudio || state.previewStarting;
+      stopPreviewForChange();
       const intensity = Number(event.target.value);
       state.rife = window.FocusBridgeRife.config({ ...state.rife, intensity });
       const output = root.querySelector("#q-rife-intensity-value");
       if (output) output.textContent = state.rife.intensity + "%";
       try { localStorage.setItem(RIFE_SETTINGS_KEY, JSON.stringify(state.rife)); } catch {}
+      if (wasPreviewing) render();
     }
     const match = /^q-mix-(surf|bass|beat|rain|wind|hum)$/.exec(event.target.id || "");
     if (match) {
+      const wasPreviewing = !!state.previewAudio || state.previewStarting;
+      stopPreviewForChange();
       const key = match[1];
       state[key] = level(event.target.value, 0);
       const display = root.querySelector("#q-mix-value-" + key);
       if (display) display.textContent = state[key] + "%";
       event.target.setAttribute("aria-valuetext", state[key] + " percent");
       saveMix();
+      if (wasPreviewing) render();
+      else {
+        const meter = root.querySelector("#q-preview-meter-" + key);
+        if (meter) meter.style.width = state[key] + "%";
+        const value = root.querySelector("#q-preview-value-" + key);
+        if (value) value.textContent = state[key] + "%";
+      }
     }
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.screen === "running" &&
-        document.body.classList.contains("fb21-quiet-mode")) finishSession(true);
+    if (event.key === "Escape" && document.body.classList.contains("fb21-quiet-mode")) {
+      if (state.screen === "running") finishSession(true);
+      else if (state.screen === "prepare" && (state.previewActive || state.previewStarting))
+        stopPreview("Preview stopped.");
+    }
   });
-  window.addEventListener("pagehide", () => { clearInterval(state.timer); stopAudio(); });
+  window.addEventListener("pagehide", () => {
+    stopPreview("", false);
+    clearInterval(state.timer);
+    stopAudio();
+  });
 
   let openOldLab = false;
   try {

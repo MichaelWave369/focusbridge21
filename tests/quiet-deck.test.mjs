@@ -11,6 +11,9 @@ const read = (p) => readFileSync(join(dir, p), "utf8");
 const script = read("docs/fb21-v13-quiet-deck.js");
 const syncScript = read("docs/fb21-focus-sync.js");
 const rifeScript = read("docs/fb21-rife-lab.js");
+const soundscapeWindow = {};
+runInNewContext(read("docs/fb21-soundscape.js"), { window: soundscapeWindow, Math });
+const HUM_NOTES = soundscapeWindow.FocusBridgeSoundscape.HUM_NOTES;
 
 function harness({ withAudio = false } = {}) {
   let clock = Date.now();
@@ -71,7 +74,7 @@ function harness({ withAudio = false } = {}) {
   const window = {
     addEventListener() {},
     location: { reload() { reloads++; } },
-    FocusBridgeSoundscape: { schedule(ctx, options, seconds) {
+    FocusBridgeSoundscape: { HUM_NOTES, schedule(ctx, options, seconds) {
       scheduled.push({ ctx, options, seconds }); return true;
     } },
     ...(withAudio ? { AudioContext: FakeAudioContext } : {})

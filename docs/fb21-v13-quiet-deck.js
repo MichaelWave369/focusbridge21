@@ -806,9 +806,9 @@
             '<div class="q-preview-levels">',
             PREVIEW_LAYERS.map(([key, label]) =>
               '<div class="q-preview-level"><span>' + safeText(label) + '</span>' +
-              '<div class="q-preview-meter" aria-hidden="true"><div style="width:' +
+              '<div class="q-preview-meter" aria-hidden="true"><div id="q-preview-meter-' + key + '" style="width:' +
                 state[key] + '%"></div></div>' +
-              '<strong>' + state[key] + '%</strong></div>').join(""),
+              '<strong id="q-preview-value-' + key + '">' + state[key] + '%</strong></div>').join(""),
             '</div>',
             state.hum ? '<p class="q-detail">HUM note: <strong>' + safeText(state.humNote) + '</strong></p>' : '',
             state.tones ? [

@@ -46,7 +46,9 @@ References:
 
 ## Follow-on experiment: CFD field
 
-A future opt-in **CFD Field** can offer slow, non-flashing procedural dots and clouds inspired by personal descriptions of visual noise observed with eyes closed. Keep it optional and compatible with reduced-motion settings. The visual should not claim to reproduce a neurological signal, track brain waves, or induce projection. Allow visual-free audio at all times.
+**CFD is the existing [Cognitive Field Display](https://github.com/MichaelWave369/CFD) project.** It is an original interactive WebGL/Three.js exploration of a densely packed, rainbow-like square field of tiny points with deep zoom. Previous CFD experiments include Fuzzy Lattice, Vortex, Nested Six, ring columns, elastic cross-to-diamond transitions, and recursive Pocket Field structures.
+
+For a future FocusBridge21 integration, use CFD as an **optional, independently controlled visual layer**, not as evidence that a stereo signal is controlling the brain. The initial design should import or embed the *existing* CFD renderer rather than reinventing a generic particle visual. Make it non-flashing, opt-in, compatible with reduced motion, and available only in awake exploration sessions by default. Preserve visual-free audio, accessible RETURN NOW, and strict separation between personal subjective observations and objective physiological measurements.
 
 Potential v1.7 work: separate long-session audio lifecycle clock from wall time; browser background-suspension warnings and resume recovery; verified long-play browser QA; accessible dark screen lock; optional fade-out start time; head-tracked spatial rendering where a compatible headset is available; receipt fields for subjective CFD observations.
 

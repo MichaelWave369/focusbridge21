@@ -282,3 +282,34 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
 @media(max-width: 560px) {
   #fb21-quiet-root .q-rife-control-grid { grid-template-columns: 1fr; }
 }
+
+/* v2.1 Weather + musical HUM controls: preserve the existing six-layer mixer layout. */
+#fb21-quiet-root .q-hum-note {
+  border-top: 1px solid #64738f55;
+  margin-top: 16px;
+  padding: 18px 0 4px;
+}
+#fb21-quiet-root .q-hum-note label {
+  display: block;
+  margin-bottom: 9px;
+  font-weight: 700;
+  color: #e3f0f0;
+}
+#fb21-quiet-root .q-hum-note select {
+  background: #20354b;
+  color: #f2f8f8;
+  border: 1px solid #9ccfc5;
+  border-radius: 12px;
+  padding: 12px 15px;
+  font: inherit;
+  min-width: 190px;
+  max-width: 100%;
+}
+#fb21-quiet-root .q-hum-note .q-detail {
+  margin: 9px 0 2px;
+}
+@media (max-width: 560px) {
+  #fb21-quiet-root .q-hum-note select {
+    width: 100%;
+  }
+}

@@ -18,6 +18,7 @@ function harness({ withAudio = false } = {}) {
   const session = new Map();
   const classes = new Map();
   const contexts = [];
+  const scheduled = [];
   let reloads = 0;
   let nextTimer = 1;
   class FakeDate extends Date { static now() { return clock; } }
@@ -64,6 +65,9 @@ function harness({ withAudio = false } = {}) {
   const window = {
     addEventListener() {},
     location: { reload() { reloads++; } },
+    FocusBridgeSoundscape: { schedule(ctx, options, seconds) {
+      scheduled.push({ ctx, options, seconds }); return true;
+    } },
     ...(withAudio ? { AudioContext: FakeAudioContext } : {})
   };
   const localStorage = {
@@ -92,7 +96,7 @@ function harness({ withAudio = false } = {}) {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, setMix, advance, storage, classes, contexts, session,
+  return { root, click, check, note, setMix, advance, storage, classes, contexts, scheduled, session,
     get reloads() { return reloads; } };
 }
 
@@ -104,7 +108,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback)/);
+  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -163,4 +167,36 @@ test("all soundscape layers off and stereo tones disabled cannot masquerade as p
   app.click("start");
   assert.doesNotMatch(app.root.innerHTML, /Return now/);
   assert.equal(app.contexts.length, 0);
+});
+
+test("Sleep Sanctuary offers six-hour ambience without headphone consent or sudden completion audio", async () => {
+  const app = harness({ withAudio: true });
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /6 hr/);
+  assert.match(app.root.innerHTML, /Sleep Sanctuary/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/, "surf-only sleep allows speakers");
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(app.root.innerHTML, /Return now/);
+  assert.equal(app.contexts.length, 1);
+  assert.equal(app.scheduled.length, 1);
+  assert.equal(app.scheduled[0].seconds, 21600, "engine receives the full six hours");
+  assert.equal(app.scheduled[0].options.space, 10);
+  app.advance(45 * 60 * 1000);
+  assert.match(app.root.innerHTML, /Return now/, "no 45-minute cutoff");
+  app.advance((6 * 60 - 45) * 60 * 1000);
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  assert.equal(app.contexts[0].state, "closed");
+});
+
+test("focus and exploratory presets retain their independent, adjustable sessions", () => {
+  const app = harness();
+  app.click("focus");
+  assert.match(app.root.innerHTML, /Deep Focus/);
+  assert.match(app.root.innerHTML, /180 min/);
+  app.click("home");
+  app.click("explore");
+  assert.match(app.root.innerHTML, /Threshold Explorer/);
+  assert.match(app.root.innerHTML, /120 min/);
 });

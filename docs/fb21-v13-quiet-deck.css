@@ -121,6 +121,11 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
   }
 }
 
+/* The six-hour sleep deck uses a subdued visual without flashes or wake-up cues. */
+#fb21-quiet-root .q-running-sleep .q-orb { opacity: .2; animation: none; }
+#fb21-quiet-root .q-running-sleep .q-cue { color: #9aafc6; }
+#fb21-quiet-root .q-running-sleep .q-timer { color: #aabbd0; }
+
 /* v1.4 optional original soundscape mixer */
 #fb21-quiet-root .q-mixer { border-block: 1px solid #64738f50; margin: 20px 0; padding: 22px 0 14px; }
 #fb21-quiet-root .q-mixer h2 { margin: 0 0 6px; }

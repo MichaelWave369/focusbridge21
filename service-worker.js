@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v2-2-island-108";
+const CACHE_NAME = "focusbridge21-v2-3-mix-preview";
 const APP_SHELL = [
   "./",
   "./index.html",

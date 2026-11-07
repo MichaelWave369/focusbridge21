@@ -34,7 +34,7 @@ function harness({ withAudio = false } = {}) {
     connect() { return this; }
     disconnect() {}
     start() {}
-    stop() {}
+    stop(when) { this.stopTime = when; }
   }
   class FakeAudioContext {
     constructor() { this.currentTime = 0; this.state = "running"; this.destination = new FakeNode(); contexts.push(this); }

@@ -46,7 +46,11 @@
     }
   };
 
-  const fmt = s => `${String(Math.floor(Math.max(0, s) / 60)).padStart(2, "0")}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, "0")}`;
+  const fmt = s => {
+    const seconds = Math.max(0, Math.floor(s));
+    if (seconds >= 3600) return `${Math.floor(seconds / 3600)}:${String(Math.floor(seconds % 3600 / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  };
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const jread = (k, f) => { try { return JSON.parse(localStorage.getItem(k) || ""); } catch { return f; } };
   const jwrite = (k, v) => localStorage.setItem(k, JSON.stringify(v));

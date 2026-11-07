@@ -9,6 +9,7 @@ import { runInNewContext } from "node:vm";
 const dir = fileURLToPath(new URL("..", import.meta.url));
 const read = (p) => readFileSync(join(dir, p), "utf8");
 const script = read("docs/fb21-v13-quiet-deck.js");
+const syncScript = read("docs/fb21-focus-sync.js");
 
 function harness({ withAudio = false } = {}) {
   let clock = Date.now();
@@ -24,7 +25,11 @@ function harness({ withAudio = false } = {}) {
   class FakeDate extends Date { static now() { return clock; } }
   class FakeNode {
     constructor() {
-      this.frequency = { value: 0 };
+      this.frequency = {
+        value: 0, events: [],
+        setValueAtTime(value, at) { this.value = value; this.events.push({ kind: "set", value, at }); },
+        linearRampToValueAtTime(value, at) { this.value = value; this.events.push({ kind: "ramp", value, at }); }
+      };
       this.gain = {
         value: 0,
         setValueAtTime() {},
@@ -82,12 +87,13 @@ function harness({ withAudio = false } = {}) {
   const setInterval = (callback) => { const id = nextTimer++; timers.set(id, callback); return id; };
   const clearInterval = (id) => timers.delete(id);
 
+  runInNewContext(syncScript, { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
   assert.ok(root, "quiet root exists");
-  const click = (action, seconds) => root.listeners.click({
-    target: { closest: () => ({ disabled: false, dataset: { action, seconds } }) }
+  const click = (action, seconds, minutes) => root.listeners.click({
+    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes } }) }
   });
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
@@ -105,10 +111,13 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     const html = read(p);
     assert.match(html, /fb21-v13-quiet-deck\.css/);
     assert.match(html, /fb21-v13-quiet-deck\.js/);
+    assert.match(html, /fb21-focus-sync\.js/);
+    assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
+      "the sequence helper loads before Quiet Deck");
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort)/);
+  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -342,4 +351,69 @@ test("Holistic Zone has a completely silent fallback when sound is unpleasant", 
   app.check("q-safe");
   app.click("start");
   assert.match(app.root.innerHTML, /INTENTIONALLY SILENT/);
+});
+
+test("Focus Sync previews all published stations and four full-journey paces", () => {
+  const app = harness();
+  assert.match(app.root.innerHTML, /Focus Sync/);
+  app.click("sync");
+  assert.match(app.root.innerHTML, /Complete itinerary · 17 stations \+ return/);
+  assert.match(app.root.innerHTML, /Focus 1/);
+  assert.match(app.root.innerHTML, /Focus 34\/35/);
+  assert.match(app.root.innerHTML, /Focus 49/);
+  assert.match(app.root.innerHTML, /3:36:00/);
+  assert.match(app.root.innerHTML, /5:52:00/);
+  assert.match(app.root.innerHTML, /12-minute grounded return/);
+  assert.match(app.root.innerHTML, /No stage is objectively achieved/);
+});
+
+test("Focus Sync preflight gates the full sequence and schedules smooth changes", async () => {
+  const app = harness({ withAudio: true });
+  app.click("sync");
+  app.click("start");
+  assert.equal(app.contexts.length, 0);
+  app.check("q-safe");
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "still requires stereo headphone consent");
+  app.check("q-headphones");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.match(app.root.innerHTML, /STATION 1 OF 17/);
+  assert.match(app.root.innerHTML, /Focus 1 · Arrival/);
+  assert.equal(app.scheduled.length, 1);
+  assert.equal(app.scheduled[0].seconds, 216 * 60);
+  const changes = app.contexts[0].oscillators[1].frequency.events;
+  assert.ok(changes.filter(x => x.kind === "ramp").length >= 17, "one gentle shift per station, including return");
+  app.advance(12 * 60 * 1000);
+  assert.match(app.root.innerHTML, /STATION 2 OF 17/);
+  assert.match(app.root.innerHTML, /Focus 3 · Steady Attention/);
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+});
+
+test("deepest Focus Sync pace runs through all stations and grounded return without an early cutoff", async () => {
+  const app = harness({ withAudio: true });
+  app.click("sync");
+  app.click("sync-pace", undefined, 20);
+  assert.match(app.root.innerHTML, /5:52:00/);
+  app.check("q-safe");
+  app.check("q-headphones");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.scheduled[0].seconds, 352 * 60);
+  app.advance(45 * 60 * 1000);
+  assert.match(app.root.innerHTML, /Return now/);
+  app.advance((17 * 20 - 45) * 60 * 1000);
+  assert.match(app.root.innerHTML, /FINAL STAGE/);
+  assert.match(app.root.innerHTML, /Gentle Reorientation/);
+  app.advance(12 * 60 * 1000);
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  assert.equal(app.contexts[0].state, "closed");
+  app.note("I followed the complete symbolic route.");
+  app.click("save");
+  const entries = JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+  assert.equal(entries[0].sync_journey.last_listed_level, "Return");
+  assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });

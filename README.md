@@ -6,6 +6,17 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v1.9 Focus Sync: complete continuous journey
+
+New in Quiet Deck: **Focus Sync**, an original continuous audio journey through the **17 publicly named Monroe focus-level entries** (1, 3, 10, 11, 12, 15, 18, 21, 22, 23, 24, 25, 26, 27, 34/35, 42, 49), followed by 12 minutes of grounded return.
+
+- Choose **8, 12, 18, or 20 minutes per station**. A complete route lasts **2h28, 3h36, 5h18, or 5h52**, well within the Web Audio six-hour hard stop.
+- The soundscape is **original**, with gentle, automatically scheduled crossovers between stereo tone differences and continuous optional ocean ambience. These are audio-design choices, **not** certified neurological frequency mappings, original Hemi-Sync recordings, or proprietary Monroe guidance.
+- Live stage display, preparation itinerary, optional surf/bass/pulse mixing, mandatory comfort and headphone confirmation when appropriate, pause/resume, **RETURN NOW**, and private Signal Ledger receipts.
+- Playing a labelled stage does **not** establish that anyone has reached its associated subjective, neurological, or supernatural state. The later levels are approached as reflective metaphors, not as evidence of an afterlife.
+- Browser backgrounding or power saving may interrupt a multi-hour session. Test the target device and keep volume low.
+- Read [Focus Sync journey, station map, references and QA](docs/FOCUS_SYNC_JOURNEY.md).
+
 ## v1.8 Holistic Zone: comfort-first sound environments
 
 The Quiet Deck now includes a **Holistic Zone** with four short, gently adjustable soundscapes: Headache Sensitivity, Stomach Discomfort, Nausea / Queasiness, and Everyday Tension.

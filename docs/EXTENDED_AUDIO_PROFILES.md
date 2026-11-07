@@ -52,7 +52,7 @@ Potential v1.7 work: separate long-session audio lifecycle clock from wall time;
 
 ## Manual verification
 
-1. Check both root and `/docs/` entrypoints. All five Quiet Deck entry choices are available and the advanced lab remains accessible.
+1. Check both root and `/docs/` entrypoints. All six Quiet Deck entry choices are available and the advanced lab remains accessible.
 2. Sleep Sanctuary defaults to 6 hours, surf on, tones/pulse off, no headphone confirmation needed, safety confirmation required.
 3. Enable tones in sleep: headphone confirmation becomes required. With tones, verify they fade out at 30 minutes while surf continues.
 4. Ensure separate profile mixes persist after navigating between Sleep Sanctuary, Deep Focus, and Threshold Explorer.

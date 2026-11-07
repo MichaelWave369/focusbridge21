@@ -3,13 +3,26 @@
   "use strict";
   const LEDGER_KEY = "focusbridge21-ledger-v1";
   const MIX_KEY = "focusbridge21-quiet-soundscape-v14";
+  const PROFILE_MIX_KEY = "focusbridge21-quiet-profile-mixes-v16";
+  const readProfileMixes = () => {
+    try {
+      const value = JSON.parse(localStorage.getItem(PROFILE_MIX_KEY) || "{}");
+      return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    } catch { return {}; }
+  };
+  const profileMixes = readProfileMixes();
   const readMix = () => {
     try { return JSON.parse(localStorage.getItem(MIX_KEY) || "{}"); } catch { return {}; }
   };
   const mix = readMix();
   const level = (x, fallback) => Number.isFinite(Number(x)) && x !== undefined && x !== null ? Math.max(0, Math.min(100, Number(x))) : fallback;
   const saveMix = () => {
-    try { localStorage.setItem(MIX_KEY, JSON.stringify({ surf: state.surf, bass: state.bass, beat: state.beat, tones: state.tones })); } catch {}
+    const values = { surf: state.surf, bass: state.bass, beat: state.beat, tones: state.tones };
+    try {
+      localStorage.setItem(MIX_KEY, JSON.stringify(values)); // legacy Quiet Deck preference
+      profileMixes[state.profile] = values;
+      localStorage.setItem(PROFILE_MIX_KEY, JSON.stringify(profileMixes));
+    } catch {} // Audio works without storage access.
   };
   // These are original audio-design profiles, not measured neurological states.
   const PROFILES = Object.freeze({
@@ -76,11 +89,12 @@
     state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
     const profile = PROFILES[state.profile];
     state.duration = mode === "settle" ? 90 : profile.duration;
-    if (mode !== "settle" && mode !== "listen") {
-      state.surf = profile.surf;
-      state.bass = profile.bass;
-      state.beat = profile.beat;
-      state.tones = profile.tones;
+    if (mode !== "settle") {
+      const saved = profileMixes[state.profile] || (mode === "listen" ? mix : profile);
+      state.surf = level(saved.surf, profile.surf);
+      state.bass = level(saved.bass, profile.bass);
+      state.beat = level(saved.beat, profile.beat);
+      state.tones = typeof saved.tones === "boolean" ? saved.tones : profile.tones;
       saveMix();
     }
     state.safe = false;
@@ -139,6 +153,7 @@
         nodes.push(left, right, leftGain, rightGain, merger, volume);
       }
       await context.resume();
+      if (context.state !== "running") throw new Error("The browser suspended audio. Check playback permissions.");
       if (state.tones) {
         left.start();
         right.start();

@@ -2,6 +2,11 @@
 (() => {
   "use strict";
   const LEDGER_KEY = "focusbridge21-ledger-v1";
+  const PREVIEW_SECONDS = 15;
+  const PREVIEW_LAYERS = Object.freeze([
+    ["surf", "Ocean surf"], ["bass", "Sub-bass"], ["beat", "Soft pulse"],
+    ["rain", "Rain"], ["wind", "Wind"], ["hum", "HUM"]
+  ]);
   const MIX_KEY = "focusbridge21-quiet-soundscape-v14";
   const PROFILE_MIX_KEY = "focusbridge21-quiet-profile-mixes-v16";
   const RIFE_SETTINGS_KEY = "focusbridge21-rife-audio-lab-v1";
@@ -109,6 +114,9 @@
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
     audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
+    previewAudio: null, previewTimer: null, previewStarting: false,
+    previewActive: false, previewStartedAt: 0, previewNonce: 0,
+    previewMessage: "", previewError: "",
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0),
     rain: level(mix.rain, 0), wind: level(mix.wind, 0), hum: level(mix.hum, 0),
     humNote: "C4", tones: mix.tones !== false
@@ -132,18 +140,24 @@
     if (isQuiet) render();
   }
   function openLab() {
+    stopPreview("", false);
     stopAudio();
     clearInterval(state.timer);
     try { sessionStorage.setItem(LAB_ONCE_KEY, "1"); } catch {}
     window.location.reload(); // also rehydrates the existing React ledger after a Quiet Deck receipt
   }
   function returnToQuiet() {
+    stopPreview("", false);
+    stopAudio();
     try { sessionStorage.removeItem(LAB_ONCE_KEY); } catch {}
     window.location.reload(); // stops any ongoing React-session audio safely
   }
   homeButton.addEventListener("click", returnToQuiet);
 
   function selectMode(mode) {
+    stopPreview("", false);
+    state.previewMessage = "";
+    state.previewError = "";
     state.mode = mode === "settle" ? "settle" : "listen";
     state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
     const profile = PROFILES[state.profile];
@@ -199,6 +213,7 @@
     render();
   }
   function returnHome() {
+    stopPreview("", false);
     stopAudio();
     clearInterval(state.timer);
     state.screen = "home";
@@ -206,12 +221,14 @@
     render();
   }
   function openHolistic() {
+    stopPreview("", false);
     stopAudio();
     state.screen = "holistic";
     state.error = "";
     render();
   }
   function returnToChoices() {
+    stopPreview("", false);
     state.screen = PROFILES[state.profile]?.holistic ? "holistic" : "home";
     state.error = "";
     render();
@@ -219,23 +236,29 @@
 
   function changeRifeSetting(key, value) {
     if (state.profile !== "rife" || !window.FocusBridgeRife) return;
+    stopPreviewForChange();
     state.rife = window.FocusBridgeRife.config({ ...state.rife, [key]: value });
     try { localStorage.setItem(RIFE_SETTINGS_KEY, JSON.stringify(state.rife)); } catch {}
     render();
   }
 
-  async function startAudio() {
+  async function startAudio(preview = false) {
     const Context = window.AudioContext || window.webkitAudioContext;
     if (!Context) throw new Error("Web Audio is not supported by this browser.");
     const context = new Context();
     const nodes = [];
-    state.audio = { context, nodes };
+    const audio = { context, nodes };
+    if (preview) state.previewAudio = audio;
+    else state.audio = audio;
+    const seconds = preview ? PREVIEW_SECONDS : state.duration;
     try {
       if (state.profile === "rife") {
         await context.resume();
         if (context.state !== "running")
           throw new Error("The browser suspended audio. Check playback permissions.");
-        window.FocusBridgeRife.schedule(context, state.rife, state.duration, state.audio);
+        if ((preview ? state.previewAudio : state.audio) !== audio)
+          throw new Error("Audio request cancelled.");
+        window.FocusBridgeRife.schedule(context, state.rife, seconds, audio, preview);
         return;
       }
       const merger = context.createChannelMerger(2);
@@ -255,15 +278,15 @@
       const startAt = context.currentTime;
       // Sleep tones, when explicitly enabled, fade away after <= 30 minutes.
       // The ambience can continue for the full duration with no abrupt ending.
-      const toneSeconds = state.profile === "sleep" ? Math.min(1800, state.duration) : state.duration;
+      const toneSeconds = state.profile === "sleep" ? Math.min(1800, seconds) : seconds;
       const endAt = startAt + toneSeconds;
       volume.gain.setValueAtTime(0.0001, startAt);
       volume.gain.linearRampToValueAtTime(0.035, startAt + 1.5);
       volume.gain.setValueAtTime(0.035, endAt - 3);
       volume.gain.linearRampToValueAtTime(0.0001, endAt);
-      if (profile.sync) {
+      if (profile.sync && !preview) {
         window.FocusBridgeSync.scheduleToneJourney(right.frequency, profile.carrier, startAt, state.syncPlan);
-      }
+      } // A preview samples the opening Focus Sync stage only.
       if (state.profile === "explore" && toneSeconds > 300) {
         right.frequency.linearRampToValueAtTime(profile.carrier + 4.5, startAt + toneSeconds * .55);
         right.frequency.linearRampToValueAtTime(profile.carrier + profile.difference, endAt);
@@ -276,6 +299,8 @@
       }
       await context.resume();
       if (context.state !== "running") throw new Error("The browser suspended audio. Check playback permissions.");
+      if ((preview ? state.previewAudio : state.audio) !== audio)
+        throw new Error("Audio request cancelled.");
       if (state.tones) {
         left.start();
         right.start();
@@ -288,24 +313,78 @@
             { surf: state.surf, bass: state.bass, beat: state.beat,
               rain: state.rain, wind: state.wind, hum: state.hum,
               humNote: state.humNote, space: profile.space },
-            state.duration, state.audio)
+            seconds, audio)
         : false;
       if (!state.tones && !ambienceStarted)
         throw new Error("The soundscape engine did not start.");
     } catch (error) {
-      stopAudio();
+      if ((preview ? state.previewAudio : state.audio) === audio) stopAudio(preview);
+      else closeAudio(audio); // navigation may have replaced the preview while resume was pending
       throw error;
     }
   }
-  function stopAudio() {
-    if (!state.audio) return;
-    const audio = state.audio;
-    state.audio = null;
+  function closeAudio(audio) {
+    if (!audio) return;
     for (const node of audio.nodes) {
       try { if (typeof node.stop === "function") node.stop(); } catch {}
       try { node.disconnect(); } catch {}
     }
     try { if (audio.context.state !== "closed") audio.context.close(); } catch {}
+  }
+  function stopAudio(preview = false) {
+    const audio = preview ? state.previewAudio : state.audio;
+    if (preview) state.previewAudio = null;
+    else state.audio = null;
+    closeAudio(audio);
+  }
+  function stopPreview(message = "", rerender = true) {
+    const wasActive = state.previewActive || state.previewStarting || !!state.previewAudio;
+    state.previewNonce++;
+    clearInterval(state.previewTimer);
+    state.previewTimer = null;
+    state.previewActive = false;
+    state.previewStarting = false;
+    stopAudio(true);
+    state.previewMessage = message;
+    if (rerender && wasActive && state.screen === "prepare") render();
+  }
+  function stopPreviewForChange() {
+    if (state.previewAudio || state.previewStarting)
+      stopPreview("Settings changed. Preview your updated mix.", false);
+  }
+  async function startPreview() {
+    // Preview respects the same safety/readiness checks as full playback.
+    if (state.screen !== "prepare" || state.mode !== "listen" || state.starting ||
+        state.previewStarting || state.previewActive || !state.safe ||
+        (headphoneRequired() && !state.headphones) || allSoundOff()) return;
+    const nonce = ++state.previewNonce;
+    state.previewStarting = true;
+    state.previewError = "";
+    state.previewMessage = "";
+    render();
+    try {
+      await startAudio(true);
+      if (state.previewNonce !== nonce || state.screen !== "prepare") return;
+      state.previewStarting = false;
+      state.previewActive = true;
+      state.previewStartedAt = Date.now();
+      state.previewTimer = setInterval(() => {
+        if (!state.previewActive || state.previewNonce !== nonce) return;
+        const remaining = Math.max(0,
+          PREVIEW_SECONDS - (Date.now() - state.previewStartedAt) / 1000);
+        const display = root.querySelector("#q-preview-remaining");
+        if (display) display.textContent = Math.ceil(remaining) + " sec remaining";
+        if (remaining <= 0)
+          stopPreview("Preview finished. Adjust the mix or begin your session.");
+      }, 200);
+      render();
+    } catch (error) {
+      if (state.previewNonce !== nonce) return;
+      state.previewStarting = false;
+      state.previewActive = false;
+      state.previewError = "Preview could not play: " + (error.message || String(error));
+      render();
+    }
   }
   function allSoundOff() {
     return !state.tones && !state.surf && !state.bass && !state.beat &&
@@ -316,8 +395,9 @@
   }
 
   async function startSession() {
-    if (state.screen !== "prepare" || state.starting || !state.safe ||
+    if (state.screen !== "prepare" || state.starting || state.previewStarting || !state.safe ||
         (state.mode === "listen" && ((headphoneRequired() && !state.headphones) || allSoundOff()))) return;
+    stopPreview("", false); // no preview oscillator may overlap the committed session
     state.starting = true;
     state.error = "";
     render();
@@ -493,7 +573,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.2</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.3</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',

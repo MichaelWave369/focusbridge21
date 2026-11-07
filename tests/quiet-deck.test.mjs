@@ -125,7 +125,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -736,4 +736,141 @@ test("Island 108 mix restores itself without overwriting Sleep Sanctuary or drif
   assert.equal(stored.lost.humNote, "C3");
   assert.equal(stored.sleep.rain, 68);
   assert.equal(stored.drift.surf, 79);
+});
+
+test("preflight Preview Mix requires safety and stereo consent without starting a session", async () => {
+  const app = harness({ withAudio: true });
+  app.click("listen");
+  assert.match(app.root.innerHTML, /Preview your selections/);
+  assert.match(app.root.innerHTML, /data-action="preview" disabled/);
+  assert.match(app.root.innerHTML, /not measured loudness or dB SPL/);
+  app.click("preview");
+  assert.equal(app.contexts.length, 0);
+  app.check("q-safe");
+  assert.match(app.root.innerHTML, /Confirm stereo headphones above to preview/);
+  app.click("preview");
+  assert.equal(app.contexts.length, 0);
+  app.check("q-headphones");
+  app.click("preview");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.equal(app.scheduled.length, 1);
+  assert.equal(app.scheduled[0].seconds, 15, "sound check schedules 15 seconds only");
+  assert.match(app.root.innerHTML, /Stop preview now/);
+  assert.match(app.root.innerHTML, /Listening only, session not started/);
+  assert.equal(app.storage.has("focusbridge21-ledger-v1"), false);
+  app.advance(15001);
+  assert.equal(app.contexts[0].state, "closed", "preview closes without user action");
+  assert.match(app.root.innerHTML, /Preview finished/);
+  assert.doesNotMatch(app.root.innerHTML, /GENTLE RETURN/, "preview never enters session completion");
+  assert.equal(app.storage.has("focusbridge21-ledger-v1"), false, "no receipt created");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 2, "committed session is a separate AudioContext");
+  assert.equal(app.scheduled[1].seconds, 120, "full duration unchanged");
+  assert.match(app.root.innerHTML, /Return now/);
+  app.click("return");
+  assert.equal(app.contexts[1].state, "closed");
+});
+
+test("Island 108 preview plays the exact selected six-layer mix and stops on retuning", async () => {
+  const app = harness({ withAudio: true });
+  app.click("lost");
+  assert.match(app.root.innerHTML, /Ocean surf/);
+  assert.match(app.root.innerHTML, /q-preview-value-surf">42%/);
+  assert.match(app.root.innerHTML, /q-preview-value-beat">4%/);
+  assert.match(app.root.innerHTML, /HUM note: <strong>C3/);
+  assert.match(app.root.innerHTML, /Optional stereo tones are off/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+  app.check("q-safe");
+  app.click("preview");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.scheduled.length, 1);
+  assert.equal(app.scheduled[0].seconds, 15);
+  for (const [key, val] of Object.entries({ surf: 42, bass: 8, beat: 4, rain: 23, wind: 16, hum: 15 }))
+    assert.equal(app.scheduled[0].options[key], val);
+  assert.equal(app.scheduled[0].options.humNote, "C3");
+  assert.ok(app.contexts[0].oscillators.every(osc => osc.stopTime === undefined),
+    "stereo tones remain disconnected and unstarted with the island mix");
+  app.setMix("hum", 50);
+  assert.equal(app.contexts[0].state, "closed", "changing a slider interrupts old preview");
+  assert.match(app.root.innerHTML, /Settings changed/);
+  assert.match(app.root.innerHTML, /q-preview-value-hum">50%/);
+  app.click("preview");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 2);
+  assert.equal(app.scheduled[1].options.hum, 50);
+  app.click("stop-preview");
+  assert.equal(app.contexts[1].state, "closed");
+  assert.match(app.root.innerHTML, /Preview stopped/);
+  assert.equal(app.storage.has("focusbridge21-ledger-v1"), false);
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.scheduled[2].seconds, 6480);
+  assert.equal(app.scheduled[2].options.hum, 50, "full session uses last auditioned mix");
+  assert.equal(app.contexts[2].state, "running");
+  app.click("return");
+});
+
+test("Preview never extends a Focus Sync journey or schedules years of tone automation", async () => {
+  const app = harness({ withAudio: true });
+  app.click("sync");
+  app.check("q-safe");
+  app.check("q-headphones");
+  assert.match(app.root.innerHTML, /opening Focus Sync stage only/);
+  app.click("preview");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.scheduled[0].seconds, 15);
+  const right = app.contexts[0].oscillators[1];
+  assert.equal(right.frequency.value, 195);
+  assert.equal(right.frequency.events.filter(event => event.kind === "ramp").length, 0,
+    "full multi-hour station glides must not leak into a short audition");
+  assert.ok(right.stopTime < 16);
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts[0].state, "closed");
+  assert.equal(app.scheduled[1].seconds, 216 * 60);
+  assert.ok(app.contexts[1].oscillators[1].frequency.events.some(e => e.kind === "ramp"));
+  app.click("return");
+});
+
+test("Rife Frequency Lab uses the exact frequency and waveform in a finite preview", async () => {
+  const app = harness({ withAudio: true });
+  app.click("rife");
+  app.click("rife-frequency", undefined, undefined, 787);
+  app.check("q-safe");
+  app.check("q-headphones");
+  assert.match(app.root.innerHTML, /787 Hz · sine/);
+  assert.match(app.root.innerHTML, /15-second sample/);
+  app.click("preview");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  const osc = app.contexts[0].oscillators[0];
+  assert.equal(osc.frequency.value, 787);
+  assert.equal(osc.stopTime, 15.05);
+  assert.match(app.root.innerHTML, /Stop preview now/);
+  app.advance(16000);
+  assert.equal(app.contexts[0].state, "closed");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts[1].oscillators[0].stopTime, 300.05,
+    "Rife normal session still uses its approved duration");
+  app.click("return");
+});
+
+test("No audio preview is allowed for a silent mix or the intentionally silent session", () => {
+  const app = harness({ withAudio: true });
+  app.click("settle");
+  assert.doesNotMatch(app.root.innerHTML, /data-action="preview"/);
+  app.click("home");
+  app.click("listen");
+  for (const layer of ["surf","bass","beat","rain","wind","hum"]) app.setMix(layer, 0);
+  app.check("q-tones", false);
+  app.check("q-safe");
+  assert.match(app.root.innerHTML, /data-action="preview" disabled/);
+  app.click("preview");
+  assert.equal(app.contexts.length, 0);
+  app.setMix("rain", 20);
+  assert.match(app.root.innerHTML, /q-preview-value-rain">20%/);
+  app.click("preview");
 });

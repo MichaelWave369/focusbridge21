@@ -6,6 +6,19 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v2.2 Island 108: LOST-inspired soundscape preset
+
+The nine main Quiet Deck cards remain unchanged. A featured **Island 108** shortcut on the homepage, plus a shortcut within Listen & drift, launches an **original fan-inspired preset** using our existing six-layer procedural sound engine. No TV-show soundtrack, dialogue, sound effects, logos, or character likenesses are included. This is unaffiliated with and not endorsed by the television series.
+
+- **4 · 8 · 15 · 16 · 23 · 42 = 108.** The famous numbers become both a custom six-layer mix and an original six-chapter timeline. The default full route lasts **108 minutes**.
+- The number-to-mixer mapping is **soft pulse 4%, warm sub-bass 8%, C3 HUM 15%, wind 16%, rain 23%, ocean surf 42%**. Stereo binaural tones are **off by default**, so the ambience can be played quietly over speakers. A user can enable optional stereo tones with normal headphone consent.
+- Chapters last **4, 8, 15, 16, 23 and 42 minutes** in the default 108-minute experience. Their original reflection prompts are *Shoreline*, *The Canopy*, *Under the Sky*, *The Signal*, *After Sundown*, and *The Way Home*. No chapter beeps, alarms, copyrighted music or sound effects.
+- Alternative durations **15, 45, 60 and 180 minutes** scale chapter proportions to the chosen session length. Chapter names are atmospheric suggestions, not literal events or neurological states.
+- **Restore original island six-layer mix** reapplies the numbered values and full 108-minute session. Custom adjustments save locally under their **own profile**, leaving Sleep Sanctuary, Deep Focus, Focus Sync and other profiles untouched.
+- Safety acknowledgment, optional headphone confirmation, Pause/Resume, RETURN NOW, the existing six-hour hard stop and browser-local Signal Ledger receipts are preserved. Device sleep may interrupt browser audio.
+
+[Read Island 108 design and QA](docs/ISLAND_108_PRESET.md).
+
 ## v2.1 Six-Layer Soundscape: Rain, Wind, Musical HUM
 
 The Quiet Deck mixer now supports **six independently adjustable procedural audio layers**: Ocean surf, Warm sub-bass, Soft pulse, **Rain**, **Wind**, and **HUM**. The new layers are included wherever the existing soundscape mixer appears: Listen & drift, Sleep Sanctuary, Deep Focus, Threshold Explorer, Focus Sync and the four Holistic Zone comfort presets.

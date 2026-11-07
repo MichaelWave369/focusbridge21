@@ -313,3 +313,64 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
     width: 100%;
   }
 }
+
+
+/* v2.2 Island 108: fan-inspired ambient preset, original sound only.
+ * A featured strip keeps the Quiet Deck's nine-card grid unchanged. */
+#fb21-quiet-root .q-island-teaser {
+  border: 1px solid #7ab8a970; border-radius: 22px; padding: clamp(19px, 4vw, 28px);
+  margin-top: 18px; background:
+    radial-gradient(ellipse at 92% 0, #2e695447 0, transparent 48%),
+    linear-gradient(115deg, #102b36, #122338 75%);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 20px; box-shadow: inset 0 1px #cde8d51c;
+}
+#fb21-quiet-root .q-island-teaser > div { flex: 1 1 290px; max-width: 640px; }
+#fb21-quiet-root .q-island-kicker {
+  color: #a8ddc9; font-size: .72rem; font-weight: 750; letter-spacing: .14em;
+  text-transform: uppercase; display: block;
+}
+#fb21-quiet-root .q-island-teaser strong {
+  display: block; margin: 6px 0 3px; color: #f4f8eb;
+  font-size: clamp(1.45rem, 3vw, 2rem); letter-spacing: -.035em;
+}
+#fb21-quiet-root .q-island-teaser p {
+  line-height: 1.6; color: #d6e4d9; margin: 8px 0;
+}
+#fb21-quiet-root .q-island-teaser small { color: #abc4c2; line-height: 1.5; }
+#fb21-quiet-root .q-island-open { white-space: normal; min-width: 185px; }
+#fb21-quiet-root .q-island-panel {
+  border: 1px solid #6fa99b77; border-radius: 18px;
+  background: linear-gradient(135deg, #16343d, #132638);
+  padding: clamp(16px, 3vw, 25px); margin: 18px 0 24px;
+}
+#fb21-quiet-root .q-island-panel h3 {
+  font-size: 1.25rem; margin: 9px 0 3px; color: #e4f4e8;
+}
+#fb21-quiet-root .q-island-chapters {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px; margin: 17px 0; padding: 0; list-style: none;
+}
+#fb21-quiet-root .q-island-chapters li {
+  padding: 12px; border: 1px solid #7da99b60; border-radius: 12px;
+  background: #0b1e2c70; min-width: 0;
+}
+#fb21-quiet-root .q-island-chapters li strong {
+  display: block; color: #c6efdc; margin-bottom: 5px; font-variant-numeric: tabular-nums;
+}
+#fb21-quiet-root .q-island-chapters li span { display: block; color: #d1e4e5; font-size: .85rem; }
+#fb21-quiet-root .q-island-active {
+  padding: clamp(18px, 4vw, 28px); border: 1px solid #91c7b980;
+  border-radius: 20px; background: linear-gradient(130deg, #10373e, #142939);
+  margin: 0 auto 18px; max-width: 570px;
+}
+#fb21-quiet-root .q-island-active h2 {
+  margin: 10px 0 7px; color: #e9f8ed; font-size: clamp(1.5rem, 4vw, 2rem);
+}
+#fb21-quiet-root .q-island-active p { color: #c8dedf; line-height: 1.65; }
+#fb21-quiet-root .q-running-island .q-orb { animation: none; opacity: .3; width: min(33vw, 155px); margin: 18px auto; }
+@media (max-width: 600px) {
+  #fb21-quiet-root .q-island-teaser { align-items: stretch; }
+  #fb21-quiet-root .q-island-open { width: 100%; }
+  #fb21-quiet-root .q-island-chapters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

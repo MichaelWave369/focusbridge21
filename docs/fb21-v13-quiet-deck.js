@@ -33,6 +33,7 @@
     sleep: { label: "Sleep Sanctuary", duration: 21600, surf: 60, bass: 8, beat: 0, tones: false, carrier: 180, difference: 4, space: 10 },
     focus: { label: "Deep Focus", duration: 2700, surf: 34, bass: 0, beat: 0, tones: true, carrier: 200, difference: 12, space: 0 },
     explore: { label: "Threshold Explorer", duration: 2700, surf: 50, bass: 8, beat: 0, tones: true, carrier: 180, difference: 6, space: 35 },
+    sync: { label: "Focus Sync", sync: true, duration: 12960, surf: 35, bass: 5, beat: 0, tones: true, carrier: 185, difference: 10, space: 12 },
     headache: { label: "Headache Sensitivity", holistic: true, duration: 600, surf: 8, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "Quiet is often best for sound-sensitive headaches. Any audio should be barely audible. Stop if discomfort increases." },
     stomach: { label: "Stomach Discomfort", holistic: true, duration: 900, surf: 20, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "A small, predictable background sound may help some people settle. This does not address the cause of abdominal pain." },
     nausea: { label: "Nausea / Queasiness", holistic: true, duration: 600, surf: 12, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "Low-stimulation ambience or silence can be preferable; audio is optional and will not treat nausea." },
@@ -67,7 +68,8 @@
   document.body.append(root, homeButton);
 
   const state = {
-    screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8, safe: false,
+    screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8,
+    syncMinutes: 12, syncPlan: null, syncStage: 0, safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
     audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0), tones: mix.tones !== false
@@ -108,6 +110,17 @@
     const profile = PROFILES[state.profile];
     state.duration = mode === "settle" ? 90 : profile.duration;
     state.toneDifference = profile.difference;
+    state.syncStage = 0;
+    if (profile.sync) {
+      if (!window.FocusBridgeSync) {
+        state.error = "Focus Sync engine was not loaded. Reload the app to retry.";
+        state.screen = "home";
+        render();
+        return;
+      }
+      state.syncPlan = window.FocusBridgeSync.timeline(state.syncMinutes);
+      state.duration = state.syncPlan.totalSeconds;
+    }
     if (mode !== "settle") {
       const saved = profileMixes[state.profile] || (mode === "listen" ? mix : profile);
       state.surf = level(saved.surf, profile.surf);
@@ -174,6 +187,9 @@
       volume.gain.linearRampToValueAtTime(0.035, startAt + 1.5);
       volume.gain.setValueAtTime(0.035, endAt - 3);
       volume.gain.linearRampToValueAtTime(0.0001, endAt);
+      if (profile.sync) {
+        window.FocusBridgeSync.scheduleToneJourney(right.frequency, profile.carrier, startAt, state.syncPlan);
+      }
       if (state.profile === "explore" && toneSeconds > 300) {
         right.frequency.linearRampToValueAtTime(profile.carrier + 4.5, startAt + toneSeconds * .55);
         right.frequency.linearRampToValueAtTime(profile.carrier + profile.difference, endAt);
@@ -230,6 +246,7 @@
     render();
     state.elapsedMs = 0;
     state.paused = false;
+    state.syncStage = 0;
     if (state.mode === "listen") {
       try { await startAudio(); }
       catch (error) {
@@ -248,6 +265,8 @@
     render();
   }
   function cue() {
+    if (state.profile === "sync" && state.syncPlan)
+      return window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000).prompt;
     if (state.profile === "sleep" && state.mode === "listen")
       return "Nothing to follow. Let the quiet soundscape carry on while you rest.";
     if (state.profile === "focus" && state.mode === "listen")
@@ -267,8 +286,18 @@
     state.lastTick = now;
     if (state.elapsedMs >= state.duration * 1000) {
       state.elapsedMs = state.duration * 1000;
+      if (state.profile === "sync" && state.syncPlan) {
+        state.syncStage = window.FocusBridgeSync.stageAt(state.syncPlan, state.duration).index;
+      }
       finishSession(false);
       return;
+    }
+    if (state.profile === "sync" && state.syncPlan && !state.paused) {
+      const stage = window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000);
+      if (stage.index !== state.syncStage) {
+        state.syncStage = stage.index;
+        render(); // Only rerender when a symbolic station changes, not every 200ms.
+      }
     }
     const timer = root.querySelector("#fb21-q-timer");
     const bar = root.querySelector("#fb21-q-progress");
@@ -318,6 +347,14 @@
       target_gate: state.mode === "settle" || state.profile === "drift" ? 10 : null,
       duration_min: state.duration / 60,
       actual_elapsed_sec: elapsed,
+      sync_journey: state.profile === "sync" && state.syncPlan ? {
+        published_level_labels: window.FocusBridgeSync.GATES.map(gate => gate.level),
+        last_listed_level: state.syncStage >= window.FocusBridgeSync.GATES.length ? "Return" : window.FocusBridgeSync.GATES[state.syncStage].level,
+        scheduled_full_journey: true,
+        finished_full_journey: !state.interrupted && elapsed >= state.duration - 1,
+        minutes_per_level: state.syncMinutes,
+        interpretation: "Time-based labels and personal reflection, not detected states"
+      } : null,
       guidance_mode: "Quiet Deck " + state.mode,
       audio_params: { engine: state.mode === "listen" ? "original-browser-soundscape-v16" : "none",
         profile: state.mode === "listen" ? state.profile : "silent",
@@ -343,7 +380,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v1.8</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v1.9</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',

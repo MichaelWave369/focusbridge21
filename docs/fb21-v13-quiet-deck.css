@@ -179,3 +179,39 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
   #fb21-quiet-root .q-readiness-card { padding: 17px; }
   #fb21-quiet-root .q-check-prominent { padding: 13px; }
 }
+
+/* v1.8 Holistic Zone. Avoid dramatic light or motion during sensory discomfort. */
+#fb21-quiet-root .q-holistic-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#fb21-quiet-root .q-holistic-choice { min-height: 212px; }
+#fb21-quiet-root .q-holistic-info {
+  border: 1px solid #748a9b80; border-radius: 20px;
+  margin-top: 22px; padding: clamp(18px, 4vw, 28px);
+  background: #15223a; color: #c8d7e8; line-height: 1.65;
+}
+#fb21-quiet-root .q-holistic-info h2 { margin: 0 0 8px; color: #f0f5ff; }
+#fb21-quiet-root .q-holistic-info p { max-width: 70ch; }
+#fb21-quiet-root .q-holistic-alert {
+  border-left: 3px solid #e7c994; padding-left: 15px;
+}
+#fb21-quiet-root .q-comfort-note {
+  border-left: 3px solid #a2dcce; padding: 12px 16px;
+  border-radius: 0 12px 12px 0; background: #1e3441;
+  color: #dfefea; line-height: 1.55;
+}
+#fb21-quiet-root .q-tone-palette {
+  border-top: 1px solid #72809b70; margin-top: 16px; padding-top: 16px;
+}
+#fb21-quiet-root .q-tone-palette label {
+  color: #e2edf5; font-weight: 650; display: block; margin-bottom: 8px;
+}
+#fb21-quiet-root .q-tone-palette select {
+  background: #263c52; color: #fff; border: 1px solid #a2d8cc;
+  border-radius: 12px; padding: 12px; font: inherit;
+}
+#fb21-quiet-root .q-tone-palette select:disabled { opacity: .45; }
+#fb21-quiet-root .q-running-comfort .q-orb { animation: none; opacity: .24; }
+#fb21-quiet-root .q-running-comfort .q-orb-inner { box-shadow: none; }
+@media (max-width: 720px) {
+  #fb21-quiet-root .q-holistic-choices { grid-template-columns: 1fr; }
+  #fb21-quiet-root .q-holistic-choice { min-height: 165px; }
+}

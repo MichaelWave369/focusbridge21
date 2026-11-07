@@ -368,6 +368,7 @@
     state.lastTick = now;
     if (state.elapsedMs >= state.duration * 1000) {
       state.elapsedMs = state.duration * 1000;
+      if (state.profile === "lost") state.islandIndex = ISLAND_SEGMENTS.length - 1;
       if (state.profile === "sync" && state.syncPlan) {
         state.syncStage = window.FocusBridgeSync.stageAt(state.syncPlan, state.duration).index;
       }
@@ -546,6 +547,13 @@
         '<strong>Explore the labs</strong><span>Every existing preset, audio tool, ledger, guide, and experiment is still here.</span>',
         '<span class="q-choice-link">Open full app →</span></button>',
         '</div>',
+        '<section class="q-island-teaser" aria-label="Special Island 108 soundscape preset">',
+        '<div><span class="q-island-kicker">SPECIAL SOUNDSCAPE · FAN TRIBUTE</span>',
+        '<strong>Island 108</strong>',
+        '<p>4 · 8 · 15 · 16 · 23 · 42. An original, LOST-inspired shoreline journey. Six sounds. Six chapters. One 108-minute loop.</p>',
+        '<small>Not affiliated with the television series. No music, dialogue, or sound effects from the show.</small></div>',
+        '<button type="button" data-action="lost" class="q-secondary q-island-open">Explore Island 108 →</button>',
+        '</section>',
         '<p class="q-footnote">Not feeling well, dizzy, or faint? Skip audio practice and rest.',
         ' The full app has more detailed safety information.</p>'
       ].join("");
@@ -592,7 +600,8 @@
             '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
             '" data-action="duration" data-seconds="' + seconds +
             '" aria-pressed="' + (state.duration === seconds) + '">' +
-            (seconds === 90 ? '90 sec' : seconds < 3600 ? (seconds / 60) + ' min' :
+            (state.profile === "lost" && seconds === 6480 ? '108 min · full island loop' :
+              seconds === 90 ? '90 sec' : seconds < 3600 ? (seconds / 60) + ' min' :
               (seconds / 3600) + ' hr') + '</button>'
           ).join("");
       content = [
@@ -604,7 +613,9 @@
             ? 'A browser-based audio oscillator inspired by the history of frequency experimentation. NOT a Rife RF device, an electromagnetic treatment, or a medical therapy. Audible Hz cannot diagnose or cure disease.'
             : PROFILES[state.profile].holistic
               ? 'Low-stimulation comfort listening, not a medical treatment. No audio frequency is proven to treat this symptom.'
-              : 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
+              : state.profile === "lost"
+                ? 'Welcome to Island 108: a mysterious, peaceful, LOST-inspired island listening trip built from original synthesized surf, rain, wind, bass, pulse and C3 HUM. No copied soundtrack or sound effects.'
+                : 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
           : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         listen && PROFILES[state.profile].holistic
           ? '<p class="q-comfort-note">' + safeText(PROFILES[state.profile].note) + '</p>'
@@ -624,6 +635,19 @@
         '<div class="q-setup-step">STEP 2 OF 3 · CUSTOMIZE</div>',
         '<h2>', state.profile === "sync" ? 'Choose a pace for the complete journey' : 'How long feels comfortable?', '</h2>',
         '<div class="q-durations">', choices, '</div>',
+        state.profile === "lost" ? [
+          '<section class="q-island-panel" aria-label="Island 108 six chapters">',
+          '<div class="q-island-kicker">THE NUMBERS · 4 8 15 16 23 42</div>',
+          '<h3>Six chapters. One shoreline.</h3>',
+          '<p class="q-detail">The classic numbers add up to 108. Each number represents a chapter length in the default 108-minute journey. Other session lengths keep the same six-chapter proportions.</p>',
+          '<ol class="q-island-chapters">',
+          ISLAND_SEGMENTS.map(segment => '<li><strong>' + segment.number + ' min</strong><span>' + safeText(segment.title) + '</span></li>').join(""),
+          '</ol><p class="q-detail">The matching original mixer levels are: Pulse 4%, bass 8%, HUM 15%, wind 16%, rain 23%, surf 42%. HUM starts on C3 and binaural tones start off.</p>',
+          '<button type="button" class="q-secondary" data-action="island-reset">Restore the island's original six-layer mix</button>',
+          '<p class="q-detail">An unofficial fan tribute. Nothing from the TV series is sampled or reproduced; no secret signal is being transmitted.</p>',
+          '</section>'
+        ].join("") : '',
+        state.profile === "drift" ? '<p class="q-island-shortcut"><button type="button" class="q-secondary" data-action="lost">Try Island 108 · LOST-inspired mix →</button></p>' : '',
         state.profile === "sync" ? [
           '<p class="q-detail">Every pace includes all 17 listed focus levels plus a 12-minute grounded return. No stage is objectively achieved by running out its timer. Longer is not automatically better.</p>',
           '<div class="q-sync-plan"><h3>Complete itinerary · 17 stations + return</h3>',
@@ -716,7 +740,8 @@
       content = [
         '<div class="q-running', state.profile === "sleep" && state.mode === "listen" ? ' q-running-sleep' : '',
         PROFILES[state.profile]?.holistic ? ' q-running-comfort' : '',
-        state.profile === "rife" ? ' q-running-rife' : '', '"><div class="q-eyebrow">',
+        state.profile === "rife" ? ' q-running-rife' : '',
+        state.profile === "lost" ? ' q-running-island' : '', '"><div class="q-eyebrow">',
         state.mode === "listen" ? safeText(PROFILES[state.profile].label.toUpperCase()) + ' · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         syncStation ? [
           '<section class="q-sync-active" aria-label="Focus Sync stage">',
@@ -725,6 +750,14 @@
           '<h2>Focus ', safeText(syncStation.level), ' · ', safeText(syncStation.title), '</h2>',
           '<p>', safeText(syncStation.prompt), '</p>',
           '<p class="q-detail">A suggested listening stage, not proof that a focus level was reached.</p>',
+          '</section>'
+        ].join("") : '',
+        state.profile === "lost" ? [
+          '<section class="q-island-active" aria-label="Island 108 chapter">',
+          '<span class="q-island-kicker">ISLAND SIGNAL · CHAPTER ', state.islandIndex + 1, ' OF 6</span>',
+          '<h2>', safeText(ISLAND_SEGMENTS[state.islandIndex].title), '</h2>',
+          '<p>', safeText(ISLAND_SEGMENTS[state.islandIndex].cue), '</p>',
+          '<p class="q-detail">4 · 8 · 15 · 16 · 23 · 42 · original atmosphere, no borrowed audio.</p>',
           '</section>'
         ].join("") : '',
         state.profile === "rife" ? [
@@ -775,12 +808,21 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "listen", "sleep", "focus", "explore", "sync", "rife", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "listen", "sleep", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();
     else if (action === "holistic") openHolistic();
     else if (action === "duration") { state.duration = Number(button.dataset.seconds); render(); }
+    else if (action === "island-reset" && state.screen === "prepare" && state.profile === "lost") {
+      const profile = PROFILES.lost;
+      for (const key of ["surf", "bass", "beat", "rain", "wind", "hum"]) state[key] = profile[key];
+      state.humNote = profile.humNote;
+      state.tones = false;
+      state.duration = profile.duration;
+      saveMix();
+      render();
+    }
     else if (action === "rife-frequency" && state.screen === "prepare" && state.profile === "rife") {
       const hz = Number(button.dataset.frequency);
       if (window.FocusBridgeRife.FREQUENCIES.includes(hz)) changeRifeSetting("frequency", hz);

@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v1-9-focus-sync";
+const CACHE_NAME = "focusbridge21-v2-0-rife-audio-lab";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -29,6 +29,7 @@ const APP_SHELL = [
   "./docs/fb21-v11-commandhub.js",
   "./docs/fb21-v12-experience.js",
   "./docs/fb21-focus-sync.js",
+  "./docs/fb21-rife-lab.js",
   "./docs/fb21-v13-quiet-deck.js",
   "./docs/fb21-v13-quiet-deck.css",
   "./docs/icon.svg",

@@ -86,3 +86,20 @@ test("oversized or invalid session requests are shortened to documented presets"
   assert.equal(receipt.seconds, 300);
   assert.equal(f.nodes[0].stopTime, 301.05);
 });
+
+test("explicit audition flag enables a finite 15-second preview without relaxing session limits", () => {
+  const short = fakeContext(), refs = { nodes: [] };
+  const result = lab.schedule(short.context, {
+    frequency: 880, waveform: "triangle", motion: "gentle-sweep", intensity: 20
+  }, 900, refs, true);
+  assert.equal(result.seconds, 15);
+  assert.equal(short.nodes[0].stopTime, 16.05);
+  assert.equal(short.nodes[0].frequency.value, 880);
+  const pitches = short.events.filter(e => e.name === "frequency");
+  assert.ok(pitches.some(e => e.action === "ramp"), "short audition still demonstrates movement");
+  assert.ok(pitches.every(e => e.value >= 880 && e.value <= 880 * 1.01));
+  assert.equal(short.events.filter(e => e.name === "gain").at(-1).value, 0);
+  const ordinary = fakeContext();
+  assert.equal(lab.schedule(ordinary.context, { frequency: 880 }, 15, { nodes: [] }).seconds, 300,
+    "only explicit previews may bypass the normal menu of allowed durations");
+});

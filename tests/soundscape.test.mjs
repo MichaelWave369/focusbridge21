@@ -89,7 +89,30 @@ test("page entrypoints and cache include new engine before React", () => {
     const reactAt = html.indexOf("fb21-react.js");
     assert.ok(engineAt > 0 && engineAt < reactAt);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback)/);
+  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback|6-extended-audio)/);
   assert.match(read("service-worker.js"), /fb21-soundscape.js/);
   assert.doesNotMatch(read("docs/fb21-react.js"), /Parallax \/ PHI369 live prototype/);
+});
+
+test("spatial surf continues to six hours and ends at the bounded Web Audio time", () => {
+  const ctx = context(), refs = { nodes: [] };
+  assert.equal(schedule(ctx, { surf: 60, space: 35 }, 21600, refs), true);
+  const sources = ctx.nodes.filter(n => n.kind === "buffer-source");
+  assert.equal(sources.length, 3);
+  for (const source of sources) {
+    assert.ok(source.stops[0] >= 12 + 21600, "no inherited one-hour cutoff");
+    assert.ok(source.stops[0] < 12 + 21601, "bounded audio scheduling");
+  }
+  const panners = ctx.nodes.filter(n => n.kind === "panner");
+  assert.equal(panners.length, 3);
+  assert.ok(panners.every(p => p.pan.events.some(e => e.type === "linear")));
+  const master = ctx.nodes.find(n => n.kind === "gain");
+  assert.equal(master.gain.events.at(-1).when, 12 + 21600, "silent end fade");
+});
+
+test("duration remains capped at six hours even for invalid oversized requests", () => {
+  const ctx = context(), refs = { nodes: [] };
+  schedule(ctx, { bass: 5 }, 86400, refs);
+  assert.ok(ctx.nodes.filter(n => n.kind === "oscillator").every(n =>
+    n.stops[0] <= 12 + 21600.2));
 });

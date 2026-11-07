@@ -1,6 +1,6 @@
 /*
- * FocusBridge21 Original Soundscape v1.4
- * Procedural waves + optional quiet low-frequency drone + gentle pulse.
+ * FocusBridge21 Original Soundscape v2.1
+ * Procedural surf, gentle sub-bass, pulse, rain, wind and musical HUM.
  * Independent of proprietary recordings and independent of Hemi-Sync.
  *
  * Intensity inputs are 0..100. Defaults are OFF, except where the UI
@@ -12,6 +12,17 @@
 
   const clamp = (n, min, max) => Math.max(min, Math.min(max, Number(n) || 0));
   const fraction = (value) => clamp(value, 0, 100) / 100;
+  // Equal-temperament notes C3 (MIDI 48, ~130.81 Hz) through
+  // C5 (MIDI 72, ~523.25 Hz), inclusive, derived from A4 = 440 Hz.
+  const NOTE_NAMES = Object.freeze(["C", "C#", "D", "D#", "E", "F",
+    "F#", "G", "G#", "A", "A#", "B"]);
+  const HUM_NOTES = Object.freeze(Array.from({ length: 25 }, (_, index) => {
+    const midi = 48 + index;
+    return Object.freeze({
+      name: NOTE_NAMES[midi % 12] + (Math.floor(midi / 12) - 1),
+      hz: Number((440 * Math.pow(2, (midi - 69) / 12)).toFixed(2))
+    });
+  }));
   const register = (refs, ...nodes) => {
     if (refs && Array.isArray(refs.nodes)) refs.nodes.push(...nodes);
   };
@@ -80,6 +91,21 @@
     }
   }
 
+  // Smooth weather amplitude with finite, sparse gain automation.
+  // Wind uses more dynamic gusts as its slider rises; rain stays steady.
+  function weatherEnvelope(gain, peak, t, seconds, cycle, depth) {
+    const end = t + seconds;
+    const floor = Math.max(0.0001, peak * (1 - depth));
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.linearRampToValueAtTime(floor, t + Math.min(2, seconds / 3));
+    for (let at = t + cycle; at + cycle * 0.55 < end - 2; at += cycle) {
+      gain.gain.linearRampToValueAtTime(Math.max(0.0001, peak), at);
+      gain.gain.linearRampToValueAtTime(floor, at + cycle * 0.55);
+    }
+    gain.gain.setValueAtTime(floor, Math.max(t + 2, end - 2));
+    gain.gain.linearRampToValueAtTime(0.0001, end);
+  }
+
   function tone(ctx, frequency, gainAmount, t, seconds, refs, output, harmonic = false) {
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -120,7 +146,10 @@
     const surf = fraction(options.surf);
     const bass = fraction(options.bass);
     const beat = fraction(options.beat);
-    if (!surf && !bass && !beat) return false;
+    const rain = fraction(options.rain);
+    const wind = fraction(options.wind);
+    const hum = fraction(options.hum);
+    if (!surf && !bass && !beat && !rain && !wind && !hum) return false;
     const duration = Math.max(5, Math.min(21600, Number(seconds) || 90)); // bounded six-hour playback
     const now = ctx.currentTime;
     const spatial = fraction(options.space) * 0.18; // at most 18% stereo-pan offset
@@ -133,14 +162,44 @@
     master.connect(destination);
     register(refs, master);
 
+    // One in-memory original noise buffer shared by surf/rain/wind;
+    // no samples, assets or extra memory allocations for the three layers.
+    const noiseBuffer = (surf || rain || wind) ? makeFoamNoise(ctx) : null;
     if (surf) {
-      const buffer = makeFoamNoise(ctx);
+      const buffer = noiseBuffer;
       const undertow = makeLayer(ctx, buffer, "lowpass", 760, surf * 0.24, -0.28, now, duration, refs, master, spatial);
       const shore = makeLayer(ctx, buffer, "lowpass", 1250, surf * 0.17, 0.28, now, duration, refs, master, spatial);
       const foam = makeLayer(ctx, buffer, "bandpass", 1500, surf * 0.10, 0.05, now, duration, refs, master, spatial);
       waves(undertow.gain, undertow.volume, now, duration, 10.6, 0, 3.3, 6.9);
       waves(shore.gain, shore.volume, now, duration, 10.6, 4.4, 3.7, 6.6);
       waves(foam.gain, foam.volume, now, duration, 10.6, 2.8, 2.3, 4.7);
+    }
+    if (rain) {
+      // High-frequency droplets over a soft rain bed. Raising the slider
+      // increases both level and bright-droplet presence, without thunder.
+      const canopy = makeLayer(ctx, noiseBuffer, "bandpass", 1500,
+        rain * 0.075, -0.1, now, duration, refs, master);
+      const droplets = makeLayer(ctx, noiseBuffer, "highpass", 2900,
+        Math.pow(rain, 1.6) * 0.040, 0.1, now, duration, refs, master);
+      weatherEnvelope(canopy.gain, canopy.volume, now, duration, 21, 0.09);
+      weatherEnvelope(droplets.gain, droplets.volume, now, duration, 13, 0.18);
+    }
+    if (wind) {
+      // Filtered air with smooth gust envelopes, no harsh gust transients.
+      const gustDepth = 0.18 + wind * 0.59;
+      const gustCycle = 17 - 8 * wind;
+      const body = makeLayer(ctx, noiseBuffer, "lowpass", 330,
+        wind * 0.110, -0.16, now, duration, refs, master);
+      const air = makeLayer(ctx, noiseBuffer, "bandpass", 760,
+        wind * 0.039, 0.16, now, duration, refs, master);
+      weatherEnvelope(body.gain, body.volume, now, duration, gustCycle, gustDepth);
+      weatherEnvelope(air.gain, air.volume, now, duration, gustCycle + 2, gustDepth * 0.84);
+    }
+    if (hum) {
+      const selected = HUM_NOTES.find(note => note.name === options.humNote) || HUM_NOTES[12];
+      // Quiet musical foundation with an extremely soft overtone.
+      tone(ctx, selected.hz, hum * 0.018, now, duration, refs, master);
+      tone(ctx, selected.hz * 2, hum * 0.0035, now, duration, refs, master);
     }
     if (bass) {
       // Audible low bass: 62 Hz plus an extremely soft 124 Hz harmonic.
@@ -152,5 +211,5 @@
     return true;
   }
 
-  window.FocusBridgeSoundscape = Object.freeze({ schedule });
+  window.FocusBridgeSoundscape = Object.freeze({ schedule, HUM_NOTES });
 })();

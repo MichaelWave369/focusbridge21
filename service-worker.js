@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v2-0-rife-audio-lab";
+const CACHE_NAME = "focusbridge21-v2-1-weather-hum";
 const APP_SHELL = [
   "./",
   "./index.html",

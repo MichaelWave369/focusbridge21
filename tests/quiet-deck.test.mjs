@@ -11,6 +11,9 @@ const read = (p) => readFileSync(join(dir, p), "utf8");
 const script = read("docs/fb21-v13-quiet-deck.js");
 const syncScript = read("docs/fb21-focus-sync.js");
 const rifeScript = read("docs/fb21-rife-lab.js");
+const soundscapeWindow = {};
+runInNewContext(read("docs/fb21-soundscape.js"), { window: soundscapeWindow, Math });
+const HUM_NOTES = soundscapeWindow.FocusBridgeSoundscape.HUM_NOTES;
 
 function harness({ withAudio = false } = {}) {
   let clock = Date.now();
@@ -71,7 +74,7 @@ function harness({ withAudio = false } = {}) {
   const window = {
     addEventListener() {},
     location: { reload() { reloads++; } },
-    FocusBridgeSoundscape: { schedule(ctx, options, seconds) {
+    FocusBridgeSoundscape: { HUM_NOTES, schedule(ctx, options, seconds) {
       scheduled.push({ ctx, options, seconds }); return true;
     } },
     ...(withAudio ? { AudioContext: FakeAudioContext } : {})
@@ -100,11 +103,12 @@ function harness({ withAudio = false } = {}) {
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
   const setMix = (key, value) => root.listeners.input({ target: { id: "q-mix-" + key, value, setAttribute() {} } });
+  const setHumNote = (value) => root.listeners.change({ target: { id: "q-hum-note", value } });
   const advance = (milliseconds) => {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, setMix, advance, storage, classes, contexts, scheduled, session,
+  return { root, click, check, note, setMix, setHumNote, advance, storage, classes, contexts, scheduled, session,
     get reloads() { return reloads; } };
 }
 
@@ -121,7 +125,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -489,4 +493,110 @@ test("Rife lab settings persist separately from established sleep profile", asyn
   app.click("home");
   app.click("rife");
   assert.match(app.root.innerHTML, /data-frequency="727" aria-pressed="true"/);
+});
+
+test("all soundscape profiles expose rain, wind and 25-note HUM with defaults off", () => {
+  const app = harness();
+  for (const profile of ["listen", "sleep", "focus", "explore", "sync"]) {
+    app.click(profile);
+    assert.match(app.root.innerHTML, /id="q-mix-rain" value="0"/);
+    assert.match(app.root.innerHTML, /id="q-mix-wind" value="0"/);
+    assert.match(app.root.innerHTML, /id="q-mix-hum" value="0"/);
+    assert.match(app.root.innerHTML, /id="q-hum-note"/);
+    assert.match(app.root.innerHTML, /C3 · 130.81 Hz/);
+    assert.match(app.root.innerHTML, /C5 · 523.25 Hz/);
+    app.click("home");
+  }
+  app.click("holistic");
+  app.click("headache");
+  assert.match(app.root.innerHTML, /id="q-mix-rain" value="0"/);
+  assert.match(app.root.innerHTML, /id="q-mix-wind" value="0"/);
+  assert.match(app.root.innerHTML, /id="q-mix-hum" value="0"/);
+  app.click("home");
+  app.click("rife");
+  assert.doesNotMatch(app.root.innerHTML, /id="q-mix-rain"/, "Rife mode remains a separate audio generator");
+});
+
+test("rain, wind and HUM can each be the sole sound layer without stereo headphones", async () => {
+  for (const layer of ["rain", "wind", "hum"]) {
+    const app = harness({ withAudio: true });
+    app.click("sleep");
+    app.setMix("surf", 0);
+    app.setMix("bass", 0);
+    app.setMix("beat", 0);
+    for (const key of ["rain","wind","hum"]) app.setMix(key, key === layer ? 40 : 0);
+    app.check("q-tones", false);
+    assert.doesNotMatch(app.root.innerHTML, /All sound layers are off/);
+    assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+    app.click("start");
+    assert.equal(app.contexts.length, 0, "still requires safety consent");
+    app.check("q-safe");
+    app.click("start");
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(app.contexts.length, 1);
+    assert.equal(app.scheduled.length, 1);
+    assert.equal(app.scheduled[0].options[layer], 40);
+    for (const other of ["rain","wind","hum"].filter(k => k !== layer))
+      assert.equal(app.scheduled[0].options[other], 0);
+    assert.match(app.root.innerHTML, /Return now/);
+    app.click("return");
+    assert.equal(app.contexts[0].state, "closed");
+  }
+});
+
+test("six-layer mixer remembers unique profile settings and selected musical HUM note", () => {
+  const app = harness();
+  app.click("sleep");
+  app.setMix("rain", 85);
+  app.setMix("wind", 20);
+  app.setMix("hum", 40);
+  app.setHumNote("C5");
+  const sleep = JSON.parse(app.storage.get("focusbridge21-quiet-profile-mixes-v16")).sleep;
+  assert.equal(sleep.rain, 85);
+  assert.equal(sleep.wind, 20);
+  assert.equal(sleep.hum, 40);
+  assert.equal(sleep.humNote, "C5");
+  app.click("home");
+  app.click("focus");
+  app.setMix("rain", 15);
+  app.setMix("wind", 55);
+  app.setMix("hum", 5);
+  app.setHumNote("C3");
+  app.click("home");
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /id="q-mix-rain" value="85"/);
+  assert.match(app.root.innerHTML, /id="q-mix-wind" value="20"/);
+  assert.match(app.root.innerHTML, /id="q-mix-hum" value="40"/);
+  assert.match(app.root.innerHTML, /value="C5" selected/);
+  app.click("home");
+  app.click("focus");
+  assert.match(app.root.innerHTML, /id="q-mix-rain" value="15"/);
+  assert.match(app.root.innerHTML, /id="q-mix-wind" value="55"/);
+  assert.match(app.root.innerHTML, /id="q-mix-hum" value="5"/);
+  assert.match(app.root.innerHTML, /value="C3" selected/);
+});
+
+test("soundscape ledger records newly mixed layers and accurate HUM note", async () => {
+  const app = harness({ withAudio: true });
+  app.click("sleep");
+  app.setMix("rain", 50);
+  app.setMix("wind", 25);
+  app.setMix("hum", 30);
+  app.setHumNote("G3");
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.scheduled[0].options.rain, 50);
+  assert.equal(app.scheduled[0].options.wind, 25);
+  assert.equal(app.scheduled[0].options.hum, 30);
+  assert.equal(app.scheduled[0].options.humNote, "G3");
+  app.advance(45000);
+  app.click("return");
+  app.click("save");
+  const receipt = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(receipt.audio_params.rain, 50);
+  assert.equal(receipt.audio_params.wind, 25);
+  assert.equal(receipt.audio_params.hum, 30);
+  assert.equal(receipt.audio_params.hum_note, "G3");
+  assert.equal(receipt.audio_params.stereo_tones, false);
 });

@@ -10,6 +10,7 @@ const dir = fileURLToPath(new URL("..", import.meta.url));
 const read = (p) => readFileSync(join(dir, p), "utf8");
 const script = read("docs/fb21-v13-quiet-deck.js");
 const syncScript = read("docs/fb21-focus-sync.js");
+const rifeScript = read("docs/fb21-rife-lab.js");
 
 function harness({ withAudio = false } = {}) {
   let clock = Date.now();
@@ -88,12 +89,13 @@ function harness({ withAudio = false } = {}) {
   const clearInterval = (id) => timers.delete(id);
 
   runInNewContext(syncScript, { window });
+  runInNewContext(rifeScript, { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
   assert.ok(root, "quiet root exists");
-  const click = (action, seconds, minutes) => root.listeners.click({
-    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes } }) }
+  const click = (action, seconds, minutes, frequency) => root.listeners.click({
+    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency } }) }
   });
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
@@ -112,6 +114,8 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-v13-quiet-deck\.css/);
     assert.match(html, /fb21-v13-quiet-deck\.js/);
     assert.match(html, /fb21-focus-sync\.js/);
+    assert.match(html, /fb21-rife-lab\.js/);
+    assert.ok(html.indexOf("fb21-rife-lab.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
       "the sequence helper loads before Quiet Deck");
     assert.match(html, /fb21-react\.js/);
@@ -416,4 +420,73 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   const entries = JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
   assert.equal(entries[0].sync_journey.last_listed_level, "Return");
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
+});
+
+test("Quiet Deck has exactly nine first-run cards including Rife Frequency Lab", () => {
+  const app = harness();
+  const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
+  assert.equal(choices.length, 9, "nine home cards form a 3 by 3 grid");
+  assert.match(app.root.innerHTML, /Rife Frequency Lab/);
+  app.click("rife");
+  assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
+  assert.match(app.root.innerHTML, /not an RF|NOT a Rife RF device/);
+  assert.match(app.root.innerHTML, /data-frequency="727"/);
+  assert.match(app.root.innerHTML, /data-frequency="787"/);
+  assert.match(app.root.innerHTML, /data-frequency="880"/);
+  assert.match(app.root.innerHTML, /q-rife-waveform/);
+  assert.match(app.root.innerHTML, /q-rife-motion/);
+  assert.match(app.root.innerHTML, /q-rife-intensity/);
+  assert.doesNotMatch(app.root.innerHTML, /class="q-mixer"/,
+    "the separate audible tone lab does not pretend to be binaural soundscape mixing");
+});
+
+test("Rife audio lab requires checkboxes and uses exactly one finite low-gain oscillator", async () => {
+  const app = harness({ withAudio: true });
+  app.click("rife");
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "no WebAudio until user checks safety");
+  app.check("q-safe");
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "headphone confirmation still required");
+  app.check("q-headphones");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.equal(app.contexts[0].oscillators.length, 1, "not the two-channel binaural engine");
+  assert.equal(app.contexts[0].oscillators[0].type, "sine");
+  assert.equal(app.contexts[0].oscillators[0].stopTime, 300.05);
+  assert.match(app.root.innerHTML, /AUDIBLE WAVEFORM DEMONSTRATION/);
+  assert.match(app.root.innerHTML, /220 Hz/);
+  assert.match(app.root.innerHTML, /Return now/);
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+});
+
+test("Rife lab settings persist separately from established sleep profile", async () => {
+  const app = harness({ withAudio: true });
+  app.click("rife");
+  app.click("rife-frequency", undefined, undefined, 727);
+  assert.match(app.root.innerHTML, /data-frequency="727" aria-pressed="true"/);
+  assert.match(app.storage.get("focusbridge21-rife-audio-lab-v1"), /"frequency":727/);
+  app.click("duration", 900);
+  app.check("q-safe");
+  app.check("q-headphones");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts[0].oscillators[0].frequency.value, 727);
+  assert.equal(app.contexts[0].oscillators[0].stopTime, 900.05);
+  app.advance(11 * 60 * 1000);
+  assert.match(app.root.innerHTML, /Return now/, "no hidden early session cutoff");
+  app.click("return");
+  app.note("A neutral sound test, not a therapy");
+  app.click("save");
+  const ledger = JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+  assert.equal(ledger[0].rife_audio_lab.frequency_hz, 727);
+  assert.equal(ledger[0].rife_audio_lab.output_type.includes("not RF"), true);
+  app.click("home");
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="60"/);
+  app.click("home");
+  app.click("rife");
+  assert.match(app.root.innerHTML, /data-frequency="727" aria-pressed="true"/);
 });

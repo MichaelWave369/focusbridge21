@@ -792,6 +792,53 @@
               (state.toneDifference === hz ? ' selected' : '') + '>' + hz + ' Hz</option>').join("") +
             '</select><p class="q-detail">Stereo headphones required for binaural tones. The Hz options are sound experiments, not medical prescriptions. Leave tones off if you are sound-sensitive.</p></div>' : '') +
           '</div>' : '',
+        listen ? [
+          '<section class="q-preview-panel" aria-label="Preview selected sounds before starting">',
+          '<div class="q-setup-step">SOUND CHECK · BEFORE YOUR SESSION</div>',
+          '<h2>Preview your selections</h2>',
+          '<p class="q-detail">Hear a 15-second sample of the sounds and tone you chose. Start with your device volume low; this does not start your session, change your settings, or save a receipt.</p>',
+          state.profile === "rife" ? [
+            '<div class="q-preview-rife"><strong>', state.rife.frequency, ' Hz · ',
+              safeText(state.rife.waveform), '</strong>',
+            '<span>', state.rife.motion === "steady" ? 'Steady pitch' : 'Gentle sweep',
+              ' · ', state.rife.intensity, '% of capped software gain</span></div>'
+          ].join("") : [
+            '<div class="q-preview-levels">',
+            PREVIEW_LAYERS.map(([key, label]) =>
+              '<div class="q-preview-level"><span>' + safeText(label) + '</span>' +
+              '<div class="q-preview-meter" aria-hidden="true"><div style="width:' +
+                state[key] + '%"></div></div>' +
+              '<strong>' + state[key] + '%</strong></div>').join(""),
+            '</div>',
+            state.hum ? '<p class="q-detail">HUM note: <strong>' + safeText(state.humNote) + '</strong></p>' : '',
+            state.tones ? [
+              '<p class="q-preview-stereo"><strong>Stereo tones enabled.</strong> ',
+              'Left ', PROFILES[state.profile].carrier, ' Hz; right ',
+              PROFILES[state.profile].carrier + (
+                PROFILES[state.profile].holistic ? state.toneDifference : PROFILES[state.profile].difference),
+              ' Hz.', state.profile === "sync" ? ' Preview plays the opening Focus Sync stage only.' : '',
+              ' Headphones are required.</p>'
+            ].join("") : '<p class="q-detail">Optional stereo tones are off.</p>'
+          ].join(""),
+          '<div class="q-actions">',
+          state.previewActive
+            ? '<button type="button" class="q-return" data-action="stop-preview">Stop preview now</button>'
+            : '<button type="button" class="q-secondary q-preview-button" data-action="preview" ' +
+              (!canBegin || state.starting || state.previewStarting ? 'disabled' : '') +
+              '>' + (state.previewStarting ? 'Starting sound check…' : '▶ Preview selected mix · 15 sec') + '</button>',
+          '</div>',
+          '<p class="q-preview-status" role="status" aria-live="polite">',
+          state.previewActive ? '<span id="q-preview-remaining">15 sec remaining</span> · Listening only, session not started.'
+            : safeText(state.previewMessage || (!state.safe
+              ? 'Complete the safety check above to enable preview.'
+              : needsHeadphones ? 'Confirm stereo headphones above to preview.'
+              : needsSound ? 'Enable at least one sound layer to preview.'
+              : 'Ready for your sound check.')),
+          '</p>',
+          state.previewError ? '<p role="alert" class="q-error">' + safeText(state.previewError) + '</p>' : '',
+          '<p class="q-detail">Percentages show mixer settings, <strong>not measured loudness or dB SPL</strong>. Your speakers, headphones, and system volume determine what you actually hear. Stop immediately if anything feels too loud or uncomfortable.</p>',
+          '</section>'
+        ].join("") : '',
         '<p class="q-detail">', listen
           ? (state.profile === "rife"
             ? 'This mode generates low-level audible tones only. It is not an RF, electromagnetic, or electrotherapy device and has no medical effectiveness claim. Stop immediately if unpleasant.'
@@ -805,7 +852,7 @@
         canBegin ? '<span aria-hidden="true">✓ </span>' : '<span aria-hidden="true">○ </span>',
         readinessHint, '</p>',
         '<div class="q-actions"><button type="button" class="q-primary" data-action="start" aria-describedby="q-readiness-hint" ',
-        (!canBegin || state.starting) ? 'disabled' : '',
+        (!canBegin || state.starting || state.previewStarting) ? 'disabled' : '',
         '>', state.starting ? 'Starting…' : 'Start my session', '</button>',
         !canBegin ? '<button type="button" class="q-secondary" data-action="review">Show me what to check ↑</button>' : '',
         listen ? '<button type="button" class="q-secondary" data-action="settle">No audio instead</button>' : '',
@@ -893,8 +940,14 @@
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();
     else if (action === "holistic") openHolistic();
-    else if (action === "duration") { state.duration = Number(button.dataset.seconds); render(); }
+    else if (action === "duration") {
+      stopPreviewForChange();
+      state.duration = Number(button.dataset.seconds); render();
+    }
+    else if (action === "preview") startPreview();
+    else if (action === "stop-preview") stopPreview("Preview stopped. Adjust your mix or listen again.");
     else if (action === "island-reset" && state.screen === "prepare" && state.profile === "lost") {
+      stopPreviewForChange();
       const profile = PROFILES.lost;
       for (const key of ["surf", "bass", "beat", "rain", "wind", "hum"]) state[key] = profile[key];
       state.humNote = profile.humNote;
@@ -910,6 +963,7 @@
     else if (action === "sync-pace" && state.screen === "prepare" && state.profile === "sync") {
       const minutes = Number(button.dataset.minutes);
       if (window.FocusBridgeSync.PACES.includes(minutes)) {
+        stopPreviewForChange();
         state.syncMinutes = minutes;
         state.syncPlan = window.FocusBridgeSync.timeline(minutes);
         state.duration = state.syncPlan.totalSeconds;
@@ -930,11 +984,21 @@
     else if (action === "save") saveReflection();
   });
   root.addEventListener("change", (event) => {
-    if (event.target.id === "q-safe") { state.safe = event.target.checked; render(); }
-    if (event.target.id === "q-headphones") { state.headphones = event.target.checked; render(); }
-    if (event.target.id === "q-tones") { state.tones = event.target.checked; saveMix(); render(); }
+    if (event.target.id === "q-safe") {
+      if (!event.target.checked) stopPreviewForChange();
+      state.safe = event.target.checked; render();
+    }
+    if (event.target.id === "q-headphones") {
+      if (!event.target.checked) stopPreviewForChange();
+      state.headphones = event.target.checked; render();
+    }
+    if (event.target.id === "q-tones") {
+      stopPreviewForChange();
+      state.tones = event.target.checked; saveMix(); render();
+    }
     if (event.target.id === "q-hum-note" && state.profile !== "rife") {
       if ((window.FocusBridgeSoundscape?.HUM_NOTES || []).some(note => note.name === event.target.value)) {
+        stopPreviewForChange();
         state.humNote = event.target.value;
         saveMix();
         render();
@@ -944,33 +1008,55 @@
     if (event.target.id === "q-rife-motion") changeRifeSetting("motion", event.target.value);
     if (event.target.id === "q-tone-palette" && PROFILES[state.profile]?.holistic) {
       const hz = Number(event.target.value);
-      if (HOLISTIC_TONE_OPTIONS.includes(hz)) { state.toneDifference = hz; saveMix(); render(); }
+      if (HOLISTIC_TONE_OPTIONS.includes(hz)) {
+        stopPreviewForChange();
+        state.toneDifference = hz; saveMix(); render();
+      }
     }
   });
   root.addEventListener("input", (event) => {
     if (event.target.id === "q-note") state.note = event.target.value;
     if (event.target.id === "q-rife-intensity" && state.profile === "rife") {
+      const wasPreviewing = !!state.previewAudio || state.previewStarting;
+      stopPreviewForChange();
       const intensity = Number(event.target.value);
       state.rife = window.FocusBridgeRife.config({ ...state.rife, intensity });
       const output = root.querySelector("#q-rife-intensity-value");
       if (output) output.textContent = state.rife.intensity + "%";
       try { localStorage.setItem(RIFE_SETTINGS_KEY, JSON.stringify(state.rife)); } catch {}
+      if (wasPreviewing) render();
     }
     const match = /^q-mix-(surf|bass|beat|rain|wind|hum)$/.exec(event.target.id || "");
     if (match) {
+      const wasPreviewing = !!state.previewAudio || state.previewStarting;
+      stopPreviewForChange();
       const key = match[1];
       state[key] = level(event.target.value, 0);
       const display = root.querySelector("#q-mix-value-" + key);
       if (display) display.textContent = state[key] + "%";
       event.target.setAttribute("aria-valuetext", state[key] + " percent");
       saveMix();
+      if (wasPreviewing) render();
+      else {
+        const meter = root.querySelector("#q-preview-meter-" + key);
+        if (meter) meter.style.width = state[key] + "%";
+        const value = root.querySelector("#q-preview-value-" + key);
+        if (value) value.textContent = state[key] + "%";
+      }
     }
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.screen === "running" &&
-        document.body.classList.contains("fb21-quiet-mode")) finishSession(true);
+    if (event.key === "Escape" && document.body.classList.contains("fb21-quiet-mode")) {
+      if (state.screen === "running") finishSession(true);
+      else if (state.screen === "prepare" && (state.previewActive || state.previewStarting))
+        stopPreview("Preview stopped.");
+    }
   });
-  window.addEventListener("pagehide", () => { clearInterval(state.timer); stopAudio(); });
+  window.addEventListener("pagehide", () => {
+    stopPreview("", false);
+    clearInterval(state.timer);
+    stopAudio();
+  });
 
   let openOldLab = false;
   try {

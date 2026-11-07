@@ -4,6 +4,11 @@
   const LEDGER_KEY = "focusbridge21-ledger-v1";
   const MIX_KEY = "focusbridge21-quiet-soundscape-v14";
   const PROFILE_MIX_KEY = "focusbridge21-quiet-profile-mixes-v16";
+  const RIFE_SETTINGS_KEY = "focusbridge21-rife-audio-lab-v1";
+  const readRifeSettings = () => {
+    try { return JSON.parse(localStorage.getItem(RIFE_SETTINGS_KEY) || "{}"); }
+    catch { return {}; }
+  };
   const readProfileMixes = () => {
     try {
       const value = JSON.parse(localStorage.getItem(PROFILE_MIX_KEY) || "{}");
@@ -34,6 +39,7 @@
     focus: { label: "Deep Focus", duration: 2700, surf: 34, bass: 0, beat: 0, tones: true, carrier: 200, difference: 12, space: 0 },
     explore: { label: "Threshold Explorer", duration: 2700, surf: 50, bass: 8, beat: 0, tones: true, carrier: 180, difference: 6, space: 35 },
     sync: { label: "Focus Sync", sync: true, duration: 12960, surf: 35, bass: 5, beat: 0, tones: true, carrier: 185, difference: 10, space: 12 },
+    rife: { label: "Rife Frequency Lab", rife: true, duration: 300, surf: 0, bass: 0, beat: 0, tones: true, carrier: 220, difference: 0, space: 0 },
     headache: { label: "Headache Sensitivity", holistic: true, duration: 600, surf: 8, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "Quiet is often best for sound-sensitive headaches. Any audio should be barely audible. Stop if discomfort increases." },
     stomach: { label: "Stomach Discomfort", holistic: true, duration: 900, surf: 20, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "A small, predictable background sound may help some people settle. This does not address the cause of abdominal pain." },
     nausea: { label: "Nausea / Queasiness", holistic: true, duration: 600, surf: 12, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "Low-stimulation ambience or silence can be preferable; audio is optional and will not treat nausea." },
@@ -52,6 +58,7 @@
     sleep: [1800, 3600, 5400, 7200, 10800, 14400, 21600],
     focus: [1500, 2700, 5400, 10800],
     explore: [1200, 2700, 5400, 7200],
+    rife: [60, 180, 300, 600, 900],
     headache: [300, 600, 900, 1200],
     stomach: [300, 600, 900, 1200, 1800],
     nausea: [300, 600, 900, 1200],
@@ -69,7 +76,9 @@
 
   const state = {
     screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8,
-    syncMinutes: 12, syncPlan: null, syncStage: 0, safe: false,
+    syncMinutes: 12, syncPlan: null, syncStage: 0,
+    rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
+    safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
     audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0), tones: mix.tones !== false
@@ -111,6 +120,12 @@
     state.duration = mode === "settle" ? 90 : profile.duration;
     state.toneDifference = profile.difference;
     state.syncStage = 0;
+    if (profile.rife && !window.FocusBridgeRife) {
+      state.error = "Audio frequency engine unavailable. Reload the app.";
+      state.screen = "home";
+      render();
+      return;
+    }
     if (profile.sync) {
       if (!window.FocusBridgeSync) {
         state.error = "Focus Sync engine was not loaded. Reload the app to retry.";
@@ -121,7 +136,13 @@
       state.syncPlan = window.FocusBridgeSync.timeline(state.syncMinutes);
       state.duration = state.syncPlan.totalSeconds;
     }
-    if (mode !== "settle") {
+    if (profile.rife) {
+      // Isolate the audible waveform lab from the binaural/mixer profiles.
+      state.surf = 0;
+      state.bass = 0;
+      state.beat = 0;
+      state.tones = true;
+    } else if (mode !== "settle") {
       const saved = profileMixes[state.profile] || (mode === "listen" ? mix : profile);
       state.surf = level(saved.surf, profile.surf);
       state.bass = level(saved.bass, profile.bass);
@@ -157,6 +178,13 @@
     render();
   }
 
+  function changeRifeSetting(key, value) {
+    if (state.profile !== "rife" || !window.FocusBridgeRife) return;
+    state.rife = window.FocusBridgeRife.config({ ...state.rife, [key]: value });
+    try { localStorage.setItem(RIFE_SETTINGS_KEY, JSON.stringify(state.rife)); } catch {}
+    render();
+  }
+
   async function startAudio() {
     const Context = window.AudioContext || window.webkitAudioContext;
     if (!Context) throw new Error("Web Audio is not supported by this browser.");
@@ -164,6 +192,13 @@
     const nodes = [];
     state.audio = { context, nodes };
     try {
+      if (state.profile === "rife") {
+        await context.resume();
+        if (context.state !== "running")
+          throw new Error("The browser suspended audio. Check playback permissions.");
+        window.FocusBridgeRife.schedule(context, state.rife, state.duration, state.audio);
+        return;
+      }
       const merger = context.createChannelMerger(2);
       const left = context.createOscillator();
       const right = context.createOscillator();
@@ -265,6 +300,8 @@
     render();
   }
   function cue() {
+    if (state.profile === "rife" && state.mode === "listen")
+      return "Notice the sound only if comfortable. A pitch is not a medical treatment.";
     if (state.profile === "sync" && state.syncPlan)
       return window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000).prompt;
     if (state.profile === "sleep" && state.mode === "listen")
@@ -356,11 +393,21 @@
         interpretation: "Time-based labels and personal reflection, not detected states"
       } : null,
       guidance_mode: "Quiet Deck " + state.mode,
-      audio_params: { engine: state.mode === "listen" ? "original-browser-soundscape-v16" : "none",
+      rife_audio_lab: state.profile === "rife" ? {
+        frequency_hz: state.rife.frequency,
+        waveform: state.rife.waveform,
+        motion: state.rife.motion,
+        intensity_percent_of_capped_gain: state.rife.intensity,
+        output_type: "audible Web Audio, not RF, EMF or electrotherapy",
+        interpretation: "Audio demonstration, not a medical treatment"
+      } : null,
+      audio_params: { engine: state.profile === "rife" ? "audible-waveform-lab-v1"
+        : state.mode === "listen" ? "original-browser-soundscape-v16" : "none",
         profile: state.mode === "listen" ? state.profile : "silent",
-        difference_hz: state.mode === "listen" && state.tones ? state.toneDifference : null,
+        difference_hz: state.mode === "listen" && state.tones && state.profile !== "rife"
+          ? state.toneDifference : null,
         space_percent: state.mode === "listen" ? PROFILES[state.profile].space : 0,
-        stereo_tones: state.mode === "listen" && state.tones,
+        stereo_tones: state.mode === "listen" && state.tones && state.profile !== "rife",
         surf: state.mode === "listen" ? state.surf : 0,
         bass: state.mode === "listen" ? state.bass : 0,
         beat: state.mode === "listen" ? state.beat : 0 },
@@ -380,7 +427,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v1.9</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.0</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',
@@ -425,6 +472,10 @@
         '<span class="q-choice-icon" aria-hidden="true">✧</span><span class="q-choice-kicker">GENTLE SELF-COMFORT</span>',
         '<strong>Holistic Zone</strong><span>Calm audio options for everyday discomfort, with clear evidence and safety boundaries.</span>',
         '<span class="q-choice-link">Explore comfort sounds →</span></button>',
+        '<button type="button" data-action="rife" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">∿</span><span class="q-choice-kicker">AUDIO WAVEFORM EXPLORATION</span>',
+        '<strong>Rife Frequency Lab</strong><span>Explore audible Hz, shapes, and gentle sweeps. A science-history lab, never a disease treatment.</span>',
+        '<span class="q-choice-link">Open sound laboratory →</span></button>',
         '<button type="button" data-action="lab" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">⌘</span><span class="q-choice-kicker">THE COMPLETE COCKPIT</span>',
         '<strong>Explore the labs</strong><span>Every existing preset, audio tool, ledger, guide, and experiment is still here.</span>',
@@ -484,9 +535,11 @@
         '<div class="q-eyebrow">', listen ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
         '<h1>', listen ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
         '<p class="q-lead">', listen
-          ? PROFILES[state.profile].holistic
-            ? 'Low-stimulation comfort listening, not a medical treatment. No audio frequency is proven to treat this symptom.'
-            : 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
+          ? PROFILES[state.profile].rife
+            ? 'A browser-based audio oscillator inspired by the history of frequency experimentation. NOT a Rife RF device, an electromagnetic treatment, or a medical therapy. Audible Hz cannot diagnose or cure disease.'
+            : PROFILES[state.profile].holistic
+              ? 'Low-stimulation comfort listening, not a medical treatment. No audio frequency is proven to treat this symptom.'
+              : 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
           : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         listen && PROFILES[state.profile].holistic
           ? '<p class="q-comfort-note">' + safeText(PROFILES[state.profile].note) + '</p>'
@@ -517,7 +570,38 @@
           '</ol></div>',
           '<p class="q-comfort-note">This can be a long session. Remain somewhere safe, use low volume, and stop if you become uncomfortable, distressed, dizzy, or disoriented. Browser or device sleep may interrupt playback. A contemplative sequence is not a test of brain state or evidence of a supernatural event.</p>'
         ].join("") : '',
-        listen ? '<div class="q-mixer"><h2>Make it sound like your place</h2>' +
+        state.profile === "rife" ? [
+          '<div class="q-rife-panel" aria-label="Audible frequency controls">',
+          '<div class="q-setup-step">EXPERIMENT SETTINGS · NOT MEDICAL TREATMENT</div>',
+          '<h3>Choose an audible frequency</h3>',
+          '<p class="q-detail">These are demonstration tones, including numbers sometimes circulated on Rife lists. No disease-matching or healing claims are supported. This browser plays sound, not radio or electromagnetic fields.</p>',
+          '<div class="q-durations q-rife-frequencies">',
+          window.FocusBridgeRife.FREQUENCIES.map(hz =>
+            '<button type="button" class="q-duration ' + (state.rife.frequency === hz ? 'selected' : '') +
+            '" data-action="rife-frequency" data-frequency="' + hz +
+            '" aria-pressed="' + (state.rife.frequency === hz) + '">' + hz + ' Hz</button>').join(""),
+          '</div>',
+          '<div class="q-rife-control-grid">',
+          '<label for="q-rife-waveform">Wave shape',
+          '<select id="q-rife-waveform">',
+          window.FocusBridgeRife.WAVEFORMS.map(shape =>
+            '<option value="' + shape + '"' + (state.rife.waveform === shape ? ' selected' : '') +
+            '>' + (shape === 'sine' ? 'Sine · smooth' : 'Triangle · more harmonics') + '</option>').join(""),
+          '</select></label>',
+          '<label for="q-rife-motion">Pitch movement',
+          '<select id="q-rife-motion">',
+          window.FocusBridgeRife.MOTIONS.map(motion =>
+            '<option value="' + motion + '"' + (state.rife.motion === motion ? ' selected' : '') +
+            '>' + (motion === 'steady' ? 'Steady tone' : 'Gentle +/- 2% sweep') + '</option>').join(""),
+          '</select></label>',
+          '</div>',
+          '<label class="q-rife-intensity" for="q-rife-intensity"><span>Quiet output level: ',
+          '<output id="q-rife-intensity-value">' + state.rife.intensity + '%</output></span>',
+          '<input type="range" id="q-rife-intensity" min="5" max="35" step="5" value="' + state.rife.intensity + '">',
+          '</label>',
+          '<p class="q-detail">Start with your device volume nearly silent. Output is software-limited but actual loudness depends on your headphones or speakers. Do not increase volume if a tone is hard to hear.</p>',
+          '</div>'
+        ].join("") : listen ? '<div class="q-mixer"><h2>Make it sound like your place</h2>' +
           '<p class="q-detail">An original, gentle soundscape. Every layer is optional, and the mix stays on this device.</p>' +
           [['surf','Ocean surf','Slow, overlapping shoreline waves'],['bass','Warm sub-bass','A quiet 62 Hz foundation'],['beat','Soft pulse','A gentle 40 BPM anchor']]
             .map(([key, label, desc]) => '<label class="q-mix-row" for="q-mix-' + key + '"><span><strong>' + label + '</strong><small>' + desc + '</small></span>' +
@@ -530,9 +614,11 @@
             '</select><p class="q-detail">Stereo headphones required for binaural tones. The Hz options are sound experiments, not medical prescriptions. Leave tones off if you are sound-sensitive.</p></div>' : '') +
           '</div>' : '',
         '<p class="q-detail">', listen
-          ? (state.profile === "sleep"
-            ? 'Sleep mode: no completion chime; tones (if enabled) gently fade by 30 minutes. Speakers are fine for ambience-only sleep. The browser/device must allow background audio.'
-            : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
+          ? (state.profile === "rife"
+            ? 'This mode generates low-level audible tones only. It is not an RF, electromagnetic, or electrotherapy device and has no medical effectiveness claim. Stop immediately if unpleasant.'
+            : state.profile === "sleep"
+              ? 'Sleep mode: no completion chime; tones (if enabled) gently fade by 30 minutes. Speakers are fine for ambience-only sleep. The browser/device must allow background audio.'
+              : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
         listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf or enable stereo tones, or choose Just settle for a deliberately silent session.</p>' : '',
         '<div class="q-start-panel"><div class="q-setup-step">STEP 3 OF 3 · BEGIN</div>',
@@ -554,7 +640,8 @@
         ? window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000) : null;
       content = [
         '<div class="q-running', state.profile === "sleep" && state.mode === "listen" ? ' q-running-sleep' : '',
-        PROFILES[state.profile]?.holistic ? ' q-running-comfort' : '', '"><div class="q-eyebrow">',
+        PROFILES[state.profile]?.holistic ? ' q-running-comfort' : '',
+        state.profile === "rife" ? ' q-running-rife' : '', '"><div class="q-eyebrow">',
         state.mode === "listen" ? safeText(PROFILES[state.profile].label.toUpperCase()) + ' · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         syncStation ? [
           '<section class="q-sync-active" aria-label="Focus Sync stage">',
@@ -564,6 +651,13 @@
           '<p>', safeText(syncStation.prompt), '</p>',
           '<p class="q-detail">A suggested listening stage, not proof that a focus level was reached.</p>',
           '</section>'
+        ].join("") : '',
+        state.profile === "rife" ? [
+          '<section class="q-rife-active"><div class="q-setup-step">AUDIBLE WAVEFORM DEMONSTRATION</div>',
+          '<h2>', state.rife.frequency, ' Hz · ', safeText(state.rife.waveform), '</h2>',
+          '<p>', state.rife.motion === "steady" ? 'Steady pitch' : 'Gentle pitch sweep', ' · ',
+          state.rife.intensity, '% of the limited software gain</p>',
+          '<p class="q-detail">Audio only. No RF transmission, disease treatment, or measured body response.</p></section>'
         ].join("") : '',
         '<div class="q-orb" aria-hidden="true"><div class="q-orb-inner"></div></div>',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
@@ -606,12 +700,16 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "listen", "sleep", "focus", "explore", "sync", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "listen", "sleep", "focus", "explore", "sync", "rife", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();
     else if (action === "holistic") openHolistic();
     else if (action === "duration") { state.duration = Number(button.dataset.seconds); render(); }
+    else if (action === "rife-frequency" && state.screen === "prepare" && state.profile === "rife") {
+      const hz = Number(button.dataset.frequency);
+      if (window.FocusBridgeRife.FREQUENCIES.includes(hz)) changeRifeSetting("frequency", hz);
+    }
     else if (action === "sync-pace" && state.screen === "prepare" && state.profile === "sync") {
       const minutes = Number(button.dataset.minutes);
       if (window.FocusBridgeSync.PACES.includes(minutes)) {
@@ -638,6 +736,8 @@
     if (event.target.id === "q-safe") { state.safe = event.target.checked; render(); }
     if (event.target.id === "q-headphones") { state.headphones = event.target.checked; render(); }
     if (event.target.id === "q-tones") { state.tones = event.target.checked; saveMix(); render(); }
+    if (event.target.id === "q-rife-waveform") changeRifeSetting("waveform", event.target.value);
+    if (event.target.id === "q-rife-motion") changeRifeSetting("motion", event.target.value);
     if (event.target.id === "q-tone-palette" && PROFILES[state.profile]?.holistic) {
       const hz = Number(event.target.value);
       if (HOLISTIC_TONE_OPTIONS.includes(hz)) { state.toneDifference = hz; saveMix(); render(); }
@@ -645,6 +745,13 @@
   });
   root.addEventListener("input", (event) => {
     if (event.target.id === "q-note") state.note = event.target.value;
+    if (event.target.id === "q-rife-intensity" && state.profile === "rife") {
+      const intensity = Number(event.target.value);
+      state.rife = window.FocusBridgeRife.config({ ...state.rife, intensity });
+      const output = root.querySelector("#q-rife-intensity-value");
+      if (output) output.textContent = state.rife.intensity + "%";
+      try { localStorage.setItem(RIFE_SETTINGS_KEY, JSON.stringify(state.rife)); } catch {}
+    }
     const match = /^q-mix-(surf|bass|beat)$/.exec(event.target.id || "");
     if (match) {
       const key = match[1];

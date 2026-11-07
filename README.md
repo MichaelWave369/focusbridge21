@@ -6,6 +6,16 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v2.0 The Ninth Quiet Deck Card: Rife Frequency Lab
+
+Quiet Deck now contains **nine accessible mode cards** in a 3-by-3 desktop layout, including a new **Rife Frequency Lab**. This is a **browser-only audible waveform experiment**, not a radiofrequency Rife machine or an electromagnetic treatment.
+
+- Explore **110, 220, 440, 727, 787, or 880 Hz** as neutral audio examples. No frequency is labeled for an illness or claimed to kill pathogens, cure disease, or induce a measured body response.
+- Compare **sine vs. triangle** tone shapes, **steady vs. gentle pitch sweep** (±2%) and conservative output level controls.
+- Finite **1, 3, 5, 10, or 15-minute sessions**, guarded start, gradual gain fades, Pause/Resume and RETURN NOW.
+- History, limitations and links to independent medical assessments are in [Rife Audio Lab](docs/RIFE_AUDIO_LAB.md). Cancer Research UK reports no reliable evidence that Rife machines cure cancer. Audio from a web browser is not RF or electrical stimulation.
+- Existing modes, separate local settings, and private Signal Ledger are preserved.
+
 ## v1.9 Focus Sync: complete continuous journey
 
 New in Quiet Deck: **Focus Sync**, an original continuous audio journey through the **17 publicly named Monroe focus-level entries** (1, 3, 10, 11, 12, 15, 18, 21, 22, 23, 24, 25, 26, 27, 34/35, 42, 49), followed by 12 minutes of grounded return.

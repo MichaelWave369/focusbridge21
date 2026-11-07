@@ -325,7 +325,7 @@ test("Holistic Zone preserves its unique preset mixes without overwriting sleep"
   app.click("stomach");
   app.setMix("surf", 27);
   app.click("back");
-  assert.match(app.root.innerHTML, /Holistic Zone/);
+  assert.match(app.root.innerHTML, /Holistic <em>Zone/);
   app.click("stomach");
   assert.match(app.root.innerHTML, /id="q-mix-surf" value="27"/);
   app.click("home");

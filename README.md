@@ -6,6 +6,20 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v2.1 Six-Layer Soundscape: Rain, Wind, Musical HUM
+
+The Quiet Deck mixer now supports **six independently adjustable procedural audio layers**: Ocean surf, Warm sub-bass, Soft pulse, **Rain**, **Wind**, and **HUM**. The new layers are included wherever the existing soundscape mixer appears: Listen & drift, Sleep Sanctuary, Deep Focus, Threshold Explorer, Focus Sync and the four Holistic Zone comfort presets.
+
+- **Rain (0–100%)**: from a barely audible light rain to a full, sustained downpour, using two filtered layers of original generated noise. No thunder or sudden impulses.
+- **Wind (0–100%)**: from a soft breeze to stronger, slowly swelling gusts. Rising intensity increases both level and gust depth. No sharp gust transients.
+- **HUM (0–100%)**: a quiet musical drone, with a **chromatic note picker C3 to C5 inclusive** (25 notes, approximately 130.81–523.25 Hz), calculated from 12-tone equal temperament and A4 = 440 Hz. Includes a very soft harmonic, not a treatment frequency.
+- **Privacy and compatibility:** Everything is generated locally in Web Audio and saved separately for each preset. Existing stored Ocean surf/sub-bass/pulse settings remain intact. Newly added layers default **off** on existing and new profiles.
+- **Playback:** Each new layer is separately optional and works without binaural tones or headphones. Safety consent is still required, and headphones are required for optional stereo binaural tones. Existing 6-hour cap, Pause/Resume and RETURN NOW remain in force.
+- **Performance:** Surf, rain, and wind share one locally generated noise buffer per session and use bounded low-rate gain automation instead of importing sound recordings.
+- **Feedback:** Signal Ledger receipts capture new layer settings and the HUM note. These sound options are for personal ambience and musical experimentation, not for diagnosis, treatment or medical frequency claims.
+
+See [Six-layer environmental sound design and acceptance QA](docs/SIX_LAYER_SOUNDSCAPE.md).
+
 ## v2.0 The Ninth Quiet Deck Card: Rife Frequency Lab
 
 Quiet Deck now contains **nine accessible mode cards** in a 3-by-3 desktop layout, including a new **Rife Frequency Lab**. This is a **browser-only audible waveform experiment**, not a radiofrequency Rife machine or an electromagnetic treatment.

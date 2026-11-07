@@ -39,7 +39,7 @@ function harness({ withAudio = false } = {}) {
   class FakeAudioContext {
     constructor() { this.currentTime = 0; this.state = "running"; this.destination = new FakeNode(); contexts.push(this); }
     createChannelMerger() { return new FakeNode(); }
-    createOscillator() { return new FakeNode(); }
+    createOscillator() { const oscillator = new FakeNode(); this.oscillators ||= []; this.oscillators.push(oscillator); return oscillator; }
     createGain() { return new FakeNode(); }
     async resume() { this.state = "running"; }
     async suspend() { this.state = "suspended"; }
@@ -199,4 +199,37 @@ test("focus and exploratory presets retain their independent, adjustable session
   app.click("explore");
   assert.match(app.root.innerHTML, /Threshold Explorer/);
   assert.match(app.root.innerHTML, /120 min/);
+});
+
+test("sleep tones are opt-in, require headphones, and stop at 30 minutes", async () => {
+  const app = harness({ withAudio: true });
+  app.click("sleep");
+  app.check("q-tones");
+  assert.match(app.root.innerHTML, /id="q-headphones"/);
+  app.check("q-safe");
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "headphone confirmation still required");
+  app.check("q-headphones");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.equal(app.contexts[0].oscillators.length, 2);
+  assert.ok(app.contexts[0].oscillators.every(n => Math.abs(n.stopTime - 1800.1) < 0.001));
+  assert.equal(app.scheduled[0].seconds, 21600, "ambience runs past tone fade");
+  app.click("return");
+});
+
+test("each original audio profile keeps its own local mixer settings", () => {
+  const app = harness();
+  app.click("sleep");
+  app.setMix("surf", 35);
+  app.click("home");
+  app.click("focus");
+  app.setMix("surf", 10);
+  app.click("home");
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="35"/);
+  app.click("home");
+  app.click("focus");
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="10"/);
 });

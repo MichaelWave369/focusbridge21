@@ -374,3 +374,89 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
   #fb21-quiet-root .q-island-open { width: 100%; }
   #fb21-quiet-root .q-island-chapters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* v2.3 preflight sound check. The meters visualize selected mixer percentages,
+ * not acoustic loudness or real-time SPL measurements. No flashy animation. */
+#fb21-quiet-root .q-preview-panel {
+  border: 1px solid #92cab899;
+  border-radius: 22px;
+  background: linear-gradient(140deg, #173b3d, #172a3e 80%);
+  padding: clamp(18px, 3vw, 27px);
+  margin: 24px 0;
+}
+#fb21-quiet-root .q-preview-panel h2 {
+  color: #e9fff4;
+  margin: 9px 0 8px;
+  font-size: clamp(1.24rem, 3vw, 1.6rem);
+}
+#fb21-quiet-root .q-preview-levels {
+  display: grid;
+  gap: 10px;
+  padding: 13px 0;
+}
+#fb21-quiet-root .q-preview-level {
+  display: grid;
+  grid-template-columns: minmax(95px, 1fr) minmax(65px, 1.4fr) 42px;
+  gap: 12px;
+  align-items: center;
+  color: #d2e8e2;
+  font-size: .91rem;
+}
+#fb21-quiet-root .q-preview-level strong {
+  font-variant-numeric: tabular-nums;
+  color: #c4efe0;
+  text-align: right;
+  font-size: .86rem;
+}
+#fb21-quiet-root .q-preview-meter {
+  height: 9px;
+  background: #07191e;
+  border: 1px solid #75999c80;
+  border-radius: 99px;
+  overflow: hidden;
+}
+#fb21-quiet-root .q-preview-meter > div {
+  height: 100%;
+  background: #a4e2cb;
+  border-radius: 99px;
+}
+#fb21-quiet-root .q-preview-stereo {
+  color: #d5e9ef;
+  line-height: 1.6;
+  margin: 9px 0;
+  font-size: .91rem;
+}
+#fb21-quiet-root .q-preview-rife {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #8bbeb477;
+  border-radius: 13px;
+  background: #112934;
+  padding: 14px 17px;
+  margin: 15px 0;
+}
+#fb21-quiet-root .q-preview-rife strong {
+  color: #c4f6e3;
+  font-size: 1.15rem;
+}
+#fb21-quiet-root .q-preview-rife span { color: #b6d4d7; }
+#fb21-quiet-root .q-preview-panel .q-actions { margin: 14px 0; }
+#fb21-quiet-root .q-preview-panel .q-actions button {
+  min-width: 190px;
+}
+#fb21-quiet-root .q-preview-status {
+  color: #e0f8e9;
+  min-height: 1.6em;
+  font-weight: 550;
+  font-size: .91rem;
+  line-height: 1.5;
+}
+@media(max-width: 560px) {
+  #fb21-quiet-root .q-preview-level {
+    grid-template-columns: minmax(75px, 1fr) minmax(60px, 1.1fr) 38px;
+    gap: 8px;
+    font-size: .82rem;
+  }
+  #fb21-quiet-root .q-preview-panel .q-actions button { width: 100%; }
+}

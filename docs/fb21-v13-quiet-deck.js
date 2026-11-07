@@ -20,7 +20,7 @@
   if (!profileMixes.drift) profileMixes.drift = mix;
   const level = (x, fallback) => Number.isFinite(Number(x)) && x !== undefined && x !== null ? Math.max(0, Math.min(100, Number(x))) : fallback;
   const saveMix = () => {
-    const values = { surf: state.surf, bass: state.bass, beat: state.beat, tones: state.tones };
+    const values = { surf: state.surf, bass: state.bass, beat: state.beat, tones: state.tones, toneDifference: state.toneDifference };
     try {
       localStorage.setItem(MIX_KEY, JSON.stringify(values)); // legacy Quiet Deck preference
       profileMixes[state.profile] = values;
@@ -32,14 +32,29 @@
     drift: { label: "Listen & drift", duration: 120, surf: 68, bass: 14, beat: 0, tones: true, carrier: 180, difference: 8, space: 20 },
     sleep: { label: "Sleep Sanctuary", duration: 21600, surf: 60, bass: 8, beat: 0, tones: false, carrier: 180, difference: 4, space: 10 },
     focus: { label: "Deep Focus", duration: 2700, surf: 34, bass: 0, beat: 0, tones: true, carrier: 200, difference: 12, space: 0 },
-    explore: { label: "Threshold Explorer", duration: 2700, surf: 50, bass: 8, beat: 0, tones: true, carrier: 180, difference: 6, space: 35 }
+    explore: { label: "Threshold Explorer", duration: 2700, surf: 50, bass: 8, beat: 0, tones: true, carrier: 180, difference: 6, space: 35 },
+    headache: { label: "Headache Sensitivity", holistic: true, duration: 600, surf: 8, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "Quiet is often best for sound-sensitive headaches. Any audio should be barely audible. Stop if discomfort increases." },
+    stomach: { label: "Stomach Discomfort", holistic: true, duration: 900, surf: 20, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "A small, predictable background sound may help some people settle. This does not address the cause of abdominal pain." },
+    nausea: { label: "Nausea / Queasiness", holistic: true, duration: 600, surf: 12, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "Low-stimulation ambience or silence can be preferable; audio is optional and will not treat nausea." },
+    tension: { label: "Everyday Tension", holistic: true, duration: 900, surf: 32, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "A soft sound field may support relaxation and provide a comfortable pause." }
   });
+  const HOLISTIC_CHOICES = Object.freeze([
+    { key: "headache", symbol: "◌", subtitle: "Headache / sound sensitivity", description: "Low stimulation first. Prefer quiet if sound makes symptoms worse." },
+    { key: "stomach", symbol: "≈", subtitle: "Stomach discomfort", description: "Predictable, low-level ambient sound for settling down." },
+    { key: "nausea", symbol: "◇", subtitle: "Nausea / queasiness", description: "Barely audible and stationary sound, with no pulses or moving stereo." },
+    { key: "tension", symbol: "✧", subtitle: "Everyday tension", description: "A soothing pause with gentle ambient texture." }
+  ]);
+  const HOLISTIC_TONE_OPTIONS = Object.freeze([4, 6, 8, 10, 12]);
   const DURATIONS = Object.freeze({
     settle: [60, 90, 120, 300, 600],
     drift: [120, 300, 900, 1500, 2700, 3600, 5400, 7200, 10800, 14400, 21600],
     sleep: [1800, 3600, 5400, 7200, 10800, 14400, 21600],
     focus: [1500, 2700, 5400, 10800],
-    explore: [1200, 2700, 5400, 7200]
+    explore: [1200, 2700, 5400, 7200],
+    headache: [300, 600, 900, 1200],
+    stomach: [300, 600, 900, 1200, 1800],
+    nausea: [300, 600, 900, 1200],
+    tension: [300, 600, 900, 1200, 1800]
   });
   const LAB_ONCE_KEY = "focusbridge21-open-lab-once-v13";
   const root = document.createElement("div");
@@ -52,7 +67,7 @@
   document.body.append(root, homeButton);
 
   const state = {
-    screen: "home", mode: "settle", profile: "drift", duration: 90, safe: false,
+    screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8, safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
     audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0), tones: mix.tones !== false
@@ -92,12 +107,15 @@
     state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
     const profile = PROFILES[state.profile];
     state.duration = mode === "settle" ? 90 : profile.duration;
+    state.toneDifference = profile.difference;
     if (mode !== "settle") {
       const saved = profileMixes[state.profile] || (mode === "listen" ? mix : profile);
       state.surf = level(saved.surf, profile.surf);
       state.bass = level(saved.bass, profile.bass);
       state.beat = level(saved.beat, profile.beat);
       state.tones = typeof saved.tones === "boolean" ? saved.tones : profile.tones;
+      state.toneDifference = HOLISTIC_TONE_OPTIONS.includes(Number(saved.toneDifference))
+        ? Number(saved.toneDifference) : profile.difference;
       saveMix();
     }
     state.safe = false;
@@ -111,6 +129,17 @@
     stopAudio();
     clearInterval(state.timer);
     state.screen = "home";
+    state.error = "";
+    render();
+  }
+  function openHolistic() {
+    stopAudio();
+    state.screen = "holistic";
+    state.error = "";
+    render();
+  }
+  function returnToChoices() {
+    state.screen = PROFILES[state.profile]?.holistic ? "holistic" : "home";
     state.error = "";
     render();
   }
@@ -133,7 +162,7 @@
       // Different profile pairs remain original audio experiments, not EEG control.
       const profile = PROFILES[state.profile];
       left.frequency.value = profile.carrier;
-      right.frequency.value = profile.carrier + profile.difference;
+      right.frequency.value = profile.carrier + (profile.holistic ? state.toneDifference : profile.difference);
       leftGain.gain.value = 0.5;
       rightGain.gain.value = 0.5;
       const startAt = context.currentTime;
@@ -292,7 +321,7 @@
       guidance_mode: "Quiet Deck " + state.mode,
       audio_params: { engine: state.mode === "listen" ? "original-browser-soundscape-v16" : "none",
         profile: state.mode === "listen" ? state.profile : "silent",
-        difference_hz: state.mode === "listen" && state.tones ? PROFILES[state.profile].difference : null,
+        difference_hz: state.mode === "listen" && state.tones ? state.toneDifference : null,
         space_percent: state.mode === "listen" ? PROFILES[state.profile].space : 0,
         stereo_tones: state.mode === "listen" && state.tones,
         surf: state.mode === "listen" ? state.surf : 0,
@@ -351,6 +380,10 @@
         '<span class="q-choice-icon" aria-hidden="true">◇</span><span class="q-choice-kicker">SUBJECTIVE EXPLORATION</span>',
         '<strong>Threshold Explorer</strong><span>Slow spatial movement for imagery and personal reflection.</span>',
         '<span class="q-choice-link">Set up exploration →</span></button>',
+        '<button type="button" data-action="holistic" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">✧</span><span class="q-choice-kicker">GENTLE SELF-COMFORT</span>',
+        '<strong>Holistic Zone</strong><span>Calm audio options for everyday discomfort, with clear evidence and safety boundaries.</span>',
+        '<span class="q-choice-link">Explore comfort sounds →</span></button>',
         '<button type="button" data-action="lab" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">⌘</span><span class="q-choice-kicker">THE COMPLETE COCKPIT</span>',
         '<strong>Explore the labs</strong><span>Every existing preset, audio tool, ledger, guide, and experiment is still here.</span>',
@@ -358,6 +391,25 @@
         '</div>',
         '<p class="q-footnote">Not feeling well, dizzy, or faint? Skip audio practice and rest.',
         ' The full app has more detailed safety information.</p>'
+      ].join("");
+    } else if (state.screen === "holistic") {
+      content = [
+        '<button type="button" class="q-back" data-action="home">← Back to Quiet Deck</button>',
+        '<div class="q-eyebrow">ORIGINAL SOUND · COMFORT FIRST</div>',
+        '<h1>Holistic <em>Zone.</em></h1>',
+        '<p class="q-lead">Choose a gentle listening environment, not a treatment frequency. Music and calming sound may help with relaxation or the experience of pain, but no particular Hz cures a headache, stomachache, or nausea.</p>',
+        '<div class="q-choices q-holistic-choices">',
+        HOLISTIC_CHOICES.map(item =>
+          '<button type="button" class="q-choice q-holistic-choice" data-action="' + item.key + '">' +
+          '<span class="q-choice-icon" aria-hidden="true">' + item.symbol + '</span>' +
+          '<span class="q-choice-kicker">COMFORT LISTENING</span>' +
+          '<strong>' + safeText(item.subtitle) + '</strong><span>' + safeText(item.description) + '</span>' +
+          '<span class="q-choice-link">Customize a session →</span></button>').join(""),
+        '</div>',
+        '<div class="q-holistic-info"><h2>Sound is optional</h2>',
+        '<p>Quiet, hydration, rest, and appropriate medical care may matter more than audio. Sound can worsen some headaches and nausea. Stop if the sound feels unpleasant.</p>',
+        '<p class="q-holistic-alert"><strong>When to seek care:</strong> A sudden extremely severe headache, weakness, confusion, severe abdominal pain, vomiting blood, or inability to keep fluids down requires prompt medical attention. This app cannot assess symptoms or provide treatment.</p>',
+        '<button type="button" class="q-secondary" data-action="settle">Choose silence instead</button></div>'
       ].join("");
     } else if (state.screen === "prepare") {
       const listen = state.mode === "listen";
@@ -379,12 +431,17 @@
           (seconds / 3600) + ' hr') + '</button>'
       ).join("");
       content = [
-        '<button type="button" class="q-back" data-action="home">← Back to choices</button>',
+        '<button type="button" class="q-back" data-action="back">← Back to ', PROFILES[state.profile]?.holistic ? 'Holistic Zone' : 'choices', '</button>',
         '<div class="q-eyebrow">', listen ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
         '<h1>', listen ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
         '<p class="q-lead">', listen
-          ? 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
+          ? PROFILES[state.profile].holistic
+            ? 'Low-stimulation comfort listening, not a medical treatment. No audio frequency is proven to treat this symptom.'
+            : 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
           : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
+        listen && PROFILES[state.profile].holistic
+          ? '<p class="q-comfort-note">' + safeText(PROFILES[state.profile].note) + '</p>'
+          : '',
         '<section class="q-panel" aria-label="Session setup">',
         '<div class="q-readiness-card ', state.safe && !needsHeadphones ? 'is-confirmed' : 'needs-confirmation', '" id="q-readiness">',
         '<div class="q-setup-step">STEP 1 OF 3 · SAFETY CHECK</div>',
@@ -404,7 +461,13 @@
           [['surf','Ocean surf','Slow, overlapping shoreline waves'],['bass','Warm sub-bass','A quiet 62 Hz foundation'],['beat','Soft pulse','A gentle 40 BPM anchor']]
             .map(([key, label, desc]) => '<label class="q-mix-row" for="q-mix-' + key + '"><span><strong>' + label + '</strong><small>' + desc + '</small></span>' +
             '<input type="range" min="0" max="100" step="5" id="q-mix-' + key + '" value="' + state[key] + '" aria-valuetext="' + state[key] + ' percent"><output id="q-mix-value-' + key + '">' + state[key] + '%</output></label>').join('') +
-          '<label class="q-check"><input type="checkbox" id="q-tones" ' + (state.tones ? 'checked' : '') + '> <span>Include gentle stereo tones (optional)</span></label></div>' : '',
+          '<label class="q-check"><input type="checkbox" id="q-tones" ' + (state.tones ? 'checked' : '') + '> <span>Include gentle stereo tones (optional)</span></label>' +
+          (PROFILES[state.profile].holistic ? '<div class="q-tone-palette"><label for="q-tone-palette">Exploratory stereo beat difference (not a symptom treatment)</label><select id="q-tone-palette" ' +
+            (state.tones ? '' : 'disabled') + '>' +
+            HOLISTIC_TONE_OPTIONS.map(hz => '<option value="' + hz + '"' +
+              (state.toneDifference === hz ? ' selected' : '') + '>' + hz + ' Hz</option>').join("") +
+            '</select><p class="q-detail">Stereo headphones required for binaural tones. The Hz options are sound experiments, not medical prescriptions. Leave tones off if you are sound-sensitive.</p></div>' : '') +
+          '</div>' : '',
         '<p class="q-detail">', listen
           ? (state.profile === "sleep"
             ? 'Sleep mode: no completion chime; tones (if enabled) gently fade by 30 minutes. Speakers are fine for ambience-only sleep. The browser/device must allow background audio.'
@@ -427,7 +490,8 @@
     } else if (state.screen === "running") {
       const remaining = formatTime(state.duration - state.elapsedMs / 1000);
       content = [
-        '<div class="q-running', state.profile === "sleep" && state.mode === "listen" ? ' q-running-sleep' : '', '"><div class="q-eyebrow">',
+        '<div class="q-running', state.profile === "sleep" && state.mode === "listen" ? ' q-running-sleep' : '',
+        PROFILES[state.profile]?.holistic ? ' q-running-comfort' : '', '"><div class="q-eyebrow">',
         state.mode === "listen" ? safeText(PROFILES[state.profile].label.toUpperCase()) + ' · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         '<div class="q-orb" aria-hidden="true"><div class="q-orb-inner"></div></div>',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
@@ -470,9 +534,11 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "listen", "sleep", "focus", "explore"].includes(action)) selectMode(action);
+    if (["settle", "listen", "sleep", "focus", "explore", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
+    else if (action === "back") returnToChoices();
+    else if (action === "holistic") openHolistic();
     else if (action === "duration") { state.duration = Number(button.dataset.seconds); render(); }
     else if (action === "start") startSession();
     else if (action === "review") {
@@ -491,6 +557,10 @@
     if (event.target.id === "q-safe") { state.safe = event.target.checked; render(); }
     if (event.target.id === "q-headphones") { state.headphones = event.target.checked; render(); }
     if (event.target.id === "q-tones") { state.tones = event.target.checked; saveMix(); render(); }
+    if (event.target.id === "q-tone-palette" && PROFILES[state.profile]?.holistic) {
+      const hz = Number(event.target.value);
+      if (HOLISTIC_TONE_OPTIONS.includes(hz)) { state.toneDifference = hz; saveMix(); render(); }
+    }
   });
   root.addEventListener("input", (event) => {
     if (event.target.id === "q-note") state.note = event.target.value;

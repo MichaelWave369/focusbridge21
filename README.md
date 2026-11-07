@@ -6,6 +6,17 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v1.8 Holistic Zone: comfort-first sound environments
+
+The Quiet Deck now includes a **Holistic Zone** with four short, gently adjustable soundscapes: Headache Sensitivity, Stomach Discomfort, Nausea / Queasiness, and Everyday Tension.
+
+- Each profile starts with **stereo tones, bass pulses, and spatial movement off**. A soft, stationary surf background can be changed or turned down to silence. A full **Just settle** silent route is offered when any audio is unpleasant.
+- Optional stereo tone experiments can be enabled deliberately, with a selectable **4 / 6 / 8 / 10 / 12 Hz beat difference**. All tone experiments require stereo headphone confirmation and are **not medical treatments**, diagnostic tools, or symptom-specific prescriptions.
+- Each profile remembers its own local mixer levels; existing sleep, focus and explorer settings remain independent.
+- The high-visibility Step 1 safety acknowledgment remains mandatory; RETURN NOW stays available.
+- Symptom-aware warnings advise seeking care for sudden severe headache, neurological symptoms, severe abdominal pain, blood in vomit, and concerning dehydration. Nothing in the app is intended to replace medical care.
+- Review the [evidence boundaries, sources, and practical QA](docs/HOLISTIC_ZONE_EVIDENCE.md).
+
 ## v1.7 First-run Onboarding Clarity
 
 An outside tester enjoyed the session but needed someone to point out the safety checkbox before playback was enabled. The Quiet Deck setup now places a prominently styled **Step 1 safety confirmation at the top**, followed by duration and optional sound controls, then **Step 3 Start**. A visible status explains exactly why Start is locked and a "Show me what to check" button brings keyboard focus back to the missing requirement. No safety checks were removed or automatically accepted.

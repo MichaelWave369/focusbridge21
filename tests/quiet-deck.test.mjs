@@ -108,7 +108,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding)/);
+  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -262,4 +262,84 @@ test("speaker-based sleep asks for safety but not headphones until stereo tones 
   app.check("q-tones");
   assert.match(app.root.innerHTML, /Confirm your stereo headphones above/);
   assert.match(app.root.innerHTML, /id="q-headphones"/);
+});
+
+test("Holistic Zone is discoverable and makes no symptom-cure frequency claims", () => {
+  const app = harness({ withAudio: true });
+  assert.match(app.root.innerHTML, /Holistic Zone/);
+  app.click("holistic");
+  assert.match(app.root.innerHTML, /Headache \/ sound sensitivity/);
+  assert.match(app.root.innerHTML, /Stomach discomfort/);
+  assert.match(app.root.innerHTML, /Nausea \/ queasiness/);
+  assert.match(app.root.innerHTML, /Everyday tension/);
+  assert.match(app.root.innerHTML, /no particular Hz cures/);
+  assert.match(app.root.innerHTML, /When to seek care/);
+  assert.match(app.root.innerHTML, /Choose silence instead/);
+});
+
+test("headache comfort defaults are low stimulation, brief and require consent", async () => {
+  const app = harness({ withAudio: true });
+  app.click("holistic");
+  app.click("headache");
+  assert.match(app.root.innerHTML, /Headache Sensitivity/);
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="8"/);
+  assert.match(app.root.innerHTML, /id="q-mix-bass" value="0"/);
+  assert.match(app.root.innerHTML, /id="q-mix-beat" value="0"/);
+  assert.match(app.root.innerHTML, /id="q-tones"\s*>/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+  assert.match(app.root.innerHTML, /audio frequency is proven to treat this symptom/);
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "must not bypass readiness");
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.scheduled.length, 1);
+  assert.equal(app.scheduled[0].seconds, 600);
+  assert.equal(app.scheduled[0].options.space, 0, "no moving stereo when sound sensitive");
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+});
+
+test("holistic optional tones are not prescribed per symptom, and require headphones", async () => {
+  const app = harness({ withAudio: true });
+  app.click("holistic");
+  app.click("nausea");
+  assert.match(app.root.innerHTML, /id="q-tone-palette" disabled/);
+  app.check("q-tones");
+  assert.match(app.root.innerHTML, /id="q-headphones"/);
+  assert.match(app.root.innerHTML, /Hz options are sound experiments/);
+  app.check("q-safe");
+  app.click("start");
+  assert.equal(app.contexts.length, 0);
+  app.check("q-headphones");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.equal(app.contexts[0].oscillators.length, 2);
+  app.click("return");
+});
+
+test("Holistic Zone preserves its unique preset mixes without overwriting sleep", () => {
+  const app = harness();
+  app.click("holistic");
+  app.click("stomach");
+  app.setMix("surf", 27);
+  app.click("back");
+  assert.match(app.root.innerHTML, /Holistic <em>Zone/);
+  app.click("stomach");
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="27"/);
+  app.click("home");
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="60"/);
+});
+
+test("Holistic Zone has a completely silent fallback when sound is unpleasant", () => {
+  const app = harness();
+  app.click("holistic");
+  app.click("settle");
+  assert.match(app.root.innerHTML, /Make a little space/);
+  assert.doesNotMatch(app.root.innerHTML, /class="q-mixer"/);
+  app.check("q-safe");
+  app.click("start");
+  assert.match(app.root.innerHTML, /INTENTIONALLY SILENT/);
 });

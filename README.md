@@ -6,6 +6,19 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v2.3 Preview Mix: listen before starting
+
+A separate **15-second Preview selected mix** control now appears in the Quiet Deck preflight setup for any audible preset, including six-layer soundscapes, Island 108, Focus Sync, Holistic Zone, and Rife Frequency Lab.
+
+- **Hear exactly the chosen starting settings** at the same proportional mixer gains as the real session, with finite hardware-scheduled oscillator/noise-source stops. Focus Sync previews its **opening station**, rather than pretending to audition an entire multi-hour evolution. Rife Frequency Lab safely previews its selected single audible tone/waveform for 15 seconds.
+- **See each sound layer's current setting** (surf, bass, pulse, rain, wind and HUM), the HUM musical note, optional stereo tone pair, or Rife frequency, waveform, sweep and capped output percentage. Values are **mix settings, not measured speaker/headphone loudness or dB SPL**.
+- **Safe preflight:** The same comfort checkbox and stereo headphone confirmation (when tones are enabled) unlock Preview. **Stop preview now** instantly closes its own AudioContext. Preview also stops automatically after 15 seconds, on navigating away, when settings change, or when the actual session starts.
+- **No accidental session:** Auditions do not start the session clock, write a Signal Ledger receipt, change saved mix settings, or modify full-session durations.
+- **Low-volume practice:** Start with device/headphone volume almost silent and stop if sound is uncomfortable. A Web browser cannot detect acoustic output volume. The preview helps with relative balance and audible pitch, not hearing-safety certification.
+- All nine home mode cards and the separate Island 108 feature remain intact. Test coverage includes safe consent gating, actual mixer options, automatic stop, no receipts, Focus Sync's opening gate, Rife's 15-second finite waveform preview, and profile isolation.
+
+See [Preview Mix design and QA](docs/PREVIEW_MIX_QA.md).
+
 ## v2.2 Island 108: LOST-inspired soundscape preset
 
 The nine main Quiet Deck cards remain unchanged. A featured **Island 108** shortcut on the homepage, plus a shortcut within Listen & drift, launches an **original fan-inspired preset** using our existing six-layer procedural sound engine. No TV-show soundtrack, dialogue, sound effects, logos, or character likenesses are included. This is unaffiliated with and not endorsed by the television series.

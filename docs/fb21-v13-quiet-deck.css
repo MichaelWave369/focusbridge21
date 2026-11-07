@@ -245,3 +245,40 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
   #fb21-quiet-root .q-sync-stage-list { grid-template-columns: 1fr; }
   #fb21-quiet-root .q-sync-plan { padding: 14px; }
 }
+
+/* v2.0 ninth Quiet Deck card: audible waveform education, not therapy. */
+#fb21-quiet-root .q-rife-panel {
+  margin: 22px 0; border: 1px solid #8daabb88; border-radius: 20px;
+  background: linear-gradient(155deg, #1d2c42, #172638); padding: clamp(18px, 4vw, 28px);
+}
+#fb21-quiet-root .q-rife-panel .q-setup-step { margin-top: 0; }
+#fb21-quiet-root .q-rife-panel h3 { font-size: 1.18rem; margin: 12px 0 4px; }
+#fb21-quiet-root .q-rife-frequencies { margin-top: 18px; }
+#fb21-quiet-root .q-rife-frequencies .q-duration { min-width: 84px; }
+#fb21-quiet-root .q-rife-control-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 20px 0;
+}
+#fb21-quiet-root .q-rife-control-grid label {
+  color: #d9e8f5; display: flex; flex-direction: column; gap: 8px; font-weight: 680;
+}
+#fb21-quiet-root .q-rife-control-grid select {
+  background: #223953; color: #f0f6fb; padding: 13px;
+  border-radius: 12px; border: 1px solid #a1c7c8; font: inherit;
+  max-width: 100%; width: 100%;
+}
+#fb21-quiet-root .q-rife-intensity {
+  display: flex; flex-direction: column; gap: 10px; margin: 12px 0 20px;
+  color: #e5f4f1; font-weight: 680;
+}
+#fb21-quiet-root .q-rife-intensity input {
+  width: 100%; accent-color: #b9eedf;
+}
+#fb21-quiet-root .q-rife-active {
+  background: #172e3a; border: 1px solid #98c6ca80;
+  border-radius: 20px; padding: 22px; margin-bottom: 16px;
+}
+#fb21-quiet-root .q-rife-active h2 { font-size: clamp(1.5rem, 4vw, 2.25rem); }
+#fb21-quiet-root .q-running-rife .q-orb { animation: none; width: min(32vw, 140px); opacity: .32; margin: 20px auto; }
+@media(max-width: 560px) {
+  #fb21-quiet-root .q-rife-control-grid { grid-template-columns: 1fr; }
+}

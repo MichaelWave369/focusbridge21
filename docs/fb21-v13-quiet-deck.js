@@ -643,7 +643,7 @@
           '<ol class="q-island-chapters">',
           ISLAND_SEGMENTS.map(segment => '<li><strong>' + segment.number + ' min</strong><span>' + safeText(segment.title) + '</span></li>').join(""),
           '</ol><p class="q-detail">The matching original mixer levels are: Pulse 4%, bass 8%, HUM 15%, wind 16%, rain 23%, surf 42%. HUM starts on C3 and binaural tones start off.</p>',
-          '<button type="button" class="q-secondary" data-action="island-reset">Restore the island's original six-layer mix</button>',
+          '<button type="button" class="q-secondary" data-action="island-reset">Restore original island six-layer mix</button>',
           '<p class="q-detail">An unofficial fan tribute. Nothing from the TV series is sampled or reproduced; no secret signal is being transmitted.</p>',
           '</section>'
         ].join("") : '',

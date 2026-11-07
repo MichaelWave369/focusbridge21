@@ -11,6 +11,20 @@
   const saveMix = () => {
     try { localStorage.setItem(MIX_KEY, JSON.stringify({ surf: state.surf, bass: state.bass, beat: state.beat, tones: state.tones })); } catch {}
   };
+  // These are original audio-design profiles, not measured neurological states.
+  const PROFILES = Object.freeze({
+    drift: { label: "Listen & drift", duration: 120, surf: 68, bass: 14, beat: 0, tones: true, carrier: 180, difference: 8, space: 20 },
+    sleep: { label: "Sleep Sanctuary", duration: 21600, surf: 60, bass: 8, beat: 0, tones: false, carrier: 180, difference: 4, space: 10 },
+    focus: { label: "Deep Focus", duration: 2700, surf: 34, bass: 0, beat: 0, tones: true, carrier: 200, difference: 12, space: 0 },
+    explore: { label: "Threshold Explorer", duration: 2700, surf: 50, bass: 8, beat: 0, tones: true, carrier: 180, difference: 6, space: 35 }
+  });
+  const DURATIONS = Object.freeze({
+    settle: [60, 90, 120, 300, 600],
+    drift: [120, 300, 900, 1500, 2700, 3600, 5400, 7200, 10800, 14400, 21600],
+    sleep: [1800, 3600, 5400, 7200, 10800, 14400, 21600],
+    focus: [1500, 2700, 5400, 10800],
+    explore: [1200, 2700, 5400, 7200]
+  });
   const LAB_ONCE_KEY = "focusbridge21-open-lab-once-v13";
   const root = document.createElement("div");
   root.id = "fb21-quiet-root";
@@ -22,7 +36,7 @@
   document.body.append(root, homeButton);
 
   const state = {
-    screen: "home", mode: "settle", duration: 90, safe: false,
+    screen: "home", mode: "settle", profile: "drift", duration: 90, safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
     audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0), tones: mix.tones !== false
@@ -34,6 +48,9 @@
   }
   function formatTime(seconds) {
     const n = Math.max(0, Math.ceil(seconds));
+    if (n >= 3600) return Math.floor(n / 3600) + ":" +
+      String(Math.floor(n % 3600 / 60)).padStart(2, "0") + ":" +
+      String(n % 60).padStart(2, "0");
     return String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
   }
   function setQuiet(isQuiet) {
@@ -55,8 +72,17 @@
   homeButton.addEventListener("click", returnToQuiet);
 
   function selectMode(mode) {
-    state.mode = mode;
-    state.duration = mode === "listen" ? 120 : 90;
+    state.mode = mode === "settle" ? "settle" : "listen";
+    state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
+    const profile = PROFILES[state.profile];
+    state.duration = mode === "settle" ? 90 : profile.duration;
+    if (mode !== "settle" && mode !== "listen") {
+      state.surf = profile.surf;
+      state.bass = profile.bass;
+      state.beat = profile.beat;
+      state.tones = profile.tones;
+      saveMix();
+    }
     state.safe = false;
     state.headphones = false;
     state.error = "";
@@ -87,17 +113,25 @@
       const volume = context.createGain();
       left.type = "sine";
       right.type = "sine";
-      // Original gentle stereo tones; this is an audio experiment, not a focus-gate claim.
-      left.frequency.value = 180;
-      right.frequency.value = 188;
+      // Different profile pairs remain original audio experiments, not EEG control.
+      const profile = PROFILES[state.profile];
+      left.frequency.value = profile.carrier;
+      right.frequency.value = profile.carrier + profile.difference;
       leftGain.gain.value = 0.5;
       rightGain.gain.value = 0.5;
       const startAt = context.currentTime;
-      const endAt = startAt + state.duration;
+      // Sleep tones, when explicitly enabled, fade away after <= 30 minutes.
+      // The ambience can continue for the full duration with no abrupt ending.
+      const toneSeconds = state.profile === "sleep" ? Math.min(1800, state.duration) : state.duration;
+      const endAt = startAt + toneSeconds;
       volume.gain.setValueAtTime(0.0001, startAt);
       volume.gain.linearRampToValueAtTime(0.035, startAt + 1.5);
-      volume.gain.setValueAtTime(0.035, endAt - 2);
+      volume.gain.setValueAtTime(0.035, endAt - 3);
       volume.gain.linearRampToValueAtTime(0.0001, endAt);
+      if (state.profile === "explore" && toneSeconds > 300) {
+        right.frequency.linearRampToValueAtTime(profile.carrier + 4.5, startAt + toneSeconds * .55);
+        right.frequency.linearRampToValueAtTime(profile.carrier + profile.difference, endAt);
+      }
       if (state.tones) {
         left.connect(leftGain).connect(merger, 0, 0);
         right.connect(rightGain).connect(merger, 0, 1);
@@ -114,7 +148,7 @@
       }
       if (window.FocusBridgeSoundscape) {
         window.FocusBridgeSoundscape.schedule(context,
-          { surf: state.surf, bass: state.bass, beat: state.beat },
+          { surf: state.surf, bass: state.bass, beat: state.beat, space: profile.space },
           state.duration, state.audio);
       }
     } catch (error) {
@@ -135,10 +169,13 @@
   function allSoundOff() {
     return !state.tones && !state.surf && !state.bass && !state.beat;
   }
+  function headphoneRequired() {
+    return state.mode === "listen" && state.tones;
+  }
 
   async function startSession() {
     if (state.screen !== "prepare" || state.starting || !state.safe ||
-        (state.mode === "listen" && (!state.headphones || allSoundOff()))) return;
+        (state.mode === "listen" && ((headphoneRequired() && !state.headphones) || allSoundOff()))) return;
     state.starting = true;
     state.error = "";
     render();
@@ -162,6 +199,12 @@
     render();
   }
   function cue() {
+    if (state.profile === "sleep" && state.mode === "listen")
+      return "Nothing to follow. Let the quiet soundscape carry on while you rest.";
+    if (state.profile === "focus" && state.mode === "listen")
+      return "Let the sound stay in the background. Give your attention to what matters.";
+    if (state.profile === "explore" && state.mode === "listen")
+      return "Observe any imagery or sensations without forcing an interpretation.";
     const fraction = state.elapsedMs / (state.duration * 1000);
     if (fraction < .25) return "Notice the room around you. There is nothing to accomplish.";
     if (fraction < .5) return "If a thought arrives, you can notice it without following it.";
@@ -221,13 +264,16 @@
       session_id: (window.crypto && typeof crypto.randomUUID === "function")
         ? crypto.randomUUID() : "quiet-" + Date.now(),
       timestamp: new Date().toISOString(),
-      app: "FocusBridge21 v1.3 Quiet Deck",
-      preset: "Foundation",
-      target_gate: 10,
+      app: "FocusBridge21 Quiet Deck extended audio",
+      preset: state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
+      target_gate: state.mode === "settle" || state.profile === "drift" ? 10 : null,
       duration_min: state.duration / 60,
       actual_elapsed_sec: elapsed,
       guidance_mode: "Quiet Deck " + state.mode,
-      audio_params: { engine: state.mode === "listen" ? "original-browser-soundscape-v14" : "none",
+      audio_params: { engine: state.mode === "listen" ? "original-browser-soundscape-v16" : "none",
+        profile: state.mode === "listen" ? state.profile : "silent",
+        difference_hz: state.mode === "listen" && state.tones ? PROFILES[state.profile].difference : null,
+        space_percent: state.mode === "listen" ? PROFILES[state.profile].space : 0,
         stereo_tones: state.mode === "listen" && state.tones,
         surf: state.mode === "listen" ? state.surf : 0,
         bass: state.mode === "listen" ? state.bass : 0,
@@ -248,7 +294,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v1.3</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v1.6</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',
@@ -273,6 +319,18 @@
         '<span class="q-choice-icon" aria-hidden="true">♫</span><span class="q-choice-kicker">STEREO HEADPHONES</span>',
         '<strong>Listen &amp; drift</strong><span>Soft original stereo tones and a gentle return.</span>',
         '<span class="q-choice-link">Choose a session →</span></button>',
+        '<button type="button" data-action="sleep" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">☾</span><span class="q-choice-kicker">UP TO 6 HOURS</span>',
+        '<strong>Sleep Sanctuary</strong><span>Gentle surf and a quiet fade. Stereo tones are off by default.</span>',
+        '<span class="q-choice-link">Set up sleep →</span></button>',
+        '<button type="button" data-action="focus" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">STEADY ATTENTION</span>',
+        '<strong>Deep Focus</strong><span>A stable, unobtrusive sound field for work or study.</span>',
+        '<span class="q-choice-link">Set up focus →</span></button>',
+        '<button type="button" data-action="explore" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">◇</span><span class="q-choice-kicker">SUBJECTIVE EXPLORATION</span>',
+        '<strong>Threshold Explorer</strong><span>Slow spatial movement for imagery and personal reflection.</span>',
+        '<span class="q-choice-link">Set up exploration →</span></button>',
         '<button type="button" data-action="lab" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">⌘</span><span class="q-choice-kicker">THE COMPLETE COCKPIT</span>',
         '<strong>Explore the labs</strong><span>Every existing preset, audio tool, ledger, guide, and experiment is still here.</span>',
@@ -283,19 +341,19 @@
       ].join("");
     } else if (state.screen === "prepare") {
       const listen = state.mode === "listen";
-      const choices = [60, 90, 120, 300].map((seconds) =>
+      const choices = DURATIONS[listen ? state.profile : "settle"].map((seconds) =>
         '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
         '" data-action="duration" data-seconds="' + seconds +
         '" aria-pressed="' + (state.duration === seconds) + '">' +
-        (seconds < 60 ? seconds + 's' : seconds === 60 ? '1 min' : seconds === 90 ? '90 sec' :
-        seconds === 120 ? '2 min' : '5 min') + '</button>'
+        (seconds === 90 ? '90 sec' : seconds < 3600 ? (seconds / 60) + ' min' :
+          (seconds / 3600) + ' hr') + '</button>'
       ).join("");
       content = [
         '<button type="button" class="q-back" data-action="home">← Back to choices</button>',
-        '<div class="q-eyebrow">', listen ? 'ORIGINAL STEREO AUDIO' : 'JUST SETTLE', '</div>',
-        '<h1>', listen ? 'Listen gently.' : 'Make a little space.', '</h1>',
+        '<div class="q-eyebrow">', listen ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
+        '<h1>', listen ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
         '<p class="q-lead">', listen
-          ? 'Low-volume stereo tones for personal exploration. They are not a verified way to reach a focus gate.'
+          ? 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
           : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         '<section class="q-panel" aria-label="Session setup">',
         '<h2>How long feels comfortable?</h2><div class="q-durations">', choices, '</div>',
@@ -306,16 +364,18 @@
             '<input type="range" min="0" max="100" step="5" id="q-mix-' + key + '" value="' + state[key] + '" aria-valuetext="' + state[key] + ' percent"><output id="q-mix-value-' + key + '">' + state[key] + '%</output></label>').join('') +
           '<label class="q-check"><input type="checkbox" id="q-tones" ' + (state.tones ? 'checked' : '') + '> <span>Include gentle stereo tones (optional)</span></label></div>' : '',
         '<p class="q-detail">', listen
-          ? 'Use stereo headphones, keep volume low, and stop immediately if you feel uncomfortable.'
+          ? (state.profile === "sleep"
+            ? 'Sleep mode: no completion chime; tones (if enabled) gently fade by 30 minutes. Speakers are fine for ambience-only sleep. The browser/device must allow background audio.'
+            : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
         '<label class="q-check"><input type="checkbox" id="q-safe" ',
         state.safe ? 'checked' : '', '> <span>I am somewhere safe, feel steady, and am not dizzy, faint, or unwell.</span></label>',
         listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf or enable stereo tones, or choose Just settle for a deliberately silent session.</p>' : '',
-        listen ? '<label class="q-check"><input type="checkbox" id="q-headphones" ' +
+        listen && headphoneRequired() ? '<label class="q-check"><input type="checkbox" id="q-headphones" ' +
           (state.headphones ? 'checked' : '') +
           '> <span>I have stereo headphones on at a low, comfortable volume.</span></label>' : '',
         '<div class="q-actions"><button type="button" class="q-primary" data-action="start" ',
-        (!state.safe || (listen && (!state.headphones || allSoundOff())) || state.starting) ? 'disabled' : '',
+        (!state.safe || (listen && ((headphoneRequired() && !state.headphones) || allSoundOff())) || state.starting) ? 'disabled' : '',
         '>Start my session</button>',
         listen ? '<button type="button" class="q-secondary" data-action="settle">No audio instead</button>' : '',
         '</div>',
@@ -325,7 +385,8 @@
     } else if (state.screen === "running") {
       const remaining = formatTime(state.duration - state.elapsedMs / 1000);
       content = [
-        '<div class="q-running"><div class="q-eyebrow">', state.mode === "listen" ? 'LISTEN & DRIFT · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
+        '<div class="q-running', state.profile === "sleep" && state.mode === "listen" ? ' q-running-sleep' : '', '"><div class="q-eyebrow">',
+        state.mode === "listen" ? safeText(PROFILES[state.profile].label.toUpperCase()) + ' · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         '<div class="q-orb" aria-hidden="true"><div class="q-orb-inner"></div></div>',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
         '<p id="fb21-q-cue" class="q-cue">', state.paused ? 'Paused. Return whenever you like.' : cue(), '</p>',
@@ -367,7 +428,7 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (action === "settle" || action === "listen") selectMode(action);
+    if (["settle", "listen", "sleep", "focus", "explore"].includes(action)) selectMode(action);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "duration") { state.duration = Number(button.dataset.seconds); render(); }

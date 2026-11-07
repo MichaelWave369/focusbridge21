@@ -858,7 +858,7 @@ test("Rife Frequency Lab uses the exact frequency and waveform in a finite previ
   app.click("return");
 });
 
-test("No audio preview is allowed for a silent mix or the intentionally silent session", () => {
+test("No audio preview is allowed for a silent mix or the intentionally silent session", async () => {
   const app = harness({ withAudio: true });
   app.click("settle");
   assert.doesNotMatch(app.root.innerHTML, /data-action="preview"/);
@@ -871,6 +871,12 @@ test("No audio preview is allowed for a silent mix or the intentionally silent s
   app.click("preview");
   assert.equal(app.contexts.length, 0);
   app.setMix("rain", 20);
+  app.check("q-safe"); // DOM-free harness rerenders after the slider changes
   assert.match(app.root.innerHTML, /q-preview-value-rain">20%/);
   app.click("preview");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.equal(app.scheduled[0].options.rain, 20);
+  app.click("stop-preview");
+  assert.equal(app.contexts[0].state, "closed");
 });

@@ -4,6 +4,11 @@
   const LEDGER_KEY = "focusbridge21-ledger-v1";
   const MIX_KEY = "focusbridge21-quiet-soundscape-v14";
   const PROFILE_MIX_KEY = "focusbridge21-quiet-profile-mixes-v16";
+  const RIFE_SETTINGS_KEY = "focusbridge21-rife-audio-lab-v1";
+  const readRifeSettings = () => {
+    try { return JSON.parse(localStorage.getItem(RIFE_SETTINGS_KEY) || "{}"); }
+    catch { return {}; }
+  };
   const readProfileMixes = () => {
     try {
       const value = JSON.parse(localStorage.getItem(PROFILE_MIX_KEY) || "{}");
@@ -34,6 +39,7 @@
     focus: { label: "Deep Focus", duration: 2700, surf: 34, bass: 0, beat: 0, tones: true, carrier: 200, difference: 12, space: 0 },
     explore: { label: "Threshold Explorer", duration: 2700, surf: 50, bass: 8, beat: 0, tones: true, carrier: 180, difference: 6, space: 35 },
     sync: { label: "Focus Sync", sync: true, duration: 12960, surf: 35, bass: 5, beat: 0, tones: true, carrier: 185, difference: 10, space: 12 },
+    rife: { label: "Rife Frequency Lab", rife: true, duration: 300, surf: 0, bass: 0, beat: 0, tones: true, carrier: 220, difference: 0, space: 0 },
     headache: { label: "Headache Sensitivity", holistic: true, duration: 600, surf: 8, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "Quiet is often best for sound-sensitive headaches. Any audio should be barely audible. Stop if discomfort increases." },
     stomach: { label: "Stomach Discomfort", holistic: true, duration: 900, surf: 20, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "A small, predictable background sound may help some people settle. This does not address the cause of abdominal pain." },
     nausea: { label: "Nausea / Queasiness", holistic: true, duration: 600, surf: 12, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0, note: "Low-stimulation ambience or silence can be preferable; audio is optional and will not treat nausea." },
@@ -52,6 +58,7 @@
     sleep: [1800, 3600, 5400, 7200, 10800, 14400, 21600],
     focus: [1500, 2700, 5400, 10800],
     explore: [1200, 2700, 5400, 7200],
+    rife: [60, 180, 300, 600, 900],
     headache: [300, 600, 900, 1200],
     stomach: [300, 600, 900, 1200, 1800],
     nausea: [300, 600, 900, 1200],
@@ -69,7 +76,9 @@
 
   const state = {
     screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8,
-    syncMinutes: 12, syncPlan: null, syncStage: 0, safe: false,
+    syncMinutes: 12, syncPlan: null, syncStage: 0,
+    rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
+    safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
     audio: null, paused: false, interrupted: false, starting: false, note: "", error: "",
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0), tones: mix.tones !== false
@@ -111,6 +120,12 @@
     state.duration = mode === "settle" ? 90 : profile.duration;
     state.toneDifference = profile.difference;
     state.syncStage = 0;
+    if (profile.rife && !window.FocusBridgeRife) {
+      state.error = "Audio frequency engine unavailable. Reload the app.";
+      state.screen = "home";
+      render();
+      return;
+    }
     if (profile.sync) {
       if (!window.FocusBridgeSync) {
         state.error = "Focus Sync engine was not loaded. Reload the app to retry.";
@@ -121,7 +136,13 @@
       state.syncPlan = window.FocusBridgeSync.timeline(state.syncMinutes);
       state.duration = state.syncPlan.totalSeconds;
     }
-    if (mode !== "settle") {
+    if (profile.rife) {
+      // Isolate the audible waveform lab from the binaural/mixer profiles.
+      state.surf = 0;
+      state.bass = 0;
+      state.beat = 0;
+      state.tones = true;
+    } else if (mode !== "settle") {
       const saved = profileMixes[state.profile] || (mode === "listen" ? mix : profile);
       state.surf = level(saved.surf, profile.surf);
       state.bass = level(saved.bass, profile.bass);
@@ -157,6 +178,13 @@
     render();
   }
 
+  function changeRifeSetting(key, value) {
+    if (state.profile !== "rife" || !window.FocusBridgeRife) return;
+    state.rife = window.FocusBridgeRife.config({ ...state.rife, [key]: value });
+    try { localStorage.setItem(RIFE_SETTINGS_KEY, JSON.stringify(state.rife)); } catch {}
+    render();
+  }
+
   async function startAudio() {
     const Context = window.AudioContext || window.webkitAudioContext;
     if (!Context) throw new Error("Web Audio is not supported by this browser.");
@@ -164,6 +192,13 @@
     const nodes = [];
     state.audio = { context, nodes };
     try {
+      if (state.profile === "rife") {
+        await context.resume();
+        if (context.state !== "running")
+          throw new Error("The browser suspended audio. Check playback permissions.");
+        window.FocusBridgeRife.schedule(context, state.rife, state.duration, state.audio);
+        return;
+      }
       const merger = context.createChannelMerger(2);
       const left = context.createOscillator();
       const right = context.createOscillator();
@@ -265,6 +300,8 @@
     render();
   }
   function cue() {
+    if (state.profile === "rife" && state.mode === "listen")
+      return "Notice the sound only if comfortable. A pitch is not a medical treatment.";
     if (state.profile === "sync" && state.syncPlan)
       return window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000).prompt;
     if (state.profile === "sleep" && state.mode === "listen")
@@ -356,11 +393,21 @@
         interpretation: "Time-based labels and personal reflection, not detected states"
       } : null,
       guidance_mode: "Quiet Deck " + state.mode,
-      audio_params: { engine: state.mode === "listen" ? "original-browser-soundscape-v16" : "none",
+      rife_audio_lab: state.profile === "rife" ? {
+        frequency_hz: state.rife.frequency,
+        waveform: state.rife.waveform,
+        motion: state.rife.motion,
+        intensity_percent_of_capped_gain: state.rife.intensity,
+        output_type: "audible Web Audio, not RF, EMF or electrotherapy",
+        interpretation: "Audio demonstration, not a medical treatment"
+      } : null,
+      audio_params: { engine: state.profile === "rife" ? "audible-waveform-lab-v1"
+        : state.mode === "listen" ? "original-browser-soundscape-v16" : "none",
         profile: state.mode === "listen" ? state.profile : "silent",
-        difference_hz: state.mode === "listen" && state.tones ? state.toneDifference : null,
+        difference_hz: state.mode === "listen" && state.tones && state.profile !== "rife"
+          ? state.toneDifference : null,
         space_percent: state.mode === "listen" ? PROFILES[state.profile].space : 0,
-        stereo_tones: state.mode === "listen" && state.tones,
+        stereo_tones: state.mode === "listen" && state.tones && state.profile !== "rife",
         surf: state.mode === "listen" ? state.surf : 0,
         bass: state.mode === "listen" ? state.bass : 0,
         beat: state.mode === "listen" ? state.beat : 0 },
@@ -380,7 +427,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v1.9</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.0</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',

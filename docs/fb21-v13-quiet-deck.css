@@ -215,3 +215,33 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
   #fb21-quiet-root .q-holistic-choices { grid-template-columns: 1fr; }
   #fb21-quiet-root .q-holistic-choice { min-height: 165px; }
 }
+
+/* Focus Sync: all published station labels, gentle progression, no flashing. */
+#fb21-quiet-root .q-sync-plan {
+  border: 1px solid #8fa6be60; border-radius: 18px;
+  padding: 16px 20px; background: #121c2fc9; margin: 24px 0;
+}
+#fb21-quiet-root .q-sync-plan h3 { margin: 4px 0 8px; font-size: 1.13rem; }
+#fb21-quiet-root .q-sync-stage-list {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 18px; padding-left: 24px; margin: 16px 0 0;
+}
+#fb21-quiet-root .q-sync-stage-list li {
+  color: #d2e5ed; line-height: 1.5;
+}
+#fb21-quiet-root .q-sync-stage-list strong { display: block; color: #b8eedc; }
+#fb21-quiet-root .q-sync-stage-list span { display: block; font-size: .89rem; }
+#fb21-quiet-root .q-sync-active {
+  border: 1px solid #92c7c880; border-radius: 22px;
+  background: linear-gradient(155deg, #172f3b, #162339);
+  padding: 26px 22px; margin: 0 auto 22px;
+}
+#fb21-quiet-root .q-sync-active h2 { margin: 8px 0 12px; font-size: clamp(1.3rem, 3vw, 2rem); }
+#fb21-quiet-root .q-sync-active p { color: #d3e2f0; line-height: 1.65; }
+#fb21-quiet-root .q-sync-active p.q-detail { color: #a8c2d1; font-size: .83rem; }
+#fb21-quiet-root .q-sync-step { color: #a8e3d5; font-size: .75rem; letter-spacing: .11em; font-weight: 750; }
+#fb21-quiet-root .q-running:has(.q-sync-active) .q-orb { animation: none; opacity: .46; width: min(32vw, 142px); margin: 16px auto; }
+@media (max-width: 640px) {
+  #fb21-quiet-root .q-sync-stage-list { grid-template-columns: 1fr; }
+  #fb21-quiet-root .q-sync-plan { padding: 14px; }
+}

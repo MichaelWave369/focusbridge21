@@ -417,6 +417,10 @@
         '<span class="q-choice-icon" aria-hidden="true">◇</span><span class="q-choice-kicker">SUBJECTIVE EXPLORATION</span>',
         '<strong>Threshold Explorer</strong><span>Slow spatial movement for imagery and personal reflection.</span>',
         '<span class="q-choice-link">Set up exploration →</span></button>',
+        '<button type="button" data-action="sync" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">COMPLETE LEVEL JOURNEY</span>',
+        '<strong>Focus Sync</strong><span>All 17 publicly named focus-level stations, with a grounded return and original evolving audio.</span>',
+        '<span class="q-choice-link">Plan the full journey →</span></button>',
         '<button type="button" data-action="holistic" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">✧</span><span class="q-choice-kicker">GENTLE SELF-COMFORT</span>',
         '<strong>Holistic Zone</strong><span>Calm audio options for everyday discomfort, with clear evidence and safety boundaries.</span>',
@@ -460,13 +464,21 @@
           : needsSound
             ? "Enable a sound layer or switch to Just settle before starting."
             : "All set. Your session is ready to start.";
-      const choices = DURATIONS[listen ? state.profile : "settle"].map((seconds) =>
-        '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
-        '" data-action="duration" data-seconds="' + seconds +
-        '" aria-pressed="' + (state.duration === seconds) + '">' +
-        (seconds === 90 ? '90 sec' : seconds < 3600 ? (seconds / 60) + ' min' :
-          (seconds / 3600) + ' hr') + '</button>'
-      ).join("");
+      const choices = state.profile === "sync"
+        ? window.FocusBridgeSync.PACES.map(minutes => {
+            const plan = window.FocusBridgeSync.timeline(minutes);
+            return '<button type="button" class="q-duration ' + (state.syncMinutes === minutes ? 'selected' : '') +
+              '" data-action="sync-pace" data-minutes="' + minutes +
+              '" aria-pressed="' + (state.syncMinutes === minutes) + '">' +
+              minutes + ' min/station · ' + formatTime(plan.totalSeconds) + '</button>';
+          }).join("")
+        : DURATIONS[listen ? state.profile : "settle"].map((seconds) =>
+            '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
+            '" data-action="duration" data-seconds="' + seconds +
+            '" aria-pressed="' + (state.duration === seconds) + '">' +
+            (seconds === 90 ? '90 sec' : seconds < 3600 ? (seconds / 60) + ' min' :
+              (seconds / 3600) + ' hr') + '</button>'
+          ).join("");
       content = [
         '<button type="button" class="q-back" data-action="back">← Back to ', PROFILES[state.profile]?.holistic ? 'Holistic Zone' : 'choices', '</button>',
         '<div class="q-eyebrow">', listen ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
@@ -492,7 +504,19 @@
           '> <span><strong>My stereo headphones are ready.</strong><small>They are on at a low, comfortable volume.</small></span></label>' : '',
         '</div>',
         '<div class="q-setup-step">STEP 2 OF 3 · CUSTOMIZE</div>',
-        '<h2>How long feels comfortable?</h2><div class="q-durations">', choices, '</div>',
+        '<h2>', state.profile === "sync" ? 'Choose a pace for the complete journey' : 'How long feels comfortable?', '</h2>',
+        '<div class="q-durations">', choices, '</div>',
+        state.profile === "sync" ? [
+          '<p class="q-detail">Every pace includes all 17 listed focus levels plus a 12-minute grounded return. No stage is objectively achieved by running out its timer. Longer is not automatically better.</p>',
+          '<div class="q-sync-plan"><h3>Complete itinerary · 17 stations + return</h3>',
+          '<p class="q-detail">These are reflective prompts inspired by publicly published focus-level names. Focus Sync has no proprietary Monroe signals, guided scripts, or claimed access to other realities.</p>',
+          '<ol class="q-sync-stage-list">',
+          window.FocusBridgeSync.GATES.map(gate =>
+            '<li><strong>Focus ' + safeText(gate.level) + '</strong><span>' + safeText(gate.title) + '</span></li>').join(""),
+          '<li><strong>Return</strong><span>12 minutes of gentle reorientation</span></li>',
+          '</ol></div>',
+          '<p class="q-comfort-note">This can be a long session. Remain somewhere safe, use low volume, and stop if you become uncomfortable, distressed, dizzy, or disoriented. Browser or device sleep may interrupt playback. A contemplative sequence is not a test of brain state or evidence of a supernatural event.</p>'
+        ].join("") : '',
         listen ? '<div class="q-mixer"><h2>Make it sound like your place</h2>' +
           '<p class="q-detail">An original, gentle soundscape. Every layer is optional, and the mix stays on this device.</p>' +
           [['surf','Ocean surf','Slow, overlapping shoreline waves'],['bass','Warm sub-bass','A quiet 62 Hz foundation'],['beat','Soft pulse','A gentle 40 BPM anchor']]
@@ -526,10 +550,21 @@
       ].join("");
     } else if (state.screen === "running") {
       const remaining = formatTime(state.duration - state.elapsedMs / 1000);
+      const syncStation = state.profile === "sync" && state.syncPlan
+        ? window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000) : null;
       content = [
         '<div class="q-running', state.profile === "sleep" && state.mode === "listen" ? ' q-running-sleep' : '',
         PROFILES[state.profile]?.holistic ? ' q-running-comfort' : '', '"><div class="q-eyebrow">',
         state.mode === "listen" ? safeText(PROFILES[state.profile].label.toUpperCase()) + ' · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
+        syncStation ? [
+          '<section class="q-sync-active" aria-label="Focus Sync stage">',
+          '<div class="q-sync-step">', syncStation.kind === "return"
+            ? 'GENTLE RETURN · FINAL STAGE' : 'STATION ' + (syncStation.index + 1) + ' OF 17', '</div>',
+          '<h2>Focus ', safeText(syncStation.level), ' · ', safeText(syncStation.title), '</h2>',
+          '<p>', safeText(syncStation.prompt), '</p>',
+          '<p class="q-detail">A suggested listening stage, not proof that a focus level was reached.</p>',
+          '</section>'
+        ].join("") : '',
         '<div class="q-orb" aria-hidden="true"><div class="q-orb-inner"></div></div>',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
         '<p id="fb21-q-cue" class="q-cue">', state.paused ? 'Paused. Return whenever you like.' : cue(), '</p>',
@@ -571,12 +606,21 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "listen", "sleep", "focus", "explore", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "listen", "sleep", "focus", "explore", "sync", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();
     else if (action === "holistic") openHolistic();
     else if (action === "duration") { state.duration = Number(button.dataset.seconds); render(); }
+    else if (action === "sync-pace" && state.screen === "prepare" && state.profile === "sync") {
+      const minutes = Number(button.dataset.minutes);
+      if (window.FocusBridgeSync.PACES.includes(minutes)) {
+        state.syncMinutes = minutes;
+        state.syncPlan = window.FocusBridgeSync.timeline(minutes);
+        state.duration = state.syncPlan.totalSeconds;
+        render();
+      }
+    }
     else if (action === "start") startSession();
     else if (action === "review") {
       const id = !state.safe ? "#q-safe" : headphoneRequired() && !state.headphones ? "#q-headphones" : "#q-tones";

@@ -89,7 +89,7 @@ test("page entrypoints and cache include new engine before React", () => {
     const reactAt = html.indexOf("fb21-react.js");
     assert.ok(engineAt > 0 && engineAt < reactAt);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum)/);
   assert.match(read("service-worker.js"), /fb21-soundscape.js/);
   assert.doesNotMatch(read("docs/fb21-react.js"), /Parallax \/ PHI369 live prototype/);
 });
@@ -115,4 +115,74 @@ test("duration remains capped at six hours even for invalid oversized requests",
   schedule(ctx, { bass: 5 }, 86400, refs);
   assert.ok(ctx.nodes.filter(n => n.kind === "oscillator").every(n =>
     n.stops[0] <= 12 + 21600.2));
+});
+
+test("rain alone produces original drizzle-to-downpour layers with gentle fades", () => {
+  const small = context(), large = context();
+  const srefs = { nodes: [] }, lrefs = { nodes: [] };
+  assert.equal(schedule(small, { rain: 10 }, 300, srefs), true);
+  assert.equal(schedule(large, { rain: 100 }, 300, lrefs), true);
+  assert.equal(small.buffers.length, 1);
+  assert.equal(large.buffers.length, 1);
+  assert.equal(small.nodes.filter(n => n.kind === "buffer-source").length, 2);
+  assert.equal(small.nodes.filter(n => n.kind === "oscillator").length, 0);
+  const peak = ctx => ctx.nodes.filter(n => n.kind === "gain").slice(1)
+    .flatMap(n => n.gain.events).filter(e => e.type === "linear").reduce((acc, e) => Math.max(acc, e.value), 0);
+  assert.ok(peak(large) > peak(small) * 3, "heavy rain should be distinctly fuller than drizzle");
+  const fade = large.nodes.filter(n => n.kind === "gain").slice(1);
+  assert.ok(fade.every(n => n.gain.events.at(-1).value <= 0.0001));
+  assert.ok(fade.every(n => n.gain.events.at(-1).when === 312));
+});
+
+test("wind alone sweeps softly from breeze to hard gusts with low frequencies", () => {
+  const soft = context(), hard = context();
+  schedule(soft, { wind: 10 }, 300);
+  schedule(hard, { wind: 100 }, 300);
+  const hardBuffers = hard.nodes.filter(n => n.kind === "buffer-source");
+  assert.equal(hardBuffers.length, 2);
+  assert.equal(hard.nodes.filter(n => n.kind === "oscillator").length, 0);
+  const body = ctx => ctx.nodes.filter(n => n.kind === "gain").at(1).gain.events;
+  const peaks = ev => Math.max(...ev.filter(x => x.type === "linear").map(x => x.value));
+  assert.ok(peaks(body(hard)) > peaks(body(soft)));
+  assert.ok(body(hard).filter(x => x.type === "linear").length >= 8, "wind gusts are smooth automated envelopes");
+  assert.ok(hardBuffers.every(n => n.stops[0] <= 313));
+});
+
+test("HUM offers each chromatic musical note between C3 and C5 and is absent when off", () => {
+  const notes = Array.from(win.FocusBridgeSoundscape.HUM_NOTES, n => ({ name: n.name, hz: n.hz }));
+  assert.equal(notes.length, 25);
+  assert.deepEqual(notes.filter(n => n.name === "C3" || n.name === "C4" || n.name === "C5"), [
+    { name: "C3", hz: 130.81 }, { name: "C4", hz: 261.63 }, { name: "C5", hz: 523.25 }
+  ]);
+  assert.ok(notes.every((n, index) => index === 0 || n.hz > notes[index - 1].hz));
+  const silent = context();
+  assert.equal(schedule(silent, { hum: 0 }, 600), false);
+  assert.equal(silent.nodes.filter(n => n.kind === "oscillator").length, 0);
+  for (const name of ["C3","C4","C5"]) {
+    const ctx = context();
+    assert.equal(schedule(ctx, { hum: 40, humNote: name }, 600), true);
+    const tones = ctx.nodes.filter(n => n.kind === "oscillator");
+    assert.equal(tones.length, 2);
+    const hz = notes.find(n => n.name === name).hz;
+    assert.equal(tones[0].frequency.value, hz);
+    assert.equal(tones[1].frequency.value, hz * 2);
+    assert.ok(tones.every(n => n.stops[0] <= 613));
+  }
+});
+
+test("all six layers combine using one noise buffer and stop after a six-hour session", () => {
+  const ctx = context(), refs = { nodes: [] };
+  const yes = schedule(ctx, {
+    surf: 40, bass: 8, beat: 5, rain: 60, wind: 50, hum: 30, humNote: "G3", space: 5
+  }, 21600, refs);
+  assert.equal(yes, true);
+  assert.equal(ctx.buffers.length, 1, "surf, rain and wind share a single synthesized buffer");
+  assert.equal(ctx.nodes.filter(n => n.kind === "buffer-source").length, 7);
+  assert.equal(ctx.nodes.filter(n => n.kind === "oscillator").length, 5);
+  assert.ok(ctx.nodes.filter(n => n.kind === "buffer-source" || n.kind === "oscillator")
+    .every(n => n.stops.length === 1 && n.stops[0] >= 21612 && n.stops[0] < 21613));
+  const master = ctx.nodes.find(n => n.kind === "gain");
+  assert.equal(master.gain.events.at(-1).when, 21612);
+  assert.equal(master.gain.events.at(-1).value, 0.0001);
+  assert.ok(refs.nodes.length > 15, "all nodes registered for explicit cleanup");
 });

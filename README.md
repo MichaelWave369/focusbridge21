@@ -6,6 +6,10 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v1.7 First-run Onboarding Clarity
+
+An outside tester enjoyed the session but needed someone to point out the safety checkbox before playback was enabled. The Quiet Deck setup now places a prominently styled **Step 1 safety confirmation at the top**, followed by duration and optional sound controls, then **Step 3 Start**. A visible status explains exactly why Start is locked and a "Show me what to check" button brings keyboard focus back to the missing requirement. No safety checks were removed or automatically accepted.
+
 ## v1.6 Extended Sessions and Original Audio Profiles
 
 The Quiet Deck now offers **Sleep Sanctuary**, **Deep Focus**, and **Threshold Explorer** in addition to **Just settle** and **Listen & drift**.

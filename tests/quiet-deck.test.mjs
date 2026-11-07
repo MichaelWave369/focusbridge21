@@ -108,7 +108,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio)/);
+  assert.match(read("service-worker.js"), /focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -232,4 +232,34 @@ test("each original audio profile keeps its own local mixer settings", () => {
   app.click("home");
   app.click("focus");
   assert.match(app.root.innerHTML, /id="q-mix-surf" value="10"/);
+});
+
+test("first-run safety confirmation is visually before optional sound controls and explains locked Start", () => {
+  const app = harness({ withAudio: true });
+  app.click("listen");
+  const initial = app.root.innerHTML;
+  assert.ok(initial.indexOf('id="q-safe"') < initial.indexOf('class="q-mixer"'),
+    "the required check is encountered before the optional audio mixer");
+  assert.match(initial, /STEP 1 OF 3 · SAFETY CHECK/);
+  assert.match(initial, /Check the comfort and safety box above to unlock Start/);
+  assert.match(initial, /Show me what to check/);
+  assert.match(initial, /data-action="start" aria-describedby="q-readiness-hint" disabled/);
+  app.click("review");
+  app.check("q-safe");
+  assert.match(app.root.innerHTML, /Confirm your stereo headphones above/);
+  app.check("q-headphones");
+  assert.match(app.root.innerHTML, /All set. Your session is ready to start/);
+  assert.match(app.root.innerHTML, /data-action="start" aria-describedby="q-readiness-hint" >Start my session/);
+});
+
+test("speaker-based sleep asks for safety but not headphones until stereo tones are enabled", () => {
+  const app = harness({ withAudio: true });
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /Check the comfort and safety box above/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+  app.check("q-safe");
+  assert.match(app.root.innerHTML, /All set. Your session is ready to start/);
+  app.check("q-tones");
+  assert.match(app.root.innerHTML, /Confirm your stereo headphones above/);
+  assert.match(app.root.innerHTML, /id="q-headphones"/);
 });

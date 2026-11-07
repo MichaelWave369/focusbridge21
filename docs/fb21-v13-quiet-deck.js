@@ -361,6 +361,16 @@
       ].join("");
     } else if (state.screen === "prepare") {
       const listen = state.mode === "listen";
+      const needsHeadphones = listen && headphoneRequired() && !state.headphones;
+      const needsSound = listen && allSoundOff();
+      const canBegin = state.safe && !needsHeadphones && !needsSound;
+      const readinessHint = !state.safe
+        ? "Check the comfort and safety box above to unlock Start."
+        : needsHeadphones
+          ? "Confirm your stereo headphones above to unlock Start."
+          : needsSound
+            ? "Enable a sound layer or switch to Just settle before starting."
+            : "All set. Your session is ready to start.";
       const choices = DURATIONS[listen ? state.profile : "settle"].map((seconds) =>
         '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
         '" data-action="duration" data-seconds="' + seconds +
@@ -376,6 +386,18 @@
           ? 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
           : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         '<section class="q-panel" aria-label="Session setup">',
+        '<div class="q-readiness-card ', state.safe && !needsHeadphones ? 'is-confirmed' : 'needs-confirmation', '" id="q-readiness">',
+        '<div class="q-setup-step">STEP 1 OF 3 · SAFETY CHECK</div>',
+        '<h2>One quick check before we begin</h2>',
+        '<p class="q-detail">Please confirm this yourself. Start will unlock after your required checks are complete.</p>',
+        '<label class="q-check q-check-prominent" for="q-safe"><input type="checkbox" id="q-safe" ',
+        state.safe ? 'checked' : '', '> <span><strong>I\'m in a comfortable, safe place.</strong>',
+        '<small>I feel steady, and I am not dizzy, faint, or unwell.</small></span></label>',
+        listen && headphoneRequired() ? '<label class="q-check q-check-prominent" for="q-headphones"><input type="checkbox" id="q-headphones" ' +
+          (state.headphones ? 'checked' : '') +
+          '> <span><strong>My stereo headphones are ready.</strong><small>They are on at a low, comfortable volume.</small></span></label>' : '',
+        '</div>',
+        '<div class="q-setup-step">STEP 2 OF 3 · CUSTOMIZE</div>',
         '<h2>How long feels comfortable?</h2><div class="q-durations">', choices, '</div>',
         listen ? '<div class="q-mixer"><h2>Make it sound like your place</h2>' +
           '<p class="q-detail">An original, gentle soundscape. Every layer is optional, and the mix stays on this device.</p>' +
@@ -388,17 +410,17 @@
             ? 'Sleep mode: no completion chime; tones (if enabled) gently fade by 30 minutes. Speakers are fine for ambience-only sleep. The browser/device must allow background audio.'
             : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
-        '<label class="q-check"><input type="checkbox" id="q-safe" ',
-        state.safe ? 'checked' : '', '> <span>I am somewhere safe, feel steady, and am not dizzy, faint, or unwell.</span></label>',
         listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf or enable stereo tones, or choose Just settle for a deliberately silent session.</p>' : '',
-        listen && headphoneRequired() ? '<label class="q-check"><input type="checkbox" id="q-headphones" ' +
-          (state.headphones ? 'checked' : '') +
-          '> <span>I have stereo headphones on at a low, comfortable volume.</span></label>' : '',
-        '<div class="q-actions"><button type="button" class="q-primary" data-action="start" ',
-        (!state.safe || (listen && ((headphoneRequired() && !state.headphones) || allSoundOff())) || state.starting) ? 'disabled' : '',
-        '>Start my session</button>',
+        '<div class="q-start-panel"><div class="q-setup-step">STEP 3 OF 3 · BEGIN</div>',
+        '<p class="q-start-hint" role="status" id="q-readiness-hint">',
+        canBegin ? '<span aria-hidden="true">✓ </span>' : '<span aria-hidden="true">○ </span>',
+        readinessHint, '</p>',
+        '<div class="q-actions"><button type="button" class="q-primary" data-action="start" aria-describedby="q-readiness-hint" ',
+        (!canBegin || state.starting) ? 'disabled' : '',
+        '>', state.starting ? 'Starting…' : 'Start my session', '</button>',
+        !canBegin ? '<button type="button" class="q-secondary" data-action="review">Show me what to check ↑</button>' : '',
         listen ? '<button type="button" class="q-secondary" data-action="settle">No audio instead</button>' : '',
-        '</div>',
+        '</div></div>',
         state.error ? '<p role="alert" class="q-error">' + safeText(state.error) + '</p>' : '',
         '</section>'
       ].join("");
@@ -453,6 +475,14 @@
     else if (action === "home") returnHome();
     else if (action === "duration") { state.duration = Number(button.dataset.seconds); render(); }
     else if (action === "start") startSession();
+    else if (action === "review") {
+      const id = !state.safe ? "#q-safe" : headphoneRequired() && !state.headphones ? "#q-headphones" : "#q-tones";
+      const target = root.querySelector(id);
+      if (target) {
+        if (typeof target.scrollIntoView === "function") target.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (typeof target.focus === "function") target.focus({ preventScroll: true });
+      }
+    }
     else if (action === "pause") togglePause();
     else if (action === "return") finishSession(true);
     else if (action === "save") saveReflection();

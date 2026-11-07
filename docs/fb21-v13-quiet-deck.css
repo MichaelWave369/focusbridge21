@@ -141,3 +141,41 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
   #fb21-quiet-root .q-mix-row { grid-template-columns: 1fr 50px; row-gap: 8px; }
   #fb21-quiet-root .q-mix-row > span { grid-column: 1 / -1; }
 }
+
+/* v1.7 first-run clarity: required consent appears before any sound controls. */
+#fb21-quiet-root .q-setup-step {
+  color: #b4e8d9; font-size: .74rem; letter-spacing: .13em;
+  font-weight: 800; margin: 18px 0 12px;
+}
+#fb21-quiet-root .q-readiness-card {
+  border: 2px solid #91dcc0; border-radius: 20px;
+  padding: 22px; margin: 0 0 30px;
+  background: linear-gradient(155deg, #244139, #1a3040);
+}
+#fb21-quiet-root .q-readiness-card.needs-confirmation {
+  border-color: #f0dc99; background: linear-gradient(155deg, #353627, #222c3b);
+}
+#fb21-quiet-root .q-readiness-card .q-setup-step { margin-top: 0; }
+#fb21-quiet-root .q-readiness-card h2 { margin: 0 0 4px; font-size: 1.32rem; }
+#fb21-quiet-root .q-readiness-card .q-detail { margin: 8px 0 12px; }
+#fb21-quiet-root .q-check-prominent {
+  cursor: pointer; border: 1px solid #b3cfcb77; border-radius: 16px;
+  padding: 16px; margin-top: 10px; background: #111c2b99;
+  align-items: center; max-width: none;
+}
+#fb21-quiet-root .q-check-prominent:hover { border-color: #b6eddb; }
+#fb21-quiet-root .q-check-prominent:focus-within { outline: 3px solid #b6eddb; outline-offset: 2px; }
+#fb21-quiet-root .q-check-prominent input { width: 28px; height: 28px; flex-basis: 28px; margin-top: 0; }
+#fb21-quiet-root .q-check-prominent strong { display: block; font-size: 1.05rem; line-height: 1.4; }
+#fb21-quiet-root .q-check-prominent small { display: block; font-size: .86rem; margin-top: 4px; color: #cfdeed; }
+#fb21-quiet-root .q-start-panel {
+  border-top: 1px solid #64738f60; margin-top: 22px; padding-top: 8px;
+}
+#fb21-quiet-root .q-start-hint { font-size: 1rem; font-weight: 600; line-height: 1.5; color: #e9d79d; }
+#fb21-quiet-root .q-start-panel:has(.q-primary:not(:disabled)) .q-start-hint { color: #b8eedc; }
+#fb21-quiet-root .q-start-panel .q-actions { margin-top: 12px; }
+#fb21-quiet-root .q-start-panel .q-primary { min-width: 210px; }
+@media (max-width: 560px) {
+  #fb21-quiet-root .q-readiness-card { padding: 17px; }
+  #fb21-quiet-root .q-check-prominent { padding: 13px; }
+}

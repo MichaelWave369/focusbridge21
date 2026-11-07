@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v1-6-extended-audio";
+const CACHE_NAME = "focusbridge21-v1-7-onboarding";
 const APP_SHELL = [
   "./",
   "./index.html",

@@ -39,6 +39,9 @@
   // These are original audio-design profiles, not measured neurological states.
   const PROFILES = Object.freeze({
     drift: { label: "Listen & drift", duration: 120, surf: 68, bass: 14, beat: 0, tones: true, carrier: 180, difference: 8, space: 20 },
+    lost: { label: "Island 108 · LOST-inspired", island: true, duration: 6480,
+      surf: 42, bass: 8, beat: 4, rain: 23, wind: 16, hum: 15, humNote: "C3",
+      tones: false, carrier: 180, difference: 8, space: 6 },
     sleep: { label: "Sleep Sanctuary", duration: 21600, surf: 60, bass: 8, beat: 0, tones: false, carrier: 180, difference: 4, space: 10 },
     focus: { label: "Deep Focus", duration: 2700, surf: 34, bass: 0, beat: 0, tones: true, carrier: 200, difference: 12, space: 0 },
     explore: { label: "Threshold Explorer", duration: 2700, surf: 50, bass: 8, beat: 0, tones: true, carrier: 180, difference: 6, space: 35 },
@@ -56,9 +59,30 @@
     { key: "tension", symbol: "✧", subtitle: "Everyday tension", description: "A soothing pause with gentle ambient texture." }
   ]);
   const HOLISTIC_TONE_OPTIONS = Object.freeze([4, 6, 8, 10, 12]);
+  // An original island-inspired six-chapter experience. These famous numbers
+  // are used only as proportional durations, not for licensed audio or scenes.
+  const ISLAND_SEGMENTS = Object.freeze([
+    { number: 4, title: "Shoreline", cue: "Settle near the imagined shoreline. Let the surf arrive and recede." },
+    { number: 8, title: "The Canopy", cue: "Imagine light rainfall through leaves. Follow no story you do not choose." },
+    { number: 15, title: "Under the Sky", cue: "Notice the wind and the space between its gentle gusts." },
+    { number: 16, title: "The Signal", cue: "Hear the quiet HUM beneath the waves. Nothing needs decoding." },
+    { number: 23, title: "After Sundown", cue: "Let the island stay a place of imagination. Relax your shoulders." },
+    { number: 42, title: "The Way Home", cue: "Feel the ground beneath you. You can return to your surroundings anytime." }
+  ]);
+  const ISLAND_TOTAL = ISLAND_SEGMENTS.reduce((sum, stage) => sum + stage.number, 0);
+  function islandStageAt(elapsedMs, durationSeconds) {
+    const scaled = Math.max(0, Math.min(ISLAND_TOTAL, elapsedMs / Math.max(1, durationSeconds * 1000) * ISLAND_TOTAL));
+    let cumulative = 0;
+    for (let i = 0; i < ISLAND_SEGMENTS.length; i++) {
+      cumulative += ISLAND_SEGMENTS[i].number;
+      if (scaled < cumulative) return i;
+    }
+    return ISLAND_SEGMENTS.length - 1;
+  }
   const DURATIONS = Object.freeze({
     settle: [60, 90, 120, 300, 600],
     drift: [120, 300, 900, 1500, 2700, 3600, 5400, 7200, 10800, 14400, 21600],
+    lost: [900, 2700, 3600, 6480, 10800],
     sleep: [1800, 3600, 5400, 7200, 10800, 14400, 21600],
     focus: [1500, 2700, 5400, 10800],
     explore: [1200, 2700, 5400, 7200],
@@ -80,7 +104,7 @@
 
   const state = {
     screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8,
-    syncMinutes: 12, syncPlan: null, syncStage: 0,
+    syncMinutes: 12, syncPlan: null, syncStage: 0, islandIndex: 0,
     rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
@@ -126,6 +150,7 @@
     state.duration = mode === "settle" ? 90 : profile.duration;
     state.toneDifference = profile.difference;
     state.syncStage = 0;
+    state.islandIndex = 0;
     if (profile.rife && !window.FocusBridgeRife) {
       state.error = "Audio frequency engine unavailable. Reload the app.";
       state.screen = "home";
@@ -156,9 +181,9 @@
       state.surf = level(saved.surf, profile.surf);
       state.bass = level(saved.bass, profile.bass);
       state.beat = level(saved.beat, profile.beat);
-      state.rain = level(saved.rain, 0);
-      state.wind = level(saved.wind, 0);
-      state.hum = level(saved.hum, 0);
+      state.rain = level(saved.rain, profile.rain ?? 0);
+      state.wind = level(saved.wind, profile.wind ?? 0);
+      state.hum = level(saved.hum, profile.hum ?? 0);
       state.humNote = (window.FocusBridgeSoundscape?.HUM_NOTES || [])
         .some(note => note.name === saved.humNote) ? saved.humNote : "C4";
       state.tones = typeof saved.tones === "boolean" ? saved.tones : profile.tones;
@@ -299,6 +324,7 @@
     state.elapsedMs = 0;
     state.paused = false;
     state.syncStage = 0;
+    state.islandIndex = 0;
     if (state.mode === "listen") {
       try { await startAudio(); }
       catch (error) {
@@ -317,6 +343,8 @@
     render();
   }
   function cue() {
+    if (state.profile === "lost")
+      return ISLAND_SEGMENTS[islandStageAt(state.elapsedMs, state.duration)].cue;
     if (state.profile === "rife" && state.mode === "listen")
       return "Notice the sound only if comfortable. A pitch is not a medical treatment.";
     if (state.profile === "sync" && state.syncPlan)
@@ -345,6 +373,13 @@
       }
       finishSession(false);
       return;
+    }
+    if (state.profile === "lost" && !state.paused) {
+      const islandIndex = islandStageAt(state.elapsedMs, state.duration);
+      if (islandIndex !== state.islandIndex) {
+        state.islandIndex = islandIndex;
+        render(); // Update only when the chapter changes; no audible alarm.
+      }
     }
     if (state.profile === "sync" && state.syncPlan && !state.paused) {
       const stage = window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000);
@@ -401,6 +436,15 @@
       target_gate: state.mode === "settle" || state.profile === "drift" ? 10 : null,
       duration_min: state.duration / 60,
       actual_elapsed_sec: elapsed,
+      island_108: state.profile === "lost" ? {
+        source: "LOST-inspired fan tribute, original audio, no affiliation",
+        numbers: ISLAND_SEGMENTS.map(segment => segment.number),
+        complete_default_duration_seconds: 6480,
+        selected_duration_seconds: state.duration,
+        last_chapter: ISLAND_SEGMENTS[state.islandIndex].title,
+        completed: !state.interrupted && elapsed >= state.duration - 1,
+        note: "The numbers are symbolic listening chapters, not a medical or paranormal signal"
+      } : null,
       sync_journey: state.profile === "sync" && state.syncPlan ? {
         published_level_labels: window.FocusBridgeSync.GATES.map(gate => gate.level),
         last_listed_level: state.syncStage >= window.FocusBridgeSync.GATES.length ? "Return" : window.FocusBridgeSync.GATES[state.syncStage].level,
@@ -448,7 +492,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.1</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.2</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',

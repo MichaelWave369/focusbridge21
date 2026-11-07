@@ -343,7 +343,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v1.6</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v1.8</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',

@@ -194,11 +194,11 @@ test("focus and exploratory presets retain their independent, adjustable session
   const app = harness();
   app.click("focus");
   assert.match(app.root.innerHTML, /Deep Focus/);
-  assert.match(app.root.innerHTML, /180 min/);
+  assert.match(app.root.innerHTML, /data-seconds="10800"/);
   app.click("home");
   app.click("explore");
   assert.match(app.root.innerHTML, /Threshold Explorer/);
-  assert.match(app.root.innerHTML, /120 min/);
+  assert.match(app.root.innerHTML, /data-seconds="7200"/);
 });
 
 test("sleep tones are opt-in, require headphones, and stop at 30 minutes", async () => {

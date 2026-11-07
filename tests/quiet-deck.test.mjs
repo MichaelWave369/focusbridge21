@@ -125,7 +125,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -599,4 +599,141 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
   assert.equal(receipt.audio_params.hum, 30);
   assert.equal(receipt.audio_params.hum_note, "G3");
   assert.equal(receipt.audio_params.stereo_tones, false);
+});
+
+test("Island 108 is a discoverable fan tribute without breaking the nine-box grid", () => {
+  const app = harness();
+  const home = app.root.innerHTML;
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 9);
+  assert.match(home, /class="q-island-teaser"/);
+  assert.match(home, /data-action="lost"/);
+  assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
+  assert.match(home, /Not affiliated with the television series/);
+  app.click("listen");
+  assert.match(app.root.innerHTML, /Try Island 108/);
+  app.click("lost");
+  assert.match(app.root.innerHTML, /Island 108 · LOST-inspired/);
+  assert.match(app.root.innerHTML, /108 min · full island loop/);
+  assert.match(app.root.innerHTML, /No copied soundtrack or sound effects/);
+});
+
+test("Island 108 defaults match every number and require normal safety without stereo", async () => {
+  const app = harness({ withAudio: true });
+  app.click("lost");
+  for (const [name, amount] of Object.entries({
+    beat: 4, bass: 8, hum: 15, wind: 16, rain: 23, surf: 42
+  })) {
+    assert.match(app.root.innerHTML, new RegExp('id="q-mix-' + name + '" value="' + amount + '"'));
+  }
+  assert.match(app.root.innerHTML, /value="C3" selected/);
+  assert.match(app.root.innerHTML, /id="q-tones"\s*>/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+  assert.match(app.root.innerHTML, /The Signal/);
+  assert.match(app.root.innerHTML, /The Way Home/);
+  app.click("start");
+  assert.equal(app.contexts.length, 0);
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.equal(app.contexts[0].oscillators.length, 2, "existing inactive stereo oscillators are not started");
+  assert.equal(app.contexts[0].oscillators[0].stopTime, undefined);
+  assert.equal(app.scheduled.length, 1);
+  assert.equal(app.scheduled[0].seconds, 6480);
+  assert.equal(app.scheduled[0].options.humNote, "C3");
+  assert.equal(app.scheduled[0].options.surf, 42);
+  assert.equal(app.scheduled[0].options.space, 6);
+  assert.match(app.root.innerHTML, /CHAPTER 1 OF 6/);
+  assert.match(app.root.innerHTML, /Shoreline/);
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+});
+
+test("Island 108 traverses six weighted chapters and ends after exactly 108 minutes", async () => {
+  const app = harness({ withAudio: true });
+  app.click("lost");
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  const steps = [
+    [4, "CHAPTER 2 OF 6", "The Canopy"],
+    [8, "CHAPTER 3 OF 6", "Under the Sky"],
+    [15, "CHAPTER 4 OF 6", "The Signal"],
+    [16, "CHAPTER 5 OF 6", "After Sundown"],
+    [23, "CHAPTER 6 OF 6", "The Way Home"]
+  ];
+  for (const [minutes, marker, title] of steps) {
+    app.advance((minutes * 60 + 1) * 1000);
+    assert.match(app.root.innerHTML, new RegExp(marker));
+    assert.match(app.root.innerHTML, new RegExp(title));
+  }
+  assert.match(app.root.innerHTML, /Return now/);
+  assert.equal(app.contexts[0].state, "running");
+  app.advance((42 * 60) * 1000);
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  assert.equal(app.contexts[0].state, "closed");
+  app.note("The beach felt peaceful.");
+  app.click("save");
+  const receipt = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.match(receipt.preset, /Island 108/);
+  assert.equal(receipt.duration_min, 108);
+  assert.equal(receipt.island_108.complete_default_duration_seconds, 6480);
+  assert.equal(receipt.island_108.last_chapter, "The Way Home");
+  assert.deepEqual(receipt.island_108.numbers, [4, 8, 15, 16, 23, 42]);
+  assert.equal(receipt.island_108.completed, true);
+});
+
+test("Island shorter routes scale chapters and enabling binaural tones requires headphones", async () => {
+  const app = harness({ withAudio: true });
+  app.click("lost");
+  app.click("duration", 900);
+  app.check("q-tones");
+  assert.match(app.root.innerHTML, /id="q-headphones"/);
+  app.check("q-safe");
+  app.click("start");
+  assert.equal(app.contexts.length, 0);
+  app.check("q-headphones");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.scheduled[0].seconds, 900);
+  app.advance(6 * 60 * 1000);
+  assert.match(app.root.innerHTML, /CHAPTER 4 OF 6/, "a scaled 15-minute journey still progresses");
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+});
+
+test("Island 108 mix restores itself without overwriting Sleep Sanctuary or drift", () => {
+  const app = harness();
+  app.click("sleep");
+  app.setMix("rain", 68);
+  app.click("home");
+  app.click("listen");
+  app.setMix("surf", 79);
+  app.click("home");
+  app.click("lost");
+  app.setMix("surf", 94);
+  app.setMix("wind", 87);
+  app.setHumNote("G4");
+  app.click("duration", 3600);
+  app.click("home");
+  app.click("lost");
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="94"/);
+  assert.match(app.root.innerHTML, /id="q-mix-wind" value="87"/);
+  assert.match(app.root.innerHTML, /value="G4" selected/);
+  app.click("island-reset");
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="42"/);
+  assert.match(app.root.innerHTML, /id="q-mix-wind" value="16"/);
+  assert.match(app.root.innerHTML, /value="C3" selected/);
+  assert.match(app.root.innerHTML, /108 min · full island loop/);
+  app.click("home");
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /id="q-mix-rain" value="68"/);
+  app.click("home");
+  app.click("listen");
+  assert.match(app.root.innerHTML, /id="q-mix-surf" value="79"/);
+  const stored = JSON.parse(app.storage.get("focusbridge21-quiet-profile-mixes-v16"));
+  assert.equal(stored.lost.surf, 42);
+  assert.equal(stored.lost.humNote, "C3");
+  assert.equal(stored.sleep.rain, 68);
+  assert.equal(stored.drift.surf, 79);
 });

@@ -503,7 +503,7 @@
       }
     }
     const breath = root.querySelector("#q-breath-phase");
-    if (breath && state.breathGuide) breath.textContent = breathCue();
+    if (breath && state.breathGuide) breath.textContent = state.paused ? "Breathing companion paused" : breathCue();
     const timer = root.querySelector("#fb21-q-timer");
     const bar = root.querySelector("#fb21-q-progress");
     const prompt = root.querySelector("#fb21-q-cue");

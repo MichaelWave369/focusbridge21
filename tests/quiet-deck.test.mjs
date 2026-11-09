@@ -1129,3 +1129,25 @@ test("Intention Studio spoken cues repeat only during active, consented awake pr
   app.advance(600000);
   assert.equal(app.spoken.length, n, "no voice after Return Now");
 });
+
+
+test("Intention Studio supports private silent reading and voice-only sessions without an AudioContext", async () => {
+  for (const speaking of [false, true]) {
+    const app = harness({ withAudio: true, withVoice: true });
+    app.click("intention");
+    app.setIntention("script", "I can pause and begin again.");
+    for (const layer of ["surf", "bass", "beat", "rain", "wind", "hum"]) app.setMix(layer, 0);
+    assert.match(app.root.innerHTML, /Intention Studio/);
+    assert.doesNotMatch(app.root.innerHTML, /All sound layers are off/);
+    assert.doesNotMatch(app.root.innerHTML, /Preview selected mix · 15 sec/);
+    if (speaking) app.check("q-intention-speak");
+    app.check("q-safe");
+    app.click("start");
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(app.contexts.length, 0, "no silent Web Audio context should be created");
+    assert.match(app.root.innerHTML, /SILENT PRACTICE/);
+    assert.equal(app.spoken.length, speaking ? 1 : 0);
+    app.click("return");
+    assert.ok(app.voiceOps.includes("cancel"), "Return Now cancels any voice");
+  }
+});

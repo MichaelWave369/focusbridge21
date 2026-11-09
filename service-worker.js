@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v2-5-master-audio-engine";
+const CACHE_NAME = "focusbridge21-v2-6-sleep-intentions";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -31,6 +31,7 @@ const APP_SHELL = [
   "./docs/fb21-v12-experience.js",
   "./docs/fb21-focus-sync.js",
   "./docs/fb21-voice-guide.js",
+  "./docs/fb21-sleep-studio.js",
   "./docs/fb21-rife-lab.js",
   "./docs/fb21-v13-quiet-deck.js",
   "./docs/fb21-v13-quiet-deck.css",

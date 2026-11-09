@@ -108,6 +108,7 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   runInNewContext(syncScript, { window });
   runInNewContext(rifeScript, { window });
   runInNewContext(read("docs/fb21-voice-guide.js"), { window });
+  runInNewContext(read("docs/fb21-sleep-studio.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -120,11 +121,12 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   const setMix = (key, value) => root.listeners.input({ target: { id: "q-mix-" + key, value, setAttribute() {} } });
   const setHumNote = (value) => root.listeners.change({ target: { id: "q-hum-note", value } });
   const setMaster = (value) => root.listeners.input({ target: { id: "q-master", value } });
+  const setSleepIntention = (value) => root.listeners.input({ target: { id: "q-sleep-intention", value } });
   const advance = (milliseconds) => {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, setMix, setHumNote, setMaster, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
+  return { root, click, check, note, setMix, setHumNote, setMaster, setSleepIntention, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
     get reloads() { return reloads; } };
 }
 
@@ -141,7 +143,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine|focusbridge21-v2-6-sleep-intentions)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -978,4 +980,58 @@ test("master can be adjusted during preview without creating a receipt", async (
   assert.equal(app.storage.has("focusbridge21-ledger-v1"), false);
   app.click("stop-preview");
   assert.equal(app.contexts[0].state, "closed", "fake audio falls back to immediate stop");
+});
+
+
+test("Sleep Sanctuary+ starts its optional wind-down and speaks no cues after three minutes", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /SLEEP SANCTUARY\+ · YOUR WIND-DOWN/);
+  assert.match(app.root.innerHTML, /id="q-sleep-guide"/);
+  assert.match(app.root.innerHTML, /id="q-sleep-intention-speak"/);
+  assert.match(app.root.innerHTML, /id="q-sleep-dim" checked/);
+  assert.equal(app.spoken.length, 0, "the sleep narrator is opt-in");
+  app.setSleepIntention("Tonight I can rest.");
+  app.check("q-sleep-intention-speak", true);
+  app.check("q-sleep-guide", true);
+  const saved = JSON.parse(app.storage.get("focusbridge21-sleep-intentions-v26"));
+  assert.equal(saved.intention, "Tonight I can rest.");
+  assert.equal(saved.speakIntention, true);
+  assert.equal(saved.guide, true);
+  app.click("sleep-voice-preview");
+  assert.equal(app.spoken.length, 0, "preview requires safety consent");
+  app.check("q-safe");
+  app.click("sleep-voice-preview");
+  assert.equal(app.spoken.length, 1, "voice preview is explicit");
+  assert.match(app.spoken[0], /Tonight I can rest/);
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.match(app.root.innerHTML, /q-sleep-dim/);
+  assert.equal(app.spoken.length, 2, "session introduction plays once");
+  app.advance(60 * 1000);
+  assert.equal(app.spoken.length, 3, "one followup cue after the first minute");
+  app.advance(180 * 1000);
+  assert.equal(app.spoken.length, 3, "no repeated overnight speech");
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+  app.click("save");
+  const receipt = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(receipt.sleep_wind_down.spoken_guide_opted_in, true);
+  assert.equal(receipt.sleep_wind_down.spoken_personal_intention_opted_in, true);
+  assert.equal(receipt.sleep_wind_down.saved_intention_text_excluded, true);
+  assert.ok(!JSON.stringify(receipt).includes("Tonight I can rest"), "private intention not repeated in session ledger");
+});
+
+test("Sleep Sanctuary+ text is escaped, voice remains optional, and night mode may be disabled", () => {
+  const app = harness();
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /id="q-sleep-guide" disabled/);
+  assert.match(app.root.innerHTML, /Voice is unavailable here/);
+  app.setSleepIntention("<script>not HTML</script>");
+  app.check("q-sleep-dim", false);
+  assert.match(app.root.innerHTML, /&lt;script&gt;not HTML&lt;\/script&gt;/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-sleep-dim" checked/);
+  assert.equal(app.storage.get("focusbridge21-sleep-intentions-v26") !== null, true);
+  assert.doesNotMatch(app.root.innerHTML, /<script>not HTML<\/script>/);
 });

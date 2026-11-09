@@ -12,6 +12,14 @@
   const RIFE_SETTINGS_KEY = "focusbridge21-rife-audio-lab-v1";
   const GUIDE_KEY = "focusbridge21-quiet-guidance-v1";
   const MASTER_KEY = "focusbridge21-master-level-v25";
+  const SLEEP_KEY = "focusbridge21-sleep-intentions-v26";
+  const sleepPrefs = (() => {
+    try {
+      const value = JSON.parse(localStorage.getItem(SLEEP_KEY) || "{}");
+      return window.FocusBridgeSleep
+        ? window.FocusBridgeSleep.preferences(value) : {};
+    } catch { return {}; }
+  })();
   const guidePrefs = (() => {
     try {
       const value = JSON.parse(localStorage.getItem(GUIDE_KEY) || "{}");
@@ -129,7 +137,10 @@
     rain: level(mix.rain, 0), wind: level(mix.wind, 0), hum: level(mix.hum, 0),
     humNote: "C4", tones: mix.tones !== false,
     master: level((() => { try { return localStorage.getItem(MASTER_KEY) ?? 80; } catch { return 80; } })(), 80),
-    voiceGuide: guidePrefs.voice === true, breathGuide: guidePrefs.breath === true
+    voiceGuide: guidePrefs.voice === true, breathGuide: guidePrefs.breath === true,
+    sleepGuide: sleepPrefs.guide === true, sleepSpeakIntention: sleepPrefs.speakIntention === true,
+    sleepDim: sleepPrefs.dim !== false, sleepIntention: sleepPrefs.intention || "",
+    sleepCueIndex: 0
   };
 
   function saveGuidePreferences() {
@@ -140,6 +151,19 @@
   }
   function voiceAvailable() {
     return !!(window.FocusBridgeVoice && window.FocusBridgeVoice.available());
+  }
+  function sleepConfig() {
+    return { guide: state.sleepGuide, speakIntention: state.sleepSpeakIntention,
+      dim: state.sleepDim, intention: state.sleepIntention };
+  }
+  function saveSleepSettings() {
+    try { localStorage.setItem(SLEEP_KEY, JSON.stringify(sleepConfig())); }
+    catch {} // Session remains usable if storage is blocked.
+  }
+  function speakSleep(kind) {
+    if (!window.FocusBridgeSleep || !voiceAvailable()) return false;
+    const message = window.FocusBridgeSleep.cue(sleepConfig(), kind);
+    return message ? window.FocusBridgeVoice.say(message) : false;
   }
   function speakGate(stage) {
     if (!state.voiceGuide || state.profile !== "sync" || !voiceAvailable()) return;
@@ -408,6 +432,7 @@
     state.previewMessage = "";
     render();
     try {
+      if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
       await startAudio(true);
       if (state.previewNonce !== nonce || state.screen !== "prepare") return;
       state.previewStarting = false;
@@ -443,6 +468,7 @@
     if (state.screen !== "prepare" || state.starting || state.previewStarting || !state.safe ||
         (state.mode === "listen" && ((headphoneRequired() && !state.headphones) || allSoundOff()))) return;
     stopPreview("", false); // no preview oscillator may overlap the committed session
+    if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
     state.starting = true;
     state.error = "";
     render();
@@ -450,6 +476,7 @@
     state.paused = false;
     state.syncStage = 0;
     state.islandIndex = 0;
+    state.sleepCueIndex = 0;
     if (state.mode === "listen") {
       try { await startAudio(); }
       catch (error) {
@@ -468,6 +495,9 @@
     render();
     if (state.profile === "sync" && state.syncPlan)
       speakGate(window.FocusBridgeSync.stageAt(state.syncPlan, 0));
+    if (state.profile === "sleep" && state.mode === "listen") {
+      if (speakSleep("start") && state.sleepGuide) state.sleepCueIndex = 1;
+    }
   }
   function cue() {
     if (state.profile === "lost")
@@ -516,6 +546,12 @@
         render(); // Only rerender when a symbolic station changes, not every 200ms.
         speakGate(stage);
       }
+    }
+    if (state.profile === "sleep" && !state.paused && state.sleepCueIndex === 1 &&
+        window.FocusBridgeSleep && window.FocusBridgeSleep.shouldSpeakSecond(
+          sleepConfig(), state.elapsedMs / 1000, false)) {
+      state.sleepCueIndex = 2; // never repeat on a throttled tab.
+      speakSleep("settle");
     }
     const breath = root.querySelector("#q-breath-phase");
     if (breath && state.breathGuide) breath.textContent = state.paused ? "Breathing companion paused" : breathCue();
@@ -600,6 +636,13 @@
       guidance_mode: "Quiet Deck " + state.mode,
       voice_guidance_opted_in: state.profile === "sync" && state.voiceGuide && voiceAvailable(),
       optional_breath_visual: state.breathGuide,
+      sleep_wind_down: state.profile === "sleep" ? {
+        spoken_guide_opted_in: state.sleepGuide && voiceAvailable(),
+        spoken_personal_intention_opted_in: state.sleepSpeakIntention &&
+          !!state.sleepIntention && voiceAvailable(),
+        dimmed_display: state.sleepDim,
+        saved_intention_text_excluded: true
+      } : null,
       rife_audio_lab: state.profile === "rife" ? {
         frequency_hz: state.rife.frequency,
         waveform: state.rife.waveform,
@@ -639,7 +682,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.4</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.6</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',
@@ -923,6 +966,31 @@
               : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
         listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf, Rain, Wind, HUM, or enable stereo tones; choose Just settle for silence.</p>' : '',
+        state.profile === "sleep" && listen ? [
+          '<section class="q-sleep-studio" aria-label="Sleep and personal intention studio">',
+          '<div class="q-setup-step">SLEEP SANCTUARY+ · YOUR WIND-DOWN</div>',
+          '<h2>A little help letting the day go</h2>',
+          '<p class="q-detail">Keep your soothing ambience, then optionally hear a short wind-down and a personal bedtime intention. The guide stops speaking after the first minute. No hidden audio and no promises of sleep learning.</p>',
+          '<label class="q-check" for="q-sleep-guide"><input type="checkbox" id="q-sleep-guide" ',
+          state.sleepGuide && voiceAvailable() ? 'checked' : '', voiceAvailable() ? '' : 'disabled',
+          '> <span><strong>Gentle bedtime narrator</strong><small>A short opening welcome and one last cue around the first minute. No overnight narration.</small></span></label>',
+          '<label for="q-sleep-intention" class="q-sleep-label">My bedtime intention (optional)</label>',
+          '<textarea id="q-sleep-intention" maxlength="280" rows="3" placeholder="For example: Tomorrow I can begin calmly. Tonight I can rest.">',
+          safeText(state.sleepIntention), '</textarea>',
+          '<label class="q-check" for="q-sleep-intention-speak"><input type="checkbox" id="q-sleep-intention-speak" ',
+          state.sleepSpeakIntention && voiceAvailable() ? 'checked' : '',
+          voiceAvailable() ? '' : 'disabled',
+          '> <span><strong>Read my intention once at the beginning</strong><small>Your own words, at a normal audible level; always voluntary, never subliminal.</small></span></label>',
+          '<label class="q-check" for="q-sleep-dim"><input type="checkbox" id="q-sleep-dim" ',
+          state.sleepDim ? 'checked' : '',
+          '> <span><strong>Dim the session display</strong><small>Make the session visually quieter without hiding Return Now.</small></span></label>',
+          voiceAvailable()
+            ? '<button type="button" class="q-secondary" data-action="sleep-voice-preview" ' +
+              (!state.safe ? 'disabled' : '') + '>Hear my wind-down voice · one-time preview</button>'
+            : '<p class="q-detail">Voice is unavailable here. All text and ambient sound controls still work.</p>',
+          '<p class="q-detail">Your intention is stored in this browser, not encrypted. Some system voices may use an online service, so avoid entering secrets. This is a reflective practice, not a proven way to reprogram the subconscious during sleep.</p>',
+          '</section>'
+        ].join("") : '',
         '<section class="q-guide-panel" aria-label="Optional practice guidance">',
         '<div class="q-setup-step">OPTIONAL · GUIDED EXPERIENCE</div>',
         '<h2>Make the journey yours</h2>',
@@ -959,7 +1027,9 @@
         '<div class="q-running', state.profile === "sleep" && state.mode === "listen" ? ' q-running-sleep' : '',
         PROFILES[state.profile]?.holistic ? ' q-running-comfort' : '',
         state.profile === "rife" ? ' q-running-rife' : '',
-        state.profile === "lost" ? ' q-running-island' : '', '"><div class="q-eyebrow">',
+        state.profile === "lost" ? ' q-running-island' : '',
+        state.profile === "sleep" && state.sleepDim ? ' q-sleep-dim' : '',
+        '"><div class="q-eyebrow">',
         state.mode === "listen" ? safeText(PROFILES[state.profile].label.toUpperCase()) + ' · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         syncStation ? [
           '<section class="q-sync-active" aria-label="Focus Sync stage">',
@@ -1050,6 +1120,11 @@
       state.duration = Number(button.dataset.seconds); render();
     }
     else if (action === "preview") startPreview();
+    else if (action === "sleep-voice-preview" && state.screen === "prepare" &&
+        state.profile === "sleep" && state.safe && voiceAvailable()) {
+      if (state.previewActive || state.previewStarting) stopPreview("", false);
+      speakSleep("start");
+    }
     else if (action === "stop-preview") stopPreview("Preview stopped. Adjust your mix or listen again.");
     else if (action === "island-reset" && state.screen === "prepare" && state.profile === "lost") {
       stopPreviewForChange();
@@ -1097,6 +1172,17 @@
       if (!event.target.checked) stopPreviewForChange();
       state.headphones = event.target.checked; render();
     }
+    if (state.profile === "sleep" && state.screen === "prepare") {
+      if (event.target.id === "q-sleep-guide")
+        state.sleepGuide = voiceAvailable() && event.target.checked;
+      if (event.target.id === "q-sleep-intention-speak")
+        state.sleepSpeakIntention = voiceAvailable() && event.target.checked;
+      if (event.target.id === "q-sleep-dim")
+        state.sleepDim = event.target.checked;
+      if (["q-sleep-guide", "q-sleep-intention-speak", "q-sleep-dim"].includes(event.target.id)) {
+        saveSleepSettings(); render();
+      }
+    }
     if (event.target.id === "q-guide-voice" && state.profile === "sync") {
       state.voiceGuide = voiceAvailable() && event.target.checked;
       saveGuidePreferences(); render();
@@ -1129,6 +1215,12 @@
   });
   root.addEventListener("input", (event) => {
     if (event.target.id === "q-note") state.note = event.target.value;
+    if (event.target.id === "q-sleep-intention" && state.profile === "sleep") {
+      state.sleepIntention = window.FocusBridgeSleep
+        ? window.FocusBridgeSleep.clean(event.target.value)
+        : String(event.target.value || "").slice(0, 280);
+      saveSleepSettings();
+    }
     if (event.target.id === "q-master" && state.profile !== "rife") {
       state.master = level(event.target.value, 80);
       try { localStorage.setItem(MASTER_KEY, String(state.master)); } catch {}

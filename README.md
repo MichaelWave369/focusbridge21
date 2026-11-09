@@ -6,6 +6,13 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v2.8 Seamless Surf Wrap: eliminate the 11-second seam dropout
+
+- Fixed the original ocean-surf noise buffer's repeated 25 ms fade-to-silence notch. The surf's end now crossfades into the **preceding natural noise samples** over ~750 ms, maintaining an audible continuous bed instead of a short silent pulse every 11 seconds.
+- Uses a raised-cosine **equal-power overlap-add** and keeps the 11-second buffer length, three surf voices, rain/wind sharing, existing gain envelopes, master dynamics and soft session stops unchanged.
+- A deterministic waveform regression test verifies the *actual* final-to-first sample transition, overlap shape and absence of a zero-level notch. Existing Quiet Deck and extended-session tests still run.
+- A new PWA shell cache version lets previously-installed browser apps refresh the fixed sound generator after deployment. Manual headphone/speaker listening is still required to confirm the audible issue is gone on a real device.
+
 ## v2.7 Intention Studio: create, save, and hear your own reflection scripts
 
 - New dedicated **Intention Studio** card on the Quiet Deck home screen, using the existing shared master audio bus and original six-layer ambience.

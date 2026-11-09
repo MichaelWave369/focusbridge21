@@ -126,6 +126,74 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
 #fb21-quiet-root .q-running-sleep .q-cue { color: #9aafc6; }
 #fb21-quiet-root .q-running-sleep .q-timer { color: #aabbd0; }
 
+/* v2.7 Intention Studio: calm, responsive script and sound recipe cockpit */
+#fb21-quiet-root .q-choice-intention {
+  background: linear-gradient(150deg, #1d2746, #1b2339 58%, #152b30);
+  border-color: #8ec7ba88;
+}
+#fb21-quiet-root .q-intention-studio,
+#fb21-quiet-root .q-intention-active {
+  margin: 28px 0;
+  border-radius: 24px;
+  border: 1px solid #89b4b88c;
+  padding: clamp(20px, 4vw, 34px);
+  background: linear-gradient(135deg, #101d33f2, #192c3cea 66%, #11192df0);
+  box-shadow: 0 26px 65px #020a1d57, inset 0 1px 0 #ffffff18;
+}
+#fb21-quiet-root .q-intention-studio h2,
+#fb21-quiet-root .q-intention-active h2 {
+  font-size: clamp(1.4rem, 3vw, 2rem); letter-spacing: -.02em;
+  margin: 10px 0 15px; color: #f0f8fc;
+}
+#fb21-quiet-root .q-intention-studio .q-intention-label {
+  display: block; margin: 20px 0 9px; font-size: .95rem;
+  font-weight: 700; color: #dff1f2;
+}
+#fb21-quiet-root .q-intention-studio select,
+#fb21-quiet-root .q-intention-studio input[type="text"],
+#fb21-quiet-root .q-intention-studio textarea {
+  width: 100%; max-width: 100%;
+  border: 1px solid #8298b795; border-radius: 14px;
+  color: #f6faff; background: #0d1b2c;
+  font: inherit; padding: 14px 16px; line-height: 1.55;
+}
+#fb21-quiet-root .q-intention-studio select:focus-visible,
+#fb21-quiet-root .q-intention-studio input:focus-visible,
+#fb21-quiet-root .q-intention-studio textarea:focus-visible {
+  outline: 3px solid #ade6d3; outline-offset: 3px;
+}
+#fb21-quiet-root .q-intention-studio textarea {
+  min-height: 140px; resize: vertical;
+}
+#fb21-quiet-root .q-intention-actions {
+  display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0 23px;
+}
+#fb21-quiet-root .q-intention-actions button { flex: 1 1 190px; }
+#fb21-quiet-root .q-intention-studio .q-check {
+  padding: 15px 0; border-top: 1px solid #93b7bd40;
+  margin-top: 12px;
+}
+#fb21-quiet-root .q-intention-studio .q-check strong,
+#fb21-quiet-root .q-intention-studio .q-check small { display: block; }
+#fb21-quiet-root .q-intention-studio .q-check small {
+  color: #bfcddb; margin-top: 5px;
+}
+#fb21-quiet-root .q-intention-notice {
+  border-left: 3px solid #afdacf; padding: 11px 15px; background: #132b32;
+}
+#fb21-quiet-root .q-intention-active {
+  max-width: 680px; margin: 0 auto 24px; text-align: center;
+}
+#fb21-quiet-root .q-intention-active p:not(.q-detail) {
+  max-width: 55ch; margin: 14px auto; font-size: clamp(1.05rem, 2vw, 1.3rem);
+  line-height: 1.8; color: #dcebe9; overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+  #fb21-quiet-root .q-intention-studio { padding: 19px 16px; }
+  #fb21-quiet-root .q-intention-actions { flex-direction: column; }
+  #fb21-quiet-root .q-intention-actions button { width: 100%; flex: auto; }
+}
+
 /* v2.6 Sleep Sanctuary+ and user-written intention cards. */
 #fb21-quiet-root .q-sleep-studio {
   padding: clamp(20px, 4.5vw, 32px); margin: 28px 0;

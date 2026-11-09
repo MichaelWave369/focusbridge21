@@ -109,6 +109,7 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   runInNewContext(rifeScript, { window });
   runInNewContext(read("docs/fb21-voice-guide.js"), { window });
   runInNewContext(read("docs/fb21-sleep-studio.js"), { window });
+  runInNewContext(read("docs/fb21-intention-studio.js"), { window, Date: FakeDate });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -122,11 +123,14 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   const setHumNote = (value) => root.listeners.change({ target: { id: "q-hum-note", value } });
   const setMaster = (value) => root.listeners.input({ target: { id: "q-master", value } });
   const setSleepIntention = (value) => root.listeners.input({ target: { id: "q-sleep-intention", value } });
+  const setIntention = (key, value) => root.listeners.input({ target: { id: "q-intention-" + key, value } });
+  const chooseIntention = (id) => root.listeners.change({ target: { id: "q-intention-saved", value: id } });
+  const cadence = (value) => root.listeners.change({ target: { id: "q-intention-cadence", value } });
   const advance = (milliseconds) => {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, setMix, setHumNote, setMaster, setSleepIntention, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
+  return { root, click, check, note, setMix, setHumNote, setMaster, setSleepIntention, setIntention, chooseIntention, cadence, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
     get reloads() { return reloads; } };
 }
 
@@ -143,7 +147,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine|focusbridge21-v2-6-sleep-intentions)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine|focusbridge21-v2-6-sleep-intentions|focusbridge21-v2-7-intention-studio)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -1034,4 +1038,116 @@ test("Sleep Sanctuary+ text is escaped, voice remains optional, and night mode m
   assert.doesNotMatch(app.root.innerHTML, /id="q-sleep-dim" checked/);
   assert.equal(app.storage.get("focusbridge21-sleep-intentions-v26") !== null, true);
   assert.doesNotMatch(app.root.innerHTML, /<script>not HTML<\/script>/);
+});
+
+
+test("Intention Studio keeps spoken text opt-in, uses master audio, and excludes scripts from ledger", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  assert.match(app.root.innerHTML, /Open Intention Studio/);
+  app.click("intention");
+  assert.match(app.root.innerHTML, /id="q-intention-script"/);
+  assert.match(app.root.innerHTML, /Saved recipes \(0\/12\)/);
+  assert.match(app.root.innerHTML, /id="q-intention-speak" type="checkbox"/);
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "safety and script are required");
+  app.check("q-safe");
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "cannot begin without written script");
+  app.setIntention("title", "A calmer afternoon");
+  app.setIntention("script", "I can complete one kind step.");
+  app.click("intention-voice-preview");
+  assert.equal(app.spoken.length, 1, "explicit voice preview is allowed after safety check");
+  assert.match(app.spoken[0], /one kind step/);
+  app.cadence("3m");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.equal(app.spoken.length, 1, "preview did not silently opt into session narration");
+  assert.match(app.root.innerHTML, /Your chosen words|YOUR CHOSEN WORDS/);
+  app.advance(180000);
+  assert.equal(app.spoken.length, 1, "no automatic narration without consent");
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+  app.click("save");
+  const receipt = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(receipt.intention_studio.voice_opted_in, false);
+  assert.equal(receipt.intention_studio.cadence, "3m");
+  assert.equal(receipt.intention_studio.personal_script_excluded, true);
+  assert.doesNotMatch(JSON.stringify(receipt), /one kind step/);
+});
+
+test("Intention Studio library saves separate ambient mix snapshots, restores, and confirms deletion", () => {
+  const app = harness({ withAudio: true });
+  app.click("intention");
+  assert.match(app.root.innerHTML, /No browser voice is available/);
+  app.setIntention("title", 'My <script>day</script>');
+  app.setIntention("script", 'Keep it gentle <img src=x onerror="bad">');
+  app.click("intention-save");
+  const saved = JSON.parse(app.storage.get("focusbridge21-intention-library-v27"));
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].mix.surf, 30);
+  assert.equal(saved[0].mix.rain, 10);
+  assert.equal(saved[0].mix.hum, 10);
+  assert.equal(saved[0].mix.tones, false);
+  assert.match(app.root.innerHTML, /&lt;script&gt;day&lt;\/script&gt;/);
+  assert.doesNotMatch(app.root.innerHTML, /<script>day<\/script>/);
+  app.setMix("surf", 80);
+  app.chooseIntention(saved[0].id);
+  assert.match(app.root.innerHTML, /q-mix-surf/);
+  assert.match(app.root.innerHTML, /value="30" id="q-mix-surf"|id="q-mix-surf"[^>]+value="30"/);
+  app.click("intention-delete");
+  assert.match(app.root.innerHTML, /Confirm delete from this device/);
+  assert.equal(JSON.parse(app.storage.get("focusbridge21-intention-library-v27")).length, 1);
+  app.click("intention-confirm-delete");
+  assert.equal(JSON.parse(app.storage.get("focusbridge21-intention-library-v27")).length, 0);
+});
+
+test("Intention Studio spoken cues repeat only during active, consented awake practice", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  app.click("intention");
+  app.setIntention("script", "I can start fresh.");
+  app.cadence("3m");
+  app.check("q-intention-speak", true);
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.spoken.length, 1, "first spoken cue at start");
+  app.advance(180000);
+  assert.equal(app.spoken.length, 2, "second cue at 3 minutes");
+  app.click("pause");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(app.voiceOps.includes("pause"));
+  app.advance(180000);
+  assert.equal(app.spoken.length, 2, "no speech while paused");
+  app.click("pause");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(app.voiceOps.includes("resume"));
+  app.advance(180000);
+  assert.equal(app.spoken.length, 3, "repeat resumes with active playback");
+  app.click("return");
+  const n = app.spoken.length;
+  app.advance(600000);
+  assert.equal(app.spoken.length, n, "no voice after Return Now");
+});
+
+
+test("Intention Studio supports private silent reading and voice-only sessions without an AudioContext", async () => {
+  for (const speaking of [false, true]) {
+    const app = harness({ withAudio: true, withVoice: true });
+    app.click("intention");
+    app.setIntention("script", "I can pause and begin again.");
+    for (const layer of ["surf", "bass", "beat", "rain", "wind", "hum"]) app.setMix(layer, 0);
+    assert.match(app.root.innerHTML, /Intention Studio/);
+    assert.doesNotMatch(app.root.innerHTML, /All sound layers are off/);
+    assert.doesNotMatch(app.root.innerHTML, /Preview selected mix · 15 sec/);
+    if (speaking) app.check("q-intention-speak");
+    app.check("q-safe");
+    app.click("start");
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(app.contexts.length, 0, "no silent Web Audio context should be created");
+    assert.match(app.root.innerHTML, /SILENT PRACTICE/);
+    assert.equal(app.spoken.length, speaking ? 1 : 0);
+    app.click("return");
+    assert.ok(app.voiceOps.includes("cancel"), "Return Now cancels any voice");
+  }
 });

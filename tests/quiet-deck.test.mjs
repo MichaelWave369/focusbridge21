@@ -104,6 +104,7 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   const setInterval = (callback) => { const id = nextTimer++; timers.set(id, callback); return id; };
   const clearInterval = (id) => timers.delete(id);
 
+  runInNewContext(read("docs/fb21-audio-engine.js"), { window, Uint8Array });
   runInNewContext(syncScript, { window });
   runInNewContext(rifeScript, { window });
   runInNewContext(read("docs/fb21-voice-guide.js"), { window });
@@ -118,11 +119,12 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
   const setMix = (key, value) => root.listeners.input({ target: { id: "q-mix-" + key, value, setAttribute() {} } });
   const setHumNote = (value) => root.listeners.change({ target: { id: "q-hum-note", value } });
+  const setMaster = (value) => root.listeners.input({ target: { id: "q-master", value } });
   const advance = (milliseconds) => {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, setMix, setHumNote, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
+  return { root, click, check, note, setMix, setHumNote, setMaster, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
     get reloads() { return reloads; } };
 }
 
@@ -139,7 +141,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -935,4 +937,45 @@ test("Focus Sync keeps written prompts when no speech engine exists", () => {
   assert.match(app.root.innerHTML, /browser has no speech voice available/);
   app.check("q-guide-breath", true);
   assert.match(app.root.innerHTML, /id="q-guide-breath" checked/);
+});
+
+
+test("v2.5 master fader persists, is available while running, and never bypasses safety checks", async () => {
+  const app = harness({ withAudio: true });
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /Φ AUDIO ENGINE · MASTER OUTPUT/);
+  assert.match(app.root.innerHTML, /id="q-master" min="0" max="100" step="5" value="80"/);
+  app.setMaster(35);
+  assert.equal(app.storage.get("focusbridge21-master-level-v25"), "35");
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "master fader does not bypass safety confirmation");
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.match(app.root.innerHTML, /q-master-running/);
+  assert.match(app.root.innerHTML, /id="q-master" min="0" max="100" step="5" value="35"/);
+  assert.match(app.root.innerHTML, /id="q-master-meter-fill"/);
+  app.setMaster(60);
+  assert.equal(app.storage.get("focusbridge21-master-level-v25"), "60");
+  app.click("pause");
+  await new Promise(resolve => setImmediate(resolve));
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed", "paused session stops immediately");
+});
+
+test("master can be adjusted during preview without creating a receipt", async () => {
+  const app = harness({ withAudio: true });
+  app.click("listen");
+  app.check("q-safe");
+  app.check("q-headphones");
+  app.click("preview");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  app.setMaster(25);
+  assert.equal(app.storage.get("focusbridge21-master-level-v25"), "25");
+  assert.equal(app.contexts[0].state, "running");
+  assert.equal(app.storage.has("focusbridge21-ledger-v1"), false);
+  app.click("stop-preview");
+  assert.equal(app.contexts[0].state, "closed", "fake audio falls back to immediate stop");
 });

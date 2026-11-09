@@ -11,6 +11,7 @@
   const PROFILE_MIX_KEY = "focusbridge21-quiet-profile-mixes-v16";
   const RIFE_SETTINGS_KEY = "focusbridge21-rife-audio-lab-v1";
   const GUIDE_KEY = "focusbridge21-quiet-guidance-v1";
+  const MASTER_KEY = "focusbridge21-master-level-v25";
   const guidePrefs = (() => {
     try {
       const value = JSON.parse(localStorage.getItem(GUIDE_KEY) || "{}");
@@ -127,6 +128,7 @@
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0),
     rain: level(mix.rain, 0), wind: level(mix.wind, 0), hum: level(mix.hum, 0),
     humNote: "C4", tones: mix.tones !== false,
+    master: level((() => { try { return localStorage.getItem(MASTER_KEY) ?? 80; } catch { return 80; } })(), 80),
     voiceGuide: guidePrefs.voice === true, breathGuide: guidePrefs.breath === true
   };
 
@@ -276,11 +278,17 @@
     if (!Context) throw new Error("Web Audio is not supported by this browser.");
     const context = new Context();
     const nodes = [];
-    const audio = { context, nodes };
+    const audio = { context, nodes, bus: null };
     if (preview) state.previewAudio = audio;
     else state.audio = audio;
     const seconds = preview ? PREVIEW_SECONDS : state.duration;
     try {
+      // Both oscillator tones and six-layer ambience feed a common output bus.
+      // The experimental Rife module remains isolated until its own routing QA.
+      if (state.profile !== "rife" && window.FocusBridgeAudioEngine) {
+        audio.bus = window.FocusBridgeAudioEngine.create(context, audio,
+          { level: state.master });
+      }
       if (state.profile === "rife") {
         await context.resume();
         if (context.state !== "running")
@@ -323,7 +331,7 @@
       if (state.tones) {
         left.connect(leftGain).connect(merger, 0, 0);
         right.connect(rightGain).connect(merger, 0, 1);
-        merger.connect(volume).connect(context.destination);
+        merger.connect(volume).connect(audio.bus ? audio.bus.input : context.destination);
         nodes.push(left, right, leftGain, rightGain, merger, volume);
       }
       await context.resume();
@@ -341,7 +349,8 @@
         ? window.FocusBridgeSoundscape.schedule(context,
             { surf: state.surf, bass: state.bass, beat: state.beat,
               rain: state.rain, wind: state.wind, hum: state.hum,
-              humNote: state.humNote, space: profile.space },
+              humNote: state.humNote, space: profile.space,
+              destination: audio.bus ? audio.bus.input : context.destination },
             seconds, audio)
         : false;
       if (!state.tones && !ambienceStarted)
@@ -360,12 +369,18 @@
     }
     try { if (audio.context.state !== "closed") audio.context.close(); } catch {}
   }
-  function stopAudio(preview = false) {
+  function stopAudio(preview = false, immediate = false) {
     if (!preview && window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
     const audio = preview ? state.previewAudio : state.audio;
     if (preview) state.previewAudio = null;
     else state.audio = null;
-    closeAudio(audio);
+    // Audio stop is logically immediate. Real Web Audio fades for 140 ms
+    // before context cleanup to avoid clicks from abrupt disconnection.
+    if (audio && audio.bus && !immediate && window.FocusBridgeAudioEngine) {
+      window.FocusBridgeAudioEngine.beginStop(audio.bus, () => closeAudio(audio));
+    } else {
+      closeAudio(audio);
+    }
   }
   function stopPreview(message = "", rerender = true) {
     const wasActive = state.previewActive || state.previewStarting || !!state.previewAudio;
@@ -504,6 +519,15 @@
     }
     const breath = root.querySelector("#q-breath-phase");
     if (breath && state.breathGuide) breath.textContent = state.paused ? "Breathing companion paused" : breathCue();
+    const meter = root.querySelector("#q-master-meter-fill");
+    if (meter && state.audio && state.audio.bus && window.FocusBridgeAudioEngine) {
+      const value = window.FocusBridgeAudioEngine.peak(state.audio.bus);
+      if (value !== null) {
+        meter.style.width = Math.round(value * 100) + "%";
+        const text = root.querySelector("#q-meter-reading");
+        if (text) text.textContent = Math.round(value * 100) + "% digital peak";
+      }
+    }
     const timer = root.querySelector("#fb21-q-timer");
     const bar = root.querySelector("#fb21-q-progress");
     const prompt = root.querySelector("#fb21-q-cue");
@@ -584,7 +608,8 @@
         output_type: "audible Web Audio, not RF, EMF or electrotherapy",
         interpretation: "Audio demonstration, not a medical treatment"
       } : null,
-      audio_params: { engine: state.profile === "rife" ? "audible-waveform-lab-v1"
+      audio_params: { master_percent: state.master,
+        engine: state.profile === "rife" ? "audible-waveform-lab-v1"
         : state.mode === "listen" ? "original-browser-soundscape-v16" : "none",
         profile: state.mode === "listen" ? state.profile : "silent",
         difference_hz: state.mode === "listen" && state.tones && state.profile !== "rife"
@@ -833,6 +858,16 @@
               (state.toneDifference === hz ? ' selected' : '') + '>' + hz + ' Hz</option>').join("") +
             '</select><p class="q-detail">Stereo headphones required for binaural tones. The Hz options are sound experiments, not medical prescriptions. Leave tones off if you are sound-sensitive.</p></div>' : '') +
           '</div>' : '',
+        listen && state.profile !== "rife" ? [
+          '<section class="q-master-panel" aria-label="Audio engine master output">',
+          '<div class="q-setup-step">Φ AUDIO ENGINE · MASTER OUTPUT</div>',
+          '<label for="q-master"><strong>Master output</strong> · ',
+          '<output id="q-master-value">', state.master, '%</output></label>',
+          '<input type="range" id="q-master" min="0" max="100" step="5" value="',
+          state.master, '" aria-label="Master output level">',
+          '<p class="q-detail">Relative digital mixer gain, not measured headphone loudness. Start with your device volume low. Changes also apply during preview.</p>',
+          '</section>'
+        ].join("") : '',
         listen ? [
           '<section class="q-preview-panel" aria-label="Preview selected sounds before starting">',
           '<div class="q-setup-step">SOUND CHECK · BEFORE YOUR SESSION</div>',
@@ -957,6 +992,16 @@
           (state.paused ? 'Breathing companion paused' : breathCue()) + '</p>' : '',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
         '<p id="fb21-q-cue" class="q-cue">', state.paused ? 'Paused. Return whenever you like.' : cue(), '</p>',
+        state.mode === "listen" && state.profile !== "rife" ? [
+          '<section class="q-master-panel q-master-running" aria-label="Live audio output">',
+          '<label for="q-master"><strong>Master output</strong> · ',
+          '<output id="q-master-value">', state.master, '%</output></label>',
+          '<input type="range" id="q-master" min="0" max="100" step="5" value="', state.master,
+          '" aria-label="Live master output level">',
+          '<div class="q-master-meter" aria-hidden="true"><div id="q-master-meter-fill"></div></div>',
+          '<small id="q-meter-reading">Digital peak monitor</small>',
+          '</section>'
+        ].join("") : '',
         '<div class="q-track"><div id="fb21-q-progress" style="width:',
         Math.round(100 * state.elapsedMs / (state.duration * 1000)), '%"></div></div>',
         '<div class="q-actions q-center"><button type="button" class="q-secondary" data-action="pause">',
@@ -1084,6 +1129,18 @@
   });
   root.addEventListener("input", (event) => {
     if (event.target.id === "q-note") state.note = event.target.value;
+    if (event.target.id === "q-master" && state.profile !== "rife") {
+      state.master = level(event.target.value, 80);
+      try { localStorage.setItem(MASTER_KEY, String(state.master)); } catch {}
+      if (window.FocusBridgeAudioEngine) {
+        for (const instance of [state.audio, state.previewAudio]) {
+          if (instance && instance.bus)
+            window.FocusBridgeAudioEngine.setLevel(instance.bus, state.master);
+        }
+      }
+      const output = root.querySelector("#q-master-value");
+      if (output) output.textContent = state.master + "%";
+    }
     if (event.target.id === "q-rife-intensity" && state.profile === "rife") {
       const wasPreviewing = !!state.previewAudio || state.previewStarting;
       stopPreviewForChange();
@@ -1123,7 +1180,7 @@
   window.addEventListener("pagehide", () => {
     stopPreview("", false);
     clearInterval(state.timer);
-    stopAudio();
+    stopAudio(false, true); // navigation cannot be trusted to run delayed cleanup
   });
 
   let openOldLab = false;

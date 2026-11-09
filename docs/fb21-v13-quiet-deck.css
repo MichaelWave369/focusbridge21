@@ -126,6 +126,46 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
 #fb21-quiet-root .q-running-sleep .q-cue { color: #9aafc6; }
 #fb21-quiet-root .q-running-sleep .q-timer { color: #aabbd0; }
 
+/* v2.4 optional voice guidance and gentle visual pacing. */
+#fb21-quiet-root .q-guide-panel {
+  margin: 28px 0; padding: clamp(18px, 4vw, 30px);
+  background: linear-gradient(125deg, #16253d, #132c37dd 60%, #18223d);
+  border: 1px solid #89ccbf66; border-radius: 22px;
+  box-shadow: inset 0 1px 0 #b6eddd14, 0 18px 45px #0508123a;
+}
+#fb21-quiet-root .q-guide-panel h2 {
+  margin: 10px 0 8px; font-size: clamp(1.25rem, 2.8vw, 1.7rem);
+  letter-spacing: -.025em;
+}
+#fb21-quiet-root .q-guide-panel .q-check {
+  max-width: none; border-top: 1px solid #759ea43d; padding: 17px 0;
+}
+#fb21-quiet-root .q-guide-panel .q-check strong,
+#fb21-quiet-root .q-guide-panel .q-check small { display: block; }
+#fb21-quiet-root .q-guide-panel .q-check small {
+  margin-top: 5px; color: #bccddd; font-size: .88rem;
+}
+#fb21-quiet-root .q-breath-phase {
+  color: #c4f6e8; font-size: 1.08rem; font-weight: 650;
+  letter-spacing: .04em; margin: -7px auto 19px;
+}
+#fb21-quiet-root .q-orb-guided {
+  animation: fb21-q-guided-breath 10s linear infinite;
+  box-shadow: 0 0 110px #81d0cb42, inset 0 0 55px #aadbe62e;
+}
+#fb21-quiet-root .q-orb-paused { animation-play-state: paused; }
+@keyframes fb21-q-guided-breath {
+  0%, 100% { transform: scale(.92); filter: brightness(.86); }
+  40% { transform: scale(1.065); filter: brightness(1.13); }
+}
+#fb21-quiet-root .q-sync-active {
+  border-color: #9cdcca88; background: linear-gradient(155deg, #152b37, #131e31);
+}
+#fb21-quiet-root .q-sync-active h2 { letter-spacing: -.025em; }
+@media (prefers-reduced-motion: reduce) {
+  #fb21-quiet-root .q-orb-guided { animation: none !important; filter: none; }
+}
+
 /* v1.4 optional original soundscape mixer */
 #fb21-quiet-root .q-mixer { border-block: 1px solid #64738f50; margin: 20px 0; padding: 22px 0 14px; }
 #fb21-quiet-root .q-mixer h2 { margin: 0 0 6px; }

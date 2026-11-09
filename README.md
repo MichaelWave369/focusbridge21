@@ -6,6 +6,16 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v2.6 Sleep Sanctuary+ and Bedtime Intention Studio
+
+- Existing **Sleep Sanctuary** now offers optional short narrated wind-down prompts: a start cue and a final first-minute cue, then no more speech during the sleep session. Narration remains off by default.
+- Write an optional **personal bedtime intention** (up to 280 characters), stored only in this browser. A separate opt-in checkbox speaks the intended words **once** at session start. No subliminal messages and no scientifically unsupported promises of subconscious reprogramming while asleep.
+- A user-triggered one-time voice preview checks the spoken text after readiness confirmation without creating a session receipt. The narration stops on Pause/Return Now as appropriate.
+- An adjustable **Dim session display** setting reduces visual glow without hiding essential controls.
+- Signal Ledger records only which features were enabled, never the private intention text. Browser-local storage is not encryption, and browser speech voices may use an online service.
+
+See [Sleep and Intention Studio design and acceptance QA](docs/SLEEP_INTENTION_STUDIO.md).
+
 ## v2.5 Shared Audio Engine: master mixer and digital diagnostics
 
 - Quiet Deck's six environmental layers and stereo tones feed a common session output bus, with an accessible **master fader** shown during preflight and live playback. Individual recipe levels remain independent.

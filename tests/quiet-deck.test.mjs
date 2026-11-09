@@ -938,3 +938,44 @@ test("Focus Sync keeps written prompts when no speech engine exists", () => {
   app.check("q-guide-breath", true);
   assert.match(app.root.innerHTML, /id="q-guide-breath" checked/);
 });
+
+
+test("v2.5 master fader persists, is available while running, and never bypasses safety checks", async () => {
+  const app = harness({ withAudio: true });
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /Φ AUDIO ENGINE · MASTER OUTPUT/);
+  assert.match(app.root.innerHTML, /id="q-master" min="0" max="100" step="5" value="80"/);
+  app.setMaster(35);
+  assert.equal(app.storage.get("focusbridge21-master-level-v25"), "35");
+  app.click("start");
+  assert.equal(app.contexts.length, 0, "master fader does not bypass safety confirmation");
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.match(app.root.innerHTML, /q-master-running/);
+  assert.match(app.root.innerHTML, /id="q-master" min="0" max="100" step="5" value="35"/);
+  assert.match(app.root.innerHTML, /id="q-master-meter-fill"/);
+  app.setMaster(60);
+  assert.equal(app.storage.get("focusbridge21-master-level-v25"), "60");
+  app.click("pause");
+  await new Promise(resolve => setImmediate(resolve));
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed", "paused session stops immediately");
+});
+
+test("master can be adjusted during preview without creating a receipt", async () => {
+  const app = harness({ withAudio: true });
+  app.click("listen");
+  app.check("q-safe");
+  app.check("q-headphones");
+  app.click("preview");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  app.setMaster(25);
+  assert.equal(app.storage.get("focusbridge21-master-level-v25"), "25");
+  assert.equal(app.contexts[0].state, "running");
+  assert.equal(app.storage.has("focusbridge21-ledger-v1"), false);
+  app.click("stop-preview");
+  assert.equal(app.contexts[0].state, "closed", "fake audio falls back to immediate stop");
+});

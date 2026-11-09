@@ -1225,7 +1225,7 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "listen", "sleep", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();
@@ -1235,6 +1235,33 @@
       state.duration = Number(button.dataset.seconds); render();
     }
     else if (action === "preview") startPreview();
+    else if (state.screen === "prepare" && state.profile === "intention" &&
+        action === "intention-save") saveIntentionRecipe();
+    else if (state.screen === "prepare" && state.profile === "intention" &&
+        action === "intention-new") {
+      state.intentionId = "";
+      state.intentionTitle = "";
+      state.intentionScript = "";
+      state.intentionCadence = "once";
+      state.intentionSpeak = false;
+      state.intentionConfirmDelete = false;
+      state.intentionNotice = "Blank script ready. Your mixer levels are unchanged.";
+      render();
+    }
+    else if (state.screen === "prepare" && state.profile === "intention" &&
+        action === "intention-delete" && state.intentionId) {
+      state.intentionConfirmDelete = true;
+      state.intentionNotice = "Confirm deletion below. This only deletes the selected local recipe.";
+      render();
+    }
+    else if (state.screen === "prepare" && state.profile === "intention" &&
+        action === "intention-confirm-delete") deleteIntentionRecipe();
+    else if (state.screen === "prepare" && state.profile === "intention" &&
+        action === "intention-voice-preview" && state.safe &&
+        !!state.intentionScript && voiceAvailable()) {
+      if (state.previewActive || state.previewStarting) stopPreview("", false);
+      intentionVoice();
+    }
     else if (action === "sleep-voice-preview" && state.screen === "prepare" &&
         state.profile === "sleep" && state.safe && voiceAvailable()) {
       if (state.previewActive || state.previewStarting) stopPreview("", false);
@@ -1299,6 +1326,31 @@
         saveSleepSettings(); render();
       }
     }
+    if (state.profile === "intention" && state.screen === "prepare") {
+      if (event.target.id === "q-intention-speak") {
+        state.intentionSpeak = voiceAvailable() && event.target.checked;
+        render();
+      }
+      if (event.target.id === "q-intention-cadence" && intentionEngine) {
+        state.intentionCadence = intentionEngine.validCadence(event.target.value);
+        render();
+      }
+      if (event.target.id === "q-intention-saved" && intentionEngine) {
+        if (event.target.value) {
+          const entry = state.intentionLibrary.find(e => e.id === event.target.value);
+          if (entry) applyIntentionRecipe(entry);
+        } else {
+          state.intentionId = "";
+          state.intentionTitle = "";
+          state.intentionScript = "";
+          state.intentionCadence = "once";
+          state.intentionSpeak = false;
+          state.intentionConfirmDelete = false;
+          state.intentionNotice = "";
+          render();
+        }
+      }
+    }
     if (event.target.id === "q-guide-voice" && state.profile === "sync") {
       state.voiceGuide = voiceAvailable() && event.target.checked;
       saveGuidePreferences(); render();
@@ -1331,6 +1383,12 @@
   });
   root.addEventListener("input", (event) => {
     if (event.target.id === "q-note") state.note = event.target.value;
+    if (state.profile === "intention" && state.screen === "prepare" && intentionEngine) {
+      if (event.target.id === "q-intention-title")
+        state.intentionTitle = intentionEngine.clean(event.target.value, intentionEngine.MAX_TITLE);
+      if (event.target.id === "q-intention-script")
+        state.intentionScript = intentionEngine.clean(event.target.value, intentionEngine.MAX_SCRIPT);
+    }
     if (event.target.id === "q-sleep-intention" && state.profile === "sleep") {
       state.sleepIntention = window.FocusBridgeSleep
         ? window.FocusBridgeSleep.clean(event.target.value)

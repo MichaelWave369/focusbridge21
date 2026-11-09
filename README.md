@@ -6,6 +6,17 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v2.4 Guided Focus Sync and smoother soundscape loop (review candidate)
+
+This review branch makes a focused first step toward a unified audio cockpit while preserving the existing modes, profiles, guided labs, offline shell, and safety checks.
+
+- The procedural surf/rain/wind noise loop is now 11 seconds, with a smooth 25 ms taper at both ends, reducing a possible source of periodic clicks. This does **not** prove device-specific crackles and pops are eliminated.
+- **Focus Sync** offers an optional **Speak each focus gate** control. With consent, a browser-provided voice reads the current original stage title and prompt; it is silent by default, pauses and resumes with the session, and stops on Return Now. On-screen prompts still work without speech support. Browser voice technology and whether voices use online services depend on the device.
+- An independent optional visual breathing companion uses 4 seconds in / 6 seconds out with no breath-holding requirement. Breathe naturally whenever preferable. No voice, breathing animation, or listening mode claims medical benefits or proves reaching any focus state.
+- Two entrypoints load the optional voice guide before Quiet Deck. The PWA shell cache is versioned for the new script, and automated test coverage adds narrative cancellation and buffer-loop seam checks.
+
+See [Audio cockpit roadmap and manual listening QA](docs/AUDIO_COCKPIT_ROADMAP.md) for the proposed next phase: a unified master audio bus, smooth stop transitions, peak diagnostics, narration ducking, and an optional AudioWorklet backend.
+
 ## v2.3 Preview Mix: listen before starting
 
 A separate **15-second Preview selected mix** control now appears in the Quiet Deck preflight setup for any audible preset, including six-layer soundscapes, Island 108, Focus Sync, Holistic Zone, and Rife Frequency Lab.

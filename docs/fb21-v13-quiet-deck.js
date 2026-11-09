@@ -10,6 +10,13 @@
   const MIX_KEY = "focusbridge21-quiet-soundscape-v14";
   const PROFILE_MIX_KEY = "focusbridge21-quiet-profile-mixes-v16";
   const RIFE_SETTINGS_KEY = "focusbridge21-rife-audio-lab-v1";
+  const GUIDE_KEY = "focusbridge21-quiet-guidance-v1";
+  const guidePrefs = (() => {
+    try {
+      const value = JSON.parse(localStorage.getItem(GUIDE_KEY) || "{}");
+      return value && typeof value === "object" ? value : {};
+    } catch { return {}; }
+  })();
   const readRifeSettings = () => {
     try { return JSON.parse(localStorage.getItem(RIFE_SETTINGS_KEY) || "{}"); }
     catch { return {}; }
@@ -119,8 +126,30 @@
     previewMessage: "", previewError: "",
     surf: level(mix.surf, 68), bass: level(mix.bass, 14), beat: level(mix.beat, 0),
     rain: level(mix.rain, 0), wind: level(mix.wind, 0), hum: level(mix.hum, 0),
-    humNote: "C4", tones: mix.tones !== false
+    humNote: "C4", tones: mix.tones !== false,
+    voiceGuide: guidePrefs.voice === true, breathGuide: guidePrefs.breath === true
   };
+
+  function saveGuidePreferences() {
+    try {
+      localStorage.setItem(GUIDE_KEY,
+        JSON.stringify({ voice: state.voiceGuide, breath: state.breathGuide }));
+    } catch {} // Guidance works without persistent storage.
+  }
+  function voiceAvailable() {
+    return !!(window.FocusBridgeVoice && window.FocusBridgeVoice.available());
+  }
+  function speakGate(stage) {
+    if (!state.voiceGuide || state.profile !== "sync" || !voiceAvailable()) return;
+    const introduction = stage.kind === "return"
+      ? "Now begin a gentle return."
+      : "Focus " + stage.level + ". " + stage.title + ".";
+    window.FocusBridgeVoice.say(introduction + " " + stage.prompt);
+  }
+  function breathCue() {
+    const cycle = state.elapsedMs % 10000;
+    return cycle < 4000 ? "Breathe in gently" : "Breathe out comfortably";
+  }
 
   function safeText(value) {
     return String(value || "").replace(/[&<>"']/g, (c) =>
@@ -332,6 +361,7 @@
     try { if (audio.context.state !== "closed") audio.context.close(); } catch {}
   }
   function stopAudio(preview = false) {
+    if (!preview && window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
     const audio = preview ? state.previewAudio : state.audio;
     if (preview) state.previewAudio = null;
     else state.audio = null;
@@ -421,6 +451,8 @@
     clearInterval(state.timer);
     state.timer = setInterval(tick, 200);
     render();
+    if (state.profile === "sync" && state.syncPlan)
+      speakGate(window.FocusBridgeSync.stageAt(state.syncPlan, 0));
   }
   function cue() {
     if (state.profile === "lost")
@@ -467,8 +499,11 @@
       if (stage.index !== state.syncStage) {
         state.syncStage = stage.index;
         render(); // Only rerender when a symbolic station changes, not every 200ms.
+        speakGate(stage);
       }
     }
+    const breath = root.querySelector("#q-breath-phase");
+    if (breath && state.breathGuide) breath.textContent = state.paused ? "Breathing companion paused" : breathCue();
     const timer = root.querySelector("#fb21-q-timer");
     const bar = root.querySelector("#fb21-q-progress");
     const prompt = root.querySelector("#fb21-q-cue");
@@ -488,6 +523,10 @@
         finishSession(true);
         return;
       }
+    }
+    if (state.voiceGuide && window.FocusBridgeVoice) {
+      if (state.paused) window.FocusBridgeVoice.pause();
+      else window.FocusBridgeVoice.resume();
     }
     render();
   }
@@ -535,6 +574,8 @@
         interpretation: "Time-based labels and personal reflection, not detected states"
       } : null,
       guidance_mode: "Quiet Deck " + state.mode,
+      voice_guidance_opted_in: state.profile === "sync" && state.voiceGuide && voiceAvailable(),
+      optional_breath_visual: state.breathGuide,
       rife_audio_lab: state.profile === "rife" ? {
         frequency_hz: state.rife.frequency,
         waveform: state.rife.waveform,
@@ -573,7 +614,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.3</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.4</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',
@@ -847,6 +888,21 @@
               : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
         listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf, Rain, Wind, HUM, or enable stereo tones; choose Just settle for silence.</p>' : '',
+        '<section class="q-guide-panel" aria-label="Optional practice guidance">',
+        '<div class="q-setup-step">OPTIONAL · GUIDED EXPERIENCE</div>',
+        '<h2>Make the journey yours</h2>',
+        state.profile === "sync" ? [
+          '<label class="q-check" for="q-guide-voice"><input type="checkbox" id="q-guide-voice" ',
+          state.voiceGuide && voiceAvailable() ? 'checked' : '',
+          voiceAvailable() ? '' : 'disabled',
+          '> <span><strong>Speak each focus gate</strong><small>A calm browser voice reads the original prompt when the next gate begins. No nonstop talking.</small></span></label>',
+          voiceAvailable() ? '' : '<p class="q-detail">This browser has no speech voice available. Written prompts still work.</p>',
+          '<p class="q-detail">Voice selection and offline availability depend on your browser and device; some installed voices may use an online service.</p>'
+        ].join("") : '',
+        '<label class="q-check" for="q-guide-breath"><input type="checkbox" id="q-guide-breath" ',
+        state.breathGuide ? 'checked' : '',
+        '> <span><strong>Show a gentle breathing companion</strong><small>Optional 4-second inhale, 6-second exhale visual, with no breath holding. Breathe naturally instead whenever comfortable.</small></span></label>',
+        '</section>',
         '<div class="q-start-panel"><div class="q-setup-step">STEP 3 OF 3 · BEGIN</div>',
         '<p class="q-start-hint" role="status" id="q-readiness-hint">',
         canBegin ? '<span aria-hidden="true">✓ </span>' : '<span aria-hidden="true">○ </span>',
@@ -894,7 +950,11 @@
           state.rife.intensity, '% of the limited software gain</p>',
           '<p class="q-detail">Audio only. No RF transmission, disease treatment, or measured body response.</p></section>'
         ].join("") : '',
-        '<div class="q-orb" aria-hidden="true"><div class="q-orb-inner"></div></div>',
+        '<div class="q-orb', state.breathGuide ? ' q-orb-guided' : '',
+        state.paused ? ' q-orb-paused' : '', '" aria-hidden="true" style="animation-delay:-',
+        (state.elapsedMs / 1000).toFixed(2), 's"><div class="q-orb-inner"></div></div>',
+        state.breathGuide ? '<p id="q-breath-phase" class="q-breath-phase" role="status">' +
+          (state.paused ? 'Breathing companion paused' : breathCue()) + '</p>' : '',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
         '<p id="fb21-q-cue" class="q-cue">', state.paused ? 'Paused. Return whenever you like.' : cue(), '</p>',
         '<div class="q-track"><div id="fb21-q-progress" style="width:',
@@ -991,6 +1051,14 @@
     if (event.target.id === "q-headphones") {
       if (!event.target.checked) stopPreviewForChange();
       state.headphones = event.target.checked; render();
+    }
+    if (event.target.id === "q-guide-voice" && state.profile === "sync") {
+      state.voiceGuide = voiceAvailable() && event.target.checked;
+      saveGuidePreferences(); render();
+    }
+    if (event.target.id === "q-guide-breath") {
+      state.breathGuide = event.target.checked;
+      saveGuidePreferences(); render();
     }
     if (event.target.id === "q-tones") {
       stopPreviewForChange();

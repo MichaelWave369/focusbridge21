@@ -15,7 +15,7 @@ const soundscapeWindow = {};
 runInNewContext(read("docs/fb21-soundscape.js"), { window: soundscapeWindow, Math });
 const HUM_NOTES = soundscapeWindow.FocusBridgeSoundscape.HUM_NOTES;
 
-function harness({ withAudio = false } = {}) {
+function harness({ withAudio = false, withVoice = false } = {}) {
   let clock = Date.now();
   const elements = [];
   const timers = new Map();
@@ -24,6 +24,7 @@ function harness({ withAudio = false } = {}) {
   const classes = new Map();
   const contexts = [];
   const scheduled = [];
+  const spoken = [], voiceOps = [];
   let reloads = 0;
   let nextTimer = 1;
   class FakeDate extends Date { static now() { return clock; } }
@@ -77,7 +78,19 @@ function harness({ withAudio = false } = {}) {
     FocusBridgeSoundscape: { HUM_NOTES, schedule(ctx, options, seconds) {
       scheduled.push({ ctx, options, seconds }); return true;
     } },
-    ...(withAudio ? { AudioContext: FakeAudioContext } : {})
+    ...(withAudio ? { AudioContext: FakeAudioContext } : {}),
+    ...(withVoice ? {
+      SpeechSynthesisUtterance: class {
+        constructor(text) { this.text = text; }
+      },
+      speechSynthesis: {
+        getVoices() { return [{ lang: "en-US", localService: true }]; },
+        speak(utterance) { spoken.push(utterance.text); voiceOps.push("speak"); },
+        cancel() { voiceOps.push("cancel"); },
+        pause() { voiceOps.push("pause"); },
+        resume() { voiceOps.push("resume"); }
+      }
+    } : {})
   };
   const localStorage = {
     getItem(key) { return storage.get(key) ?? null; },
@@ -93,6 +106,7 @@ function harness({ withAudio = false } = {}) {
 
   runInNewContext(syncScript, { window });
   runInNewContext(rifeScript, { window });
+  runInNewContext(read("docs/fb21-voice-guide.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -108,7 +122,7 @@ function harness({ withAudio = false } = {}) {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, setMix, setHumNote, advance, storage, classes, contexts, scheduled, session,
+  return { root, click, check, note, setMix, setHumNote, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
     get reloads() { return reloads; } };
 }
 
@@ -125,7 +139,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -879,4 +893,46 @@ test("No audio preview is allowed for a silent mix or the intentionally silent s
   assert.equal(app.scheduled[0].options.rain, 20);
   app.click("stop-preview");
   assert.equal(app.contexts[0].state, "closed");
+});
+
+
+test("Focus Sync voice and breathing companion are opt-in and stop on Return now", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  app.click("sync");
+  assert.match(app.root.innerHTML, /id="q-guide-voice"/);
+  assert.match(app.root.innerHTML, /id="q-guide-breath"/);
+  assert.equal(app.spoken.length, 0, "narration defaults off");
+  app.check("q-guide-voice", true);
+  app.check("q-guide-breath", true);
+  assert.deepEqual(JSON.parse(app.storage.get("focusbridge21-quiet-guidance-v1")),
+    { voice: true, breath: true });
+  app.check("q-safe", true);
+  app.check("q-headphones", true);
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(app.root.innerHTML, /id="q-breath-phase"/);
+  assert.match(app.root.innerHTML, /q-orb-guided/);
+  assert.equal(app.spoken.length, 1);
+  assert.match(app.spoken[0], /Focus 1\. Arrival\./);
+  app.advance(12 * 60 * 1000 + 1);
+  assert.equal(app.spoken.length, 2, "next gate narrates exactly once");
+  assert.match(app.spoken[1], /Focus 3\. Steady Attention\./);
+  app.click("pause");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(app.voiceOps.includes("pause"), "speech pauses after async audio suspension");
+  app.click("pause");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(app.voiceOps.includes("resume"), "speech resumes after async audio resume");
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+  assert.equal(app.spoken.length, 2, "Return now never queues an extra cue");
+});
+
+test("Focus Sync keeps written prompts when no speech engine exists", () => {
+  const app = harness();
+  app.click("sync");
+  assert.match(app.root.innerHTML, /id="q-guide-voice" disabled/);
+  assert.match(app.root.innerHTML, /browser has no speech voice available/);
+  app.check("q-guide-breath", true);
+  assert.match(app.root.innerHTML, /id="q-guide-breath" checked/);
 });

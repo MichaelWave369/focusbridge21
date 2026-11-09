@@ -56,7 +56,11 @@ test("ocean surf is original in-memory noise with two overlapping shoreline wave
   const ctx = context(), refs = { nodes: [] };
   assert.equal(schedule(ctx, { surf: 70 }, 90, refs), true);
   assert.equal(ctx.buffers.length, 1);
-  assert.equal(ctx.buffers[0].data.length, ctx.sampleRate * 3);
+  assert.equal(ctx.buffers[0].data.length, ctx.sampleRate * 11);
+  const wave = ctx.buffers[0].data;
+  assert.ok(Math.abs(wave[0]) < 1e-7, "noise enters at zero at the wrap boundary");
+  assert.ok(Math.abs(wave[wave.length - 1]) < 1e-7, "noise exits at zero at the wrap boundary");
+  assert.ok(wave.some(v => Math.abs(v) > 0.001), "interior keeps audible textured noise");
   assert.equal(ctx.nodes.filter(n => n.kind === "buffer-source").length, 3);
   for (const node of ctx.nodes.filter(n => n.kind === "buffer-source")) {
     assert.equal(node.starts.length, 1);
@@ -89,7 +93,7 @@ test("page entrypoints and cache include new engine before React", () => {
     const reactAt = html.indexOf("fb21-react.js");
     assert.ok(engineAt > 0 && engineAt < reactAt);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio)/);
   assert.match(read("service-worker.js"), /fb21-soundscape.js/);
   assert.doesNotMatch(read("docs/fb21-react.js"), /Parallax \/ PHI369 live prototype/);
 });

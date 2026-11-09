@@ -545,7 +545,8 @@
   async function startSession() {
     if (state.screen !== "prepare" || state.starting || state.previewStarting || !state.safe ||
         (state.profile === "intention" && !state.intentionScript) ||
-        (state.mode === "listen" && ((headphoneRequired() && !state.headphones) || allSoundOff()))) return;
+        (state.mode === "listen" && ((headphoneRequired() && !state.headphones) ||
+          (allSoundOff() && state.profile !== "intention")))) return;
     stopPreview("", false); // no preview oscillator may overlap the committed session
     if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
     state.starting = true;
@@ -558,7 +559,7 @@
     state.sleepCueIndex = 0;
     state.intentionNextCue = state.profile === "intention" && intentionEngine
       ? (intentionEngine.CADENCES[state.intentionCadence] || null) : null;
-    if (state.mode === "listen") {
+    if (state.mode === "listen" && !allSoundOff()) {
       try { await startAudio(); }
       catch (error) {
         state.starting = false;
@@ -876,7 +877,7 @@
     } else if (state.screen === "prepare") {
       const listen = state.mode === "listen";
       const needsHeadphones = listen && headphoneRequired() && !state.headphones;
-      const needsSound = listen && allSoundOff();
+      const needsSound = listen && allSoundOff() && state.profile !== "intention";
       const needsIntention = state.profile === "intention" && !state.intentionScript;
       const canBegin = state.safe && !needsHeadphones && !needsSound && !needsIntention;
       const readinessHint = !state.safe
@@ -1014,7 +1015,7 @@
               (state.toneDifference === hz ? ' selected' : '') + '>' + hz + ' Hz</option>').join("") +
             '</select><p class="q-detail">Stereo headphones required for binaural tones. The Hz options are sound experiments, not medical prescriptions. Leave tones off if you are sound-sensitive.</p></div>' : '') +
           '</div>' : '',
-        listen && state.profile !== "rife" ? [
+        listen && state.profile !== "rife" && !allSoundOff() ? [
           '<section class="q-master-panel" aria-label="Audio engine master output">',
           '<div class="q-setup-step">Φ AUDIO ENGINE · MASTER OUTPUT</div>',
           '<label for="q-master"><strong>Master output</strong> · ',
@@ -1024,7 +1025,7 @@
           '<p class="q-detail">Relative digital mixer gain, not measured headphone loudness. Start with your device volume low. Changes also apply during preview.</p>',
           '</section>'
         ].join("") : '',
-        listen ? [
+        listen && !allSoundOff() ? [
           '<section class="q-preview-panel" aria-label="Preview selected sounds before starting">',
           '<div class="q-setup-step">SOUND CHECK · BEFORE YOUR SESSION</div>',
           '<h2>Preview your selections</h2>',
@@ -1078,7 +1079,8 @@
               ? 'Sleep mode: no completion chime; tones (if enabled) gently fade by 30 minutes. Speakers are fine for ambience-only sleep. The browser/device must allow background audio.'
               : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
-        listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf, Rain, Wind, HUM, or enable stereo tones; choose Just settle for silence.</p>' : '',
+        listen && allSoundOff() && state.profile !== "intention" ?
+          '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf, Rain, Wind, HUM, or enable stereo tones; choose Just settle for silence.</p>' : '',
         state.profile === "intention" && listen && intentionEngine
           ? intentionEngine.editorHtml(state, state.safe, voiceAvailable()) : '',
         state.profile === "sleep" && listen ? [
@@ -1145,7 +1147,10 @@
         state.profile === "lost" ? ' q-running-island' : '',
         state.profile === "sleep" && state.sleepDim ? ' q-sleep-dim' : '',
         '"><div class="q-eyebrow">',
-        state.mode === "listen" ? safeText(PROFILES[state.profile].label.toUpperCase()) + ' · SOUND ACTIVE' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
+        state.mode === "listen" ?
+          safeText(PROFILES[state.profile].label.toUpperCase()) +
+            (allSoundOff() ? ' · SILENT PRACTICE' : ' · SOUND ACTIVE') :
+          'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         syncStation ? [
           '<section class="q-sync-active" aria-label="Focus Sync stage">',
           '<div class="q-sync-step">', syncStation.kind === "return"
@@ -1179,7 +1184,7 @@
           (state.paused ? 'Breathing companion paused' : breathCue()) + '</p>' : '',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
         '<p id="fb21-q-cue" class="q-cue">', state.paused ? 'Paused. Return whenever you like.' : cue(), '</p>',
-        state.mode === "listen" && state.profile !== "rife" ? [
+        state.mode === "listen" && state.profile !== "rife" && !allSoundOff() ? [
           '<section class="q-master-panel q-master-running" aria-label="Live audio output">',
           '<label for="q-master"><strong>Master output</strong> · ',
           '<output id="q-master-value">', state.master, '%</output></label>',

@@ -819,7 +819,7 @@
         '<span class="q-choice-icon" aria-hidden="true">✦</span><span class="q-choice-kicker">CREATE · SAVE · LISTEN</span>',
         '<strong>Intention Studio</strong><span>Your own spoken reflections, saved sound recipes, and thoughtful playback timing.</span>',
         '<span class="q-choice-link">Open Intention Studio →</span></button>',
-        '<button type="button" data-action="focus" class="q-choice">'
+        '<button type="button" data-action="focus" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">STEADY ATTENTION</span>',
         '<strong>Deep Focus</strong><span>A stable, unobtrusive sound field for work or study.</span>',
         '<span class="q-choice-link">Set up focus →</span></button>',

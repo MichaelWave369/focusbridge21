@@ -981,3 +981,57 @@ test("master can be adjusted during preview without creating a receipt", async (
   app.click("stop-preview");
   assert.equal(app.contexts[0].state, "closed", "fake audio falls back to immediate stop");
 });
+
+
+test("Sleep Sanctuary+ starts its optional wind-down and speaks no cues after three minutes", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /SLEEP SANCTUARY\+ · YOUR WIND-DOWN/);
+  assert.match(app.root.innerHTML, /id="q-sleep-guide"/);
+  assert.match(app.root.innerHTML, /id="q-sleep-intention-speak"/);
+  assert.match(app.root.innerHTML, /id="q-sleep-dim" checked/);
+  assert.equal(app.spoken.length, 0, "the sleep narrator is opt-in");
+  app.setSleepIntention("Tonight I can rest.");
+  app.check("q-sleep-intention-speak", true);
+  app.check("q-sleep-guide", true);
+  const saved = JSON.parse(app.storage.get("focusbridge21-sleep-intentions-v26"));
+  assert.equal(saved.intention, "Tonight I can rest.");
+  assert.equal(saved.speakIntention, true);
+  assert.equal(saved.guide, true);
+  app.click("sleep-voice-preview");
+  assert.equal(app.spoken.length, 0, "preview requires safety consent");
+  app.check("q-safe");
+  app.click("sleep-voice-preview");
+  assert.equal(app.spoken.length, 1, "voice preview is explicit");
+  assert.match(app.spoken[0], /Tonight I can rest/);
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 1);
+  assert.match(app.root.innerHTML, /q-sleep-dim/);
+  assert.equal(app.spoken.length, 2, "session introduction plays once");
+  app.advance(60 * 1000);
+  assert.equal(app.spoken.length, 3, "one followup cue after the first minute");
+  app.advance(180 * 1000);
+  assert.equal(app.spoken.length, 3, "no repeated overnight speech");
+  app.click("return");
+  assert.equal(app.contexts[0].state, "closed");
+  app.click("save");
+  const receipt = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(receipt.sleep_wind_down.spoken_guide_opted_in, true);
+  assert.equal(receipt.sleep_wind_down.spoken_personal_intention_opted_in, true);
+  assert.equal(receipt.sleep_wind_down.saved_intention_text_excluded, true);
+  assert.ok(!JSON.stringify(receipt).includes("Tonight I can rest"), "private intention not repeated in session ledger");
+});
+
+test("Sleep Sanctuary+ text is escaped, voice remains optional, and night mode may be disabled", () => {
+  const app = harness();
+  app.click("sleep");
+  assert.match(app.root.innerHTML, /id="q-sleep-guide" disabled/);
+  assert.match(app.root.innerHTML, /Voice is unavailable here/);
+  app.setSleepIntention("<script>not HTML</script>");
+  app.check("q-sleep-dim", false);
+  assert.match(app.root.innerHTML, /&lt;script&gt;not HTML&lt;\/script&gt;/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-sleep-dim" checked/);
+  assert.equal(app.storage.get("focusbridge21-sleep-intentions-v26") !== null, true);
+  assert.doesNotMatch(app.root.innerHTML, /<script>not HTML<\/script>/);
+});

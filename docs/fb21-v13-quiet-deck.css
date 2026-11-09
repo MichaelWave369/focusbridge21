@@ -126,6 +126,46 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
 #fb21-quiet-root .q-running-sleep .q-cue { color: #9aafc6; }
 #fb21-quiet-root .q-running-sleep .q-timer { color: #aabbd0; }
 
+/* v2.6 Sleep Sanctuary+ and user-written intention cards. */
+#fb21-quiet-root .q-sleep-studio {
+  padding: clamp(20px, 4.5vw, 32px); margin: 28px 0;
+  border: 1px solid #9daed766; border-radius: 24px;
+  background: linear-gradient(145deg, #151c37 0%, #152b3e 64%, #11182e 100%);
+  box-shadow: 0 20px 60px #02081245, inset 0 1px 0 #d8daff1a;
+}
+#fb21-quiet-root .q-sleep-studio h2 {
+  font-size: clamp(1.35rem, 3vw, 1.95rem); letter-spacing: -.025em;
+  margin: 12px 0 8px;
+}
+#fb21-quiet-root .q-sleep-studio .q-check {
+  border-top: 1px solid #718aa23a; max-width: none;
+}
+#fb21-quiet-root .q-sleep-studio .q-check strong,
+#fb21-quiet-root .q-sleep-studio .q-check small { display: block; }
+#fb21-quiet-root .q-sleep-studio .q-check small {
+  margin-top: 6px; color: #c1cbdf; font-size: .88rem;
+}
+#fb21-quiet-root .q-sleep-studio .q-sleep-label {
+  display: block; font-weight: 720; color: #e5f2ff; margin: 17px 0 9px;
+}
+#fb21-quiet-root #q-sleep-intention {
+  width: 100%; min-height: 108px; background: #0c1729; border: 1px solid #728da677;
+  border-radius: 15px; color: #f3f8fd; font: inherit; padding: 16px;
+  resize: vertical; line-height: 1.6;
+}
+#fb21-quiet-root #q-sleep-intention:focus-visible {
+  outline: 3px solid #9cddce; outline-offset: 3px;
+}
+#fb21-quiet-root .q-sleep-studio button { margin: 12px 0; }
+#fb21-quiet-root .q-sleep-dim .q-orb { opacity: .09; filter: saturate(.25); }
+#fb21-quiet-root .q-sleep-dim .q-timer { color: #8ca2b9; }
+#fb21-quiet-root .q-sleep-dim .q-cue { color: #8aa3b8; }
+#fb21-quiet-root .q-sleep-dim .q-master-running { opacity: .53; }
+#fb21-quiet-root .q-sleep-dim .q-return { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  #fb21-quiet-root .q-sleep-dim .q-orb { animation: none; }
+}
+
 /* v2.5 master output / inline digital monitor */
 #fb21-quiet-root .q-master-panel {
   display: grid; gap: 12px; padding: 21px 25px; margin: 20px 0;

@@ -918,9 +918,11 @@ test("Focus Sync voice and breathing companion are opt-in and stop on Return now
   assert.equal(app.spoken.length, 2, "next gate narrates exactly once");
   assert.match(app.spoken[1], /Focus 3\. Steady Attention\./);
   app.click("pause");
-  assert.ok(app.voiceOps.includes("pause"));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(app.voiceOps.includes("pause"), "speech pauses after async audio suspension");
   app.click("pause");
-  assert.ok(app.voiceOps.includes("resume"));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(app.voiceOps.includes("resume"), "speech resumes after async audio resume");
   app.click("return");
   assert.equal(app.contexts[0].state, "closed");
   assert.equal(app.spoken.length, 2, "Return now never queues an extra cue");

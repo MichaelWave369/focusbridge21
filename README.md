@@ -6,6 +6,15 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## v2.5 Shared Audio Engine: master mixer and digital diagnostics
+
+- Quiet Deck's six environmental layers and stereo tones feed a common session output bus, with an accessible **master fader** shown during preflight and live playback. Individual recipe levels remain independent.
+- **Gentle dynamics processing** (when supported) reduces some peaks and an optional digital signal meter displays relative post-processor sample peaks. Neither indicates real headphone loudness or guarantees clipping protection.
+- A **140 ms fade on Return Now / Stop Preview / session ending** softens abrupt cutoff; suspended or older browsers close immediately.
+- The existing Rife waveform experiment remains isolated on its existing audio route, and the 15-second mix-preview, Focus Sync, safe return controls, local settings, and Signal Ledger remain in place.
+
+See [Shared Audio Engine architecture and QA](docs/SHARED_AUDIO_ENGINE.md). Next planned: optional sleep wind-down and a consent-based Intention Studio for editable affirmations, without unsupported sleep-learning claims.
+
 ## v2.4 Guided Focus Sync and smoother soundscape loop (review candidate)
 
 This review branch makes a focused first step toward a unified audio cockpit while preserving the existing modes, profiles, guided labs, offline shell, and safety checks.

@@ -4,7 +4,7 @@
 
 A **voluntary, conscious reflection tool** built into the existing Quiet Deck and powered by the same locally generated six-layer soundscape and shared v2.5 master output bus. It is not a hypnosis service, mental-health treatment, subliminal audio tool or proven subconscious reprogramming system.
 
-The home screen includes a new **Intention Studio** choice beside Sleep Sanctuary and Deep Focus. The new mode defaults to a quiet, comfortable atmosphere (surf 30%, rain 10%, HUM 10%, no stereo tones). The user can customize every sound layer in the existing mixer and use a 5-, 10-, 15-, 20- or 30-minute practice. If stereo tones are explicitly enabled, existing headphone confirmation is required.
+The home screen includes a new **Intention Studio** choice beside Sleep Sanctuary and Deep Focus. The new mode defaults to a quiet, comfortable atmosphere (surf 30%, rain 10%, HUM 10%, no stereo tones). The user can customize every sound layer in the existing mixer and use a 5-, 10-, 15-, 20- or 30-minute practice. **All sound layers may also be set to zero** for silent reading or a voice-only practice: no unnecessary AudioContext will be created. Voice still requires explicit opt-in. If stereo tones are explicitly enabled, existing headphone confirmation is required.
 
 ## The personal script library
 

@@ -35,7 +35,7 @@
       utterance.lang = "en-US";
       utterance.rate = 0.88;
       utterance.pitch = 0.96;
-      utterance.volume = 0.8;
+      utterance.volume = 0.45;
       const voices = typeof synth.getVoices === "function" ? synth.getVoices() : [];
       const english = voices.filter(voice => /^en([_-]|$)/i.test(voice.lang || ""));
       const preferred = english.find(voice => voice.localService) || english[0];

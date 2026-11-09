@@ -278,6 +278,7 @@
 
   function selectMode(mode) {
     stopPreview("", false);
+    if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // prevent old preview voice after switching modes
     state.previewMessage = "";
     state.previewError = "";
     state.mode = mode === "settle" ? "settle" : "listen";
@@ -360,6 +361,7 @@
   }
   function returnToChoices() {
     stopPreview("", false);
+    if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // cancel audition on navigation
     state.screen = PROFILES[state.profile]?.holistic ? "holistic" : "home";
     state.error = "";
     render();

@@ -104,6 +104,7 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   const setInterval = (callback) => { const id = nextTimer++; timers.set(id, callback); return id; };
   const clearInterval = (id) => timers.delete(id);
 
+  runInNewContext(read("docs/fb21-audio-engine.js"), { window, Uint8Array });
   runInNewContext(syncScript, { window });
   runInNewContext(rifeScript, { window });
   runInNewContext(read("docs/fb21-voice-guide.js"), { window });
@@ -118,11 +119,12 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
   const setMix = (key, value) => root.listeners.input({ target: { id: "q-mix-" + key, value, setAttribute() {} } });
   const setHumNote = (value) => root.listeners.change({ target: { id: "q-hum-note", value } });
+  const setMaster = (value) => root.listeners.input({ target: { id: "q-master", value } });
   const advance = (milliseconds) => {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, setMix, setHumNote, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
+  return { root, click, check, note, setMix, setHumNote, setMaster, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
     get reloads() { return reloads; } };
 }
 
@@ -139,7 +141,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });

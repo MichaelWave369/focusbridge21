@@ -1025,7 +1025,7 @@
           '<p class="q-detail">Relative digital mixer gain, not measured headphone loudness. Start with your device volume low. Changes also apply during preview.</p>',
           '</section>'
         ].join("") : '',
-        listen && !allSoundOff() ? [
+        listen && (!allSoundOff() || state.profile !== "intention") ? [
           '<section class="q-preview-panel" aria-label="Preview selected sounds before starting">',
           '<div class="q-setup-step">SOUND CHECK · BEFORE YOUR SESSION</div>',
           '<h2>Preview your selections</h2>',
@@ -1427,6 +1427,7 @@
     const match = /^q-mix-(surf|bass|beat|rain|wind|hum)$/.exec(event.target.id || "");
     if (match) {
       const wasPreviewing = !!state.previewAudio || state.previewStarting;
+      const wasSilent = allSoundOff();
       stopPreviewForChange();
       const key = match[1];
       state[key] = level(event.target.value, 0);
@@ -1434,7 +1435,7 @@
       if (display) display.textContent = state[key] + "%";
       event.target.setAttribute("aria-valuetext", state[key] + " percent");
       saveMix();
-      if (wasPreviewing) render();
+      if (wasPreviewing || wasSilent !== allSoundOff()) render();
       else {
         const meter = root.querySelector("#q-preview-meter-" + key);
         if (meter) meter.style.width = state[key] + "%";

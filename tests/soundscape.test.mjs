@@ -58,8 +58,10 @@ test("ocean surf is original in-memory noise with two overlapping shoreline wave
   assert.equal(ctx.buffers.length, 1);
   assert.equal(ctx.buffers[0].data.length, ctx.sampleRate * 11);
   const wave = ctx.buffers[0].data;
-  assert.ok(Math.abs(wave[0]) < 1e-7, "noise enters at zero at the wrap boundary");
-  assert.ok(Math.abs(wave[wave.length - 1]) < 1e-7, "noise exits at zero at the wrap boundary");
+  assert.ok(wave.slice(0, 256).some(v => Math.abs(v) > 0.01),
+    "surf does not fade to digital silence at the start");
+  assert.ok(wave.slice(-256).some(v => Math.abs(v) > 0.01),
+    "surf does not fade to digital silence at the end");
   assert.ok(wave.some(v => Math.abs(v) > 0.001), "interior keeps audible textured noise");
   assert.equal(ctx.nodes.filter(n => n.kind === "buffer-source").length, 3);
   for (const node of ctx.nodes.filter(n => n.kind === "buffer-source")) {
@@ -68,6 +70,60 @@ test("ocean surf is original in-memory noise with two overlapping shoreline wave
     assert.ok(node.stops[0] <= 12 + 91);
   }
   assert.equal(ctx.nodes.filter(n => n.kind === "oscillator").length, 0);
+});
+
+test("seamless ocean buffer wraps between consecutive original noise samples", () => {
+  // Deterministic noise source catches a sample restart, zero-fade trough,
+  // phase mismatch or loss of continuity at the exact 11-second seam.
+  const initialSeed = 0x13579bdf;
+  function seeded() {
+    let seed = initialSeed;
+    return () => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 0x100000000;
+    };
+  }
+  const seededMath = Object.create(Math);
+  seededMath.random = seeded();
+  const isolatedWindow = {};
+  runInNewContext(source, { window: isolatedWindow, Math: seededMath });
+  const ctx = context();
+  assert.equal(isolatedWindow.FocusBridgeSoundscape.schedule(ctx, { surf: 65 }, 90), true);
+  const channel = ctx.buffers[0].data;
+  const size = channel.length;
+  const overlap = Math.min(Math.floor(size / 4),
+    Math.max(16, Math.round(ctx.sampleRate * 0.75)));
+  const rnd = seeded();
+  const original = new Float32Array(size + overlap);
+  let pink = 0;
+  for (let i = 0; i < original.length; i++) {
+    pink = 0.93 * pink + 0.07 * (rnd() * 2 - 1);
+    original[i] = 0.65 * pink + 0.35 * (rnd() * 2 - 1);
+  }
+  assert.ok(Math.abs(channel[0] - original[overlap]) < 1e-7,
+    "first loop sample follows the head's final sample in source noise");
+  assert.ok(Math.abs(channel.at(-1) - original[overlap - 1]) < 1e-7,
+    "final loop sample is exactly the preceding natural noise sample");
+  assert.ok(Math.abs((channel[0] - channel.at(-1)) -
+    (original[overlap] - original[overlap - 1])) < 1e-7,
+    "seam jump is no greater than its corresponding natural sample transition");
+  assert.ok(Math.abs(channel[size - overlap] - original[size]) < 1e-7,
+    "crossfade starts at the unmodified original tail sample");
+  const midpoint = Math.floor(overlap / 2);
+  const progress = midpoint / (overlap - 1);
+  const eased = progress * progress * (3 - 2 * progress);
+  const angle = eased * Math.PI / 2;
+  const expected = original[size + midpoint] * Math.cos(angle) +
+    original[midpoint] * Math.sin(angle);
+  assert.ok(Math.abs(channel[size - overlap + midpoint] - expected) < 1e-6,
+    "crossfade uses smooth equal-power weights, not a fade to silence");
+  const rms = portion => Math.sqrt(portion.reduce((sum, v) => sum + v * v, 0) /
+    portion.length);
+  const margin = 400;
+  const edgeLevel = rms([...channel.slice(0, margin), ...channel.slice(-margin)]);
+  const middleLevel = rms(channel.slice(Math.floor(size / 3), Math.floor(size / 3) + margin * 2));
+  assert.ok(edgeLevel > middleLevel * 0.55,
+    "loop ends keep a comparable noise bed rather than a perceptible silent notch");
 });
 
 test("bass is quiet 62 Hz plus soft harmonic; pulse is 40 BPM and finite", () => {
@@ -93,7 +149,7 @@ test("page entrypoints and cache include new engine before React", () => {
     const reactAt = html.indexOf("fb21-react.js");
     assert.ok(engineAt > 0 && engineAt < reactAt);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine|focusbridge21-v2-6-sleep-intentions|focusbridge21-v2-7-intention-studio)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine|focusbridge21-v2-6-sleep-intentions|focusbridge21-v2-7-intention-studio|focusbridge21-v2-8-seamless-surf)/);
   assert.match(read("service-worker.js"), /fb21-soundscape.js/);
   assert.doesNotMatch(read("docs/fb21-react.js"), /Parallax \/ PHI369 live prototype/);
 });

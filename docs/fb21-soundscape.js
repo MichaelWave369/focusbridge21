@@ -31,22 +31,33 @@
     const size = Math.max(512, Math.round(ctx.sampleRate * 11));
     const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
     const channel = buffer.getChannelData(0);
-    // Eleven seconds of locally generated textured noise. A smooth loop seam
-    // avoids a sudden sample jump that can click on every repetition.
-    // Never downloaded or taken from a copyrighted recording.
+    // Do not fade the 11-second sample to silence at its boundary: the
+    // recurring 25 ms dip was audible as a click or tiny dropout in surf.
+    // Instead extend the original noise by a short leading segment, then
+    // wrap the tail back into that segment with a smooth overlap-add.
+    // This keeps the noise bed continuous at playback's exact loop boundary.
+    const overlap = Math.min(Math.floor(size / 4),
+      Math.max(16, Math.round(ctx.sampleRate * 0.75)));
+    const head = new Float32Array(overlap);
     let pink = 0;
-    for (let i = 0; i < size; i++) {
+    for (let i = 0; i < size + overlap; i++) {
       pink = 0.93 * pink + 0.07 * (Math.random() * 2 - 1);
-      channel[i] = 0.65 * pink + 0.35 * (Math.random() * 2 - 1);
+      const sample = 0.65 * pink + 0.35 * (Math.random() * 2 - 1);
+      if (i < overlap) head[i] = sample;
+      else channel[i - overlap] = sample;
     }
-    // The final and initial samples approach zero with a Hann half-window.
-    // This also smooths the slope at the wrap point. It is not a brick-wall
-    // limiter or a guarantee against device underruns on busy systems.
-    const edge = Math.min(Math.floor(size / 4), Math.max(16, Math.round(ctx.sampleRate * 0.025)));
-    for (let i = 0; i < edge; i++) {
-      const weight = 0.5 - 0.5 * Math.cos(Math.PI * i / (edge - 1));
-      channel[i] *= weight;
-      channel[size - 1 - i] *= weight;
+    // The final sample becomes head[overlap - 1] and the first sample
+    // follows as the very next original noise sample. That makes the
+    // transition a natural adjacent-sample pair, not an abrupt reset.
+    // Equal-power raised-cosine weights avoid a fade-to-silence trough,
+    // while the eased ramp avoids a sharp change at the crossfade edges.
+    for (let i = 0; i < overlap; i++) {
+      const progress = i / (overlap - 1);
+      const eased = progress * progress * (3 - 2 * progress);
+      const angle = eased * Math.PI / 2;
+      const tailIndex = size - overlap + i;
+      channel[tailIndex] = channel[tailIndex] * Math.cos(angle) +
+        head[i] * Math.sin(angle);
     }
     return buffer;
   }

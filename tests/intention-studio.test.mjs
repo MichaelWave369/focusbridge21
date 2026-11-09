@@ -110,6 +110,6 @@ test("both entrypoints load Intention Studio before Quiet Deck and cache it for 
     assert.ok(html.indexOf("fb21-intention-studio.js") < html.indexOf("fb21-v13-quiet-deck.js"));
   }
   const worker = readFileSync(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(worker, /focusbridge21-v2-7-intention-studio/);
+  assert.match(worker, /focusbridge21-v2-(?:7-intention-studio|8-seamless-surf)/);
   assert.match(worker, /fb21-intention-studio\.js/);
 });

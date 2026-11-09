@@ -614,7 +614,7 @@
     return [
       '<div class="q-shell">',
       '<header class="q-header"><div class="q-brand"><span class="q-sigil">Φ</span><div>',
-      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.3</small></div></div>',
+      '<strong>FocusBridge21</strong><small>THE QUIET DECK · v2.4</small></div></div>',
       '<button type="button" class="q-text-button" data-action="lab">All tools &amp; labs <span aria-hidden="true">↗</span></button></header>',
       '<main class="q-main">', inner, '</main>',
       '<footer class="q-footer"><span>Local-first · No account · Nothing to prove</span>',
@@ -951,7 +951,8 @@
           '<p class="q-detail">Audio only. No RF transmission, disease treatment, or measured body response.</p></section>'
         ].join("") : '',
         '<div class="q-orb', state.breathGuide ? ' q-orb-guided' : '',
-        state.paused ? ' q-orb-paused' : '', '" aria-hidden="true"><div class="q-orb-inner"></div></div>',
+        state.paused ? ' q-orb-paused' : '', '" aria-hidden="true" style="animation-delay:-',
+        (state.elapsedMs / 1000).toFixed(2), 's"><div class="q-orb-inner"></div></div>',
         state.breathGuide ? '<p id="q-breath-phase" class="q-breath-phase" role="status">' +
           (state.paused ? 'Breathing companion paused' : breathCue()) + '</p>' : '',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',

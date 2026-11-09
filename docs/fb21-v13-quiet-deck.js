@@ -589,6 +589,9 @@
       return window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000).prompt;
     if (state.profile === "sleep" && state.mode === "listen")
       return "Nothing to follow. Let the quiet soundscape carry on while you rest.";
+    if (state.profile === "intention" && state.mode === "listen")
+      return state.intentionSpeak ? "Listen to your chosen words, or simply read them." :
+        "Read your words at your own pace. Silence is allowed.";
     if (state.profile === "focus" && state.mode === "listen")
       return "Let the sound stay in the background. Give your attention to what matters.";
     if (state.profile === "explore" && state.mode === "listen")
@@ -810,7 +813,11 @@
         '<span class="q-choice-icon" aria-hidden="true">☾</span><span class="q-choice-kicker">UP TO 6 HOURS</span>',
         '<strong>Sleep Sanctuary</strong><span>Gentle surf and a quiet fade. Stereo tones are off by default.</span>',
         '<span class="q-choice-link">Set up sleep →</span></button>',
-        '<button type="button" data-action="focus" class="q-choice">',
+        '<button type="button" data-action="intention" class="q-choice q-choice-intention">',
+        '<span class="q-choice-icon" aria-hidden="true">✦</span><span class="q-choice-kicker">CREATE · SAVE · LISTEN</span>',
+        '<strong>Intention Studio</strong><span>Your own spoken reflections, saved sound recipes, and thoughtful playback timing.</span>',
+        '<span class="q-choice-link">Open Intention Studio →</span></button>',
+        '<button type="button" data-action="focus" class="q-choice">'
         '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">STEADY ATTENTION</span>',
         '<strong>Deep Focus</strong><span>A stable, unobtrusive sound field for work or study.</span>',
         '<span class="q-choice-link">Set up focus →</span></button>',
@@ -868,14 +875,17 @@
       const listen = state.mode === "listen";
       const needsHeadphones = listen && headphoneRequired() && !state.headphones;
       const needsSound = listen && allSoundOff();
-      const canBegin = state.safe && !needsHeadphones && !needsSound;
+      const needsIntention = state.profile === "intention" && !state.intentionScript;
+      const canBegin = state.safe && !needsHeadphones && !needsSound && !needsIntention;
       const readinessHint = !state.safe
         ? "Check the comfort and safety box above to unlock Start."
         : needsHeadphones
           ? "Confirm your stereo headphones above to unlock Start."
           : needsSound
             ? "Enable a sound layer or switch to Just settle before starting."
-            : "All set. Your session is ready to start.";
+            : needsIntention
+              ? "Write a personal script before beginning."
+              : "All set. Your session is ready to start.";
       const choices = state.profile === "sync"
         ? window.FocusBridgeSync.PACES.map(minutes => {
             const plan = window.FocusBridgeSync.timeline(minutes);
@@ -903,6 +913,8 @@
               ? 'Low-stimulation comfort listening, not a medical treatment. No audio frequency is proven to treat this symptom.'
               : state.profile === "lost"
                 ? 'Welcome to Island 108: a mysterious, peaceful, LOST-inspired island listening trip built from original synthesized surf, rain, wind, bass, pulse and C3 HUM. No copied soundtrack or sound effects.'
+                : state.profile === "intention"
+                ? 'Create and read your own reflective script, with optional spoken voice and personalized ambience. No hidden audio or subconscious programming claims.'
                 : 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
           : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         listen && PROFILES[state.profile].holistic
@@ -1065,6 +1077,8 @@
               : 'Use stereo headphones for binaural tones, keep volume low, and stop if you feel uncomfortable.')
           : 'Sit or lie somewhere comfortable. Regular, natural breathing is enough.', '</p>',
         listen && allSoundOff() ? '<p role="alert" class="q-error">All sound layers are off. Turn up Ocean surf, Rain, Wind, HUM, or enable stereo tones; choose Just settle for silence.</p>' : '',
+        state.profile === "intention" && listen && intentionEngine
+          ? intentionEngine.editorHtml(state, state.safe, voiceAvailable()) : '',
         state.profile === "sleep" && listen ? [
           '<section class="q-sleep-studio" aria-label="Sleep and personal intention studio">',
           '<div class="q-setup-step">SLEEP SANCTUARY+ · YOUR WIND-DOWN</div>',
@@ -1147,6 +1161,8 @@
           '<p class="q-detail">4 · 8 · 15 · 16 · 23 · 42 · original atmosphere, no borrowed audio.</p>',
           '</section>'
         ].join("") : '',
+        state.profile === "intention" && intentionEngine
+          ? intentionEngine.activeHtml(state, voiceAvailable()) : '',
         state.profile === "rife" ? [
           '<section class="q-rife-active"><div class="q-setup-step">AUDIBLE WAVEFORM DEMONSTRATION</div>',
           '<h2>', state.rife.frequency, ' Hz · ', safeText(state.rife.waveform), '</h2>',
@@ -1251,7 +1267,8 @@
     }
     else if (action === "start") startSession();
     else if (action === "review") {
-      const id = !state.safe ? "#q-safe" : headphoneRequired() && !state.headphones ? "#q-headphones" : "#q-tones";
+      const id = !state.safe ? "#q-safe" : headphoneRequired() && !state.headphones ? "#q-headphones" :
+        state.profile === "intention" && !state.intentionScript ? "#q-intention-script" : "#q-tones";
       const target = root.querySelector(id);
       if (target) {
         if (typeof target.scrollIntoView === "function") target.scrollIntoView({ behavior: "smooth", block: "center" });

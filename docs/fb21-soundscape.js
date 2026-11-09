@@ -28,15 +28,25 @@
   };
 
   function makeFoamNoise(ctx) {
-    const size = Math.max(512, Math.round(ctx.sampleRate * 3));
+    const size = Math.max(512, Math.round(ctx.sampleRate * 11));
     const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
     const channel = buffer.getChannelData(0);
-    // 3-second pseudo-pink textured noise, randomly generated per context.
+    // Eleven seconds of locally generated textured noise. A smooth loop seam
+    // avoids a sudden sample jump that can click on every repetition.
     // Never downloaded or taken from a copyrighted recording.
     let pink = 0;
     for (let i = 0; i < size; i++) {
       pink = 0.93 * pink + 0.07 * (Math.random() * 2 - 1);
       channel[i] = 0.65 * pink + 0.35 * (Math.random() * 2 - 1);
+    }
+    // The final and initial samples approach zero with a Hann half-window.
+    // This also smooths the slope at the wrap point. It is not a brick-wall
+    // limiter or a guarantee against device underruns on busy systems.
+    const edge = Math.min(Math.floor(size / 4), Math.max(16, Math.round(ctx.sampleRate * 0.025)));
+    for (let i = 0; i < edge; i++) {
+      const weight = 0.5 - 0.5 * Math.cos(Math.PI * i / (edge - 1));
+      channel[i] *= weight;
+      channel[size - 1 - i] *= weight;
     }
     return buffer;
   }

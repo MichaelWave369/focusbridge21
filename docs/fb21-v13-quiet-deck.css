@@ -126,6 +126,31 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
 #fb21-quiet-root .q-running-sleep .q-cue { color: #9aafc6; }
 #fb21-quiet-root .q-running-sleep .q-timer { color: #aabbd0; }
 
+/* v2.5 master output / inline digital monitor */
+#fb21-quiet-root .q-master-panel {
+  display: grid; gap: 12px; padding: 21px 25px; margin: 20px 0;
+  border: 1px solid #78b6bd66; border-radius: 20px;
+  background: linear-gradient(125deg, #102b35ec, #161e36db);
+  text-align: left; box-shadow: inset 0 1px 0 #a3e9df1e;
+}
+#fb21-quiet-root .q-master-panel label { color: #d3e9f0; font-size: 1rem; }
+#fb21-quiet-root .q-master-panel output { color: #c4fce8; font-weight: 750; }
+#fb21-quiet-root .q-master-panel input { width: 100%; accent-color: #9bdfc9; }
+#fb21-quiet-root .q-master-panel .q-detail { margin: 0; }
+#fb21-quiet-root .q-master-running { max-width: 440px; margin: 23px auto; }
+#fb21-quiet-root .q-master-running small { color: #b7cbdc; }
+#fb21-quiet-root .q-master-meter {
+  background: #2b3b4f; border-radius: 999px; height: 8px; overflow: hidden;
+}
+#fb21-quiet-root .q-master-meter > div {
+  width: 0; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, #70b7b2, #9cddc8);
+  transition: width 0.15s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  #fb21-quiet-root .q-master-meter > div { transition: none; }
+}
+
 /* v2.4 optional voice guidance and gentle visual pacing. */
 #fb21-quiet-root .q-guide-panel {
   margin: 28px 0; padding: clamp(18px, 4vw, 30px);

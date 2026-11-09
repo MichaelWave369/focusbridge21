@@ -75,11 +75,11 @@
   // Schedule a 140 ms envelope before closing active nodes. Calling stop
   // immediately removes the session from UI state; sound fades briefly.
   // When an AudioParam cannot cancel scheduled automation, close directly.
-  function beginStop(bus, finish, delay = setTimeout) {
+  function beginStop(bus, finish, delay = (typeof setTimeout === "function" ? setTimeout : null)) {
     if (!bus || bus.stopping) return false;
     bus.stopping = true;
     const param = bus.master.gain;
-    if (typeof delay !== "function" ||
+    if (bus.ctx.state !== "running" || typeof delay !== "function" ||
         typeof param.cancelScheduledValues !== "function") {
       finish();
       return false;

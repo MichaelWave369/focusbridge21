@@ -56,7 +56,11 @@ test("ocean surf is original in-memory noise with two overlapping shoreline wave
   const ctx = context(), refs = { nodes: [] };
   assert.equal(schedule(ctx, { surf: 70 }, 90, refs), true);
   assert.equal(ctx.buffers.length, 1);
-  assert.equal(ctx.buffers[0].data.length, ctx.sampleRate * 3);
+  assert.equal(ctx.buffers[0].data.length, ctx.sampleRate * 11);
+  const wave = ctx.buffers[0].data;
+  assert.equal(wave[0], 0, "noise enters at zero at the wrap boundary");
+  assert.equal(wave[wave.length - 1], 0, "noise exits at zero at the wrap boundary");
+  assert.ok(wave.some(v => Math.abs(v) > 0.001), "interior keeps audible textured noise");
   assert.equal(ctx.nodes.filter(n => n.kind === "buffer-source").length, 3);
   for (const node of ctx.nodes.filter(n => n.kind === "buffer-source")) {
     assert.equal(node.starts.length, 1);

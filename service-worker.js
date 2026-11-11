@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v2-9-qmm-foundation";
+const CACHE_NAME = "focusbridge21-v2-9-qmm-foundation-qmm-first";
 const APP_SHELL = [
   "./",
   "./index.html",

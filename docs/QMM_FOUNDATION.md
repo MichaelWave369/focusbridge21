@@ -53,6 +53,14 @@ Start with **5 minutes daily for a week**, or 3 minutes if that feels better. Co
 
 ## Relationship to Going Deeper and Focus Sync
 
-The book's later "Going Deeper" practice includes imaginative descent imagery as a subjective relaxation technique. Its claims about attaining Alpha or Theta by visualization are **not EEG measurements**. A future optional QMM prelude to Focus Sync or Threshold Explorer should remain a transparent, user-selected step, preserve the Return now path, and avoid automatically asserting that a "gate" was achieved.
+The book's later "Going Deeper" practice includes imaginative descent imagery as a subjective relaxation technique. Its claims about attaining Alpha or Theta by visualization are **not EEG measurements**. ### Current QMM-first routing
+
+Selecting **Focus Sync** or **Threshold Explorer** in Quiet Deck now opens the QMM setup first. The destination is clearly displayed, and the user chooses a 3–30 minute QMM session (10 minutes by default). Completing its timed progression and the grounded return, then saving the reflection, offers a voluntary **Continue to…** button for the chosen destination. A new safety and headphone check is required before the destination session can begin.
+
+Ending QMM early is always allowed and never unlocks the follow-on button. The local receipt records completion of the **timed sequence**, not mastery of a thought-free mental state. A completed standalone QMM can also hand off to Threshold Explorer after reflection.
+
+This prerequisite applies to dedicated meditative exploration paths in the current Quiet Deck. **Listen & drift, Deep Focus for work, Sleep Sanctuary, Intention Studio, the Holistic Zone, and Rife Frequency Lab** remain independent because they are listening, productivity, reflection, comfort, or audio-test tools rather than the book's meditations. The legacy full laboratory retains its current controls; this change does not silently claim to intercept every possible old entrypoint.
+
+A future **Going Deeper Meditation (GDM)** mode should similarly begin with QMM. Keep all transitions voluntary, preserve Return Now, and never assert that a special neurological or paranormal gate was achieved.
 
 **Philosophy:** Curiosity is welcome. Claims stay bounded to what the app actually observes.

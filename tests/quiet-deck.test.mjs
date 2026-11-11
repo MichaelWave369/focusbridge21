@@ -110,6 +110,7 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   runInNewContext(read("docs/fb21-voice-guide.js"), { window });
   runInNewContext(read("docs/fb21-sleep-studio.js"), { window });
   runInNewContext(read("docs/fb21-intention-studio.js"), { window, Date: FakeDate });
+  runInNewContext(read("docs/fb21-qmm.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -1150,4 +1151,63 @@ test("Intention Studio supports private silent reading and voice-only sessions w
     app.click("return");
     assert.ok(app.voiceOps.includes("cancel"), "Return Now cancels any voice");
   }
+});
+
+
+test("QMM is an actual silent guided practice with timed cues and local receipts", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  assert.match(app.root.innerHTML, /Quiet Mind · QMM/);
+  app.click("qmm");
+  assert.match(app.root.innerHTML, /seven-step attention practice/);
+  assert.match(app.root.innerHTML, /Your QMM practice/);
+  assert.match(app.root.innerHTML, /3 min/);
+  assert.match(app.root.innerHTML, /30 min/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+  assert.match(app.root.innerHTML, /id="q-qmm-voice"/);
+  app.click("start");
+  assert.doesNotMatch(app.root.innerHTML, /Return now/, "safety check remains required");
+  app.check("q-safe");
+  app.click("duration", "300");
+  app.check("q-qmm-voice", true);
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(app.root.innerHTML, /STAGE 1 OF 7/);
+  assert.equal(app.contexts.length, 0, "QMM stays silent; optional speech does not create oscillator audio");
+  assert.equal(app.spoken.length, 1, "one opt-in start cue");
+  app.advance(40000);
+  assert.match(app.root.innerHTML, /STAGE 2 OF 7/);
+  assert.equal(app.spoken.length, 2);
+  app.click("pause");
+  const speechAtPause = app.spoken.length;
+  app.advance(60000);
+  assert.equal(app.spoken.length, speechAtPause);
+  app.click("pause");
+  app.advance(80000);
+  assert.match(app.root.innerHTML, /Return now/);
+  app.click("return");
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  app.note("My attention wandered and returned.");
+  app.click("save");
+  const row = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(row.preset, "Quiet Mind · QMM");
+  assert.equal(row.audio_params.engine, "none");
+  assert.equal(row.quiet_mind.voice_opted_in, true);
+  assert.equal(row.notes, "My attention wandered and returned.");
+  assert.match(app.root.innerHTML, /Continue to Threshold Explorer/);
+});
+
+test("QMM starts with voice disabled and returns without creating audio", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  app.click("qmm");
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 0);
+  assert.equal(app.spoken.length, 0);
+  app.advance(600000);
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  app.click("save");
+  const row = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(row.quiet_mind.voice_opted_in, false);
+  assert.equal(row.quiet_mind.last_phase, "return");
 });

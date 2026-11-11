@@ -132,7 +132,7 @@
 
   const state = {
     screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8,
-    syncMinutes: 12, syncPlan: null, syncStage: 0, islandIndex: 0, qmmStage: 0, qmmVoice: false,
+    syncMinutes: 12, syncPlan: null, syncStage: 0, islandIndex: 0, qmmStage: 0, qmmVoice: false, qmmNext: null,
     rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
@@ -282,7 +282,19 @@
   }
   homeButton.addEventListener("click", returnToQuiet);
 
-  function selectMode(mode) {
+  // In the source book, QMM precedes deeper meditation exercises.
+  // Require a fresh quiet-mind foundation before dedicated exploration modes;
+  // ordinary listening, sleep, productivity audio and labs are not meditations.
+  function selectMode(mode, completedQMM = false) {
+    if ((mode === "explore" || mode === "sync") && !completedQMM) {
+      selectMode("qmm");
+      if (state.screen === "prepare" && state.profile === "qmm") {
+        state.qmmNext = mode;
+        render();
+      }
+      return;
+    }
+    state.qmmNext = null;
     stopPreview("", false);
     if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // prevent old preview voice after switching modes
     state.previewMessage = "";
@@ -361,6 +373,7 @@
     stopAudio();
     clearInterval(state.timer);
     state.screen = "home";
+    state.qmmNext = null;
     state.error = "";
     render();
   }
@@ -372,6 +385,7 @@
     render();
   }
   function returnToChoices() {
+    state.qmmNext = null;
     stopPreview("", false);
     if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // cancel audition on navigation
     state.screen = PROFILES[state.profile]?.holistic ? "holistic" : "home";
@@ -759,6 +773,8 @@
       guidance_mode: state.profile === "qmm" ? "QMM silent-first guided attention" : "Quiet Deck " + state.mode,
       quiet_mind: state.profile === "qmm" ? {
         progression: "7 timed attention prompts",
+        completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
+        next_exercise: state.qmmNext ? PROFILES[state.qmmNext].label : null,
         last_phase: window.FocusBridgeQMM.stageAt(elapsed, state.duration).id,
         voice_opted_in: state.qmmVoice && voiceAvailable(),
         evidence_boundary: "Reflective attention practice; no measurement of thought silence or EEG"
@@ -860,11 +876,11 @@
         '<span class="q-choice-link">Set up focus →</span></button>',
         '<button type="button" data-action="explore" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">◇</span><span class="q-choice-kicker">SUBJECTIVE EXPLORATION</span>',
-        '<strong>Threshold Explorer</strong><span>Slow spatial movement for imagery and personal reflection.</span>',
+        '<strong>Threshold Explorer</strong><span>Begins with QMM, then offers spatial imagery and personal reflection.</span>',
         '<span class="q-choice-link">Set up exploration →</span></button>',
         '<button type="button" data-action="sync" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">COMPLETE LEVEL JOURNEY</span>',
-        '<strong>Focus Sync</strong><span>All 17 publicly named focus-level stations, with a grounded return and original evolving audio.</span>',
+        '<strong>Focus Sync</strong><span>QMM foundation first, then 17 focus-level stations and a grounded return.</span>',
         '<span class="q-choice-link">Plan the full journey →</span></button>',
         '<button type="button" data-action="holistic" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">✧</span><span class="q-choice-kicker">GENTLE SELF-COMFORT</span>',
@@ -974,6 +990,10 @@
         '<div class="q-setup-step">STEP 2 OF 3 · CUSTOMIZE</div>',
         '<h2>', state.profile === "sync" ? 'Choose a pace for the complete journey' : 'How long feels comfortable?', '</h2>',
         '<div class="q-durations">', choices, '</div>',
+        state.profile === "qmm" && state.qmmNext ? [
+          '<p class="q-comfort-note" role="status"><strong>Foundation first.</strong> Complete this QMM practice, return gently, and then choose to continue to ',
+          safeText(PROFILES[state.qmmNext].label), '. You can stop at any time without continuing.</p>'
+        ].join("") : '',
         state.profile === "qmm" && window.FocusBridgeQMM ? [
           '<section class="q-panel q-qmm-plan" aria-label="Quiet Mind meditation progression">',
           '<div class="q-setup-step">SEVEN STAGES · GENTLE AWARENESS</div><h3>Your QMM practice</h3>',
@@ -1277,7 +1297,9 @@
         ' You did not have to reach any special state for this session to count.</p>',
         '<div class="q-actions"><button type="button" class="q-primary" data-action="home">Back to Quiet Deck</button>',
         '<button type="button" class="q-secondary" data-action="lab">View the full ledger &amp; labs</button>',
-        state.profile === "qmm" ? '<button type="button" class="q-secondary" data-action="explore">Continue to Threshold Explorer →</button>' : '',
+        state.profile === "qmm" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
+          ? '<button type="button" class="q-secondary" data-action="qmm-continue">Continue to ' +
+            safeText(PROFILES[state.qmmNext || "explore"].label) + ' →</button>' : '',
         '</div>'
       ].join("");
     }
@@ -1288,6 +1310,12 @@
     if (!button || button.disabled) return;
     const action = button.dataset.action;
     if (["settle", "qmm", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    else if (action === "qmm-continue" && state.screen === "saved" &&
+        state.profile === "qmm" && !state.interrupted &&
+        state.elapsedMs >= state.duration * 1000 - 1000) {
+      const target = state.qmmNext || "explore";
+      selectMode(target, true); // the freshly completed QMM is the prelude
+    }
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();

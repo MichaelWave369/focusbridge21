@@ -135,6 +135,20 @@ function harness({ withAudio = false, withVoice = false } = {}) {
     get reloads() { return reloads; } };
 }
 
+function completeQmmPrelude(app) {
+  assert.match(app.root.innerHTML, /Quiet Mind · QMM/);
+  assert.match(app.root.innerHTML, /Foundation first/);
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  app.click("save");
+  assert.match(app.root.innerHTML, /Continue to/);
+  app.click("qmm-continue");
+  assert.doesNotMatch(app.root.innerHTML, /Foundation first/);
+}
+
 test("both Pages entrypoints reference Quiet Deck while retaining the original app", () => {
   for (const p of ["index.html", "docs/index.html"]) {
     const html = read(p);
@@ -237,6 +251,7 @@ test("focus and exploratory presets retain their independent, adjustable session
   assert.match(app.root.innerHTML, /data-seconds="10800"/);
   app.click("home");
   app.click("explore");
+  completeQmmPrelude(app);
   assert.match(app.root.innerHTML, /Threshold Explorer/);
   assert.match(app.root.innerHTML, /data-seconds="7200"/);
 });
@@ -388,6 +403,7 @@ test("Focus Sync previews all published stations and four full-journey paces", (
   const app = harness();
   assert.match(app.root.innerHTML, /Focus Sync/);
   app.click("sync");
+  completeQmmPrelude(app);
   assert.match(app.root.innerHTML, /Complete itinerary · 17 stations \+ return/);
   assert.match(app.root.innerHTML, /Focus 1/);
   assert.match(app.root.innerHTML, /Focus 34\/35/);
@@ -401,6 +417,7 @@ test("Focus Sync previews all published stations and four full-journey paces", (
 test("Focus Sync preflight gates the full sequence and schedules smooth changes", async () => {
   const app = harness({ withAudio: true });
   app.click("sync");
+  completeQmmPrelude(app);
   app.click("start");
   assert.equal(app.contexts.length, 0);
   app.check("q-safe");
@@ -427,6 +444,7 @@ test("Focus Sync preflight gates the full sequence and schedules smooth changes"
 test("deepest Focus Sync pace runs through all stations and grounded return without an early cutoff", async () => {
   const app = harness({ withAudio: true });
   app.click("sync");
+  completeQmmPrelude(app);
   app.click("sync-pace", undefined, 20);
   assert.match(app.root.innerHTML, /5:52:00/);
   app.check("q-safe");
@@ -522,6 +540,7 @@ test("all soundscape profiles expose rain, wind and 25-note HUM with defaults of
   const app = harness();
   for (const profile of ["listen", "sleep", "focus", "explore", "sync"]) {
     app.click(profile);
+    if (profile === "explore" || profile === "sync") completeQmmPrelude(app);
     assert.match(app.root.innerHTML, /id="q-mix-rain" value="0"/);
     assert.match(app.root.innerHTML, /id="q-mix-wind" value="0"/);
     assert.match(app.root.innerHTML, /id="q-mix-hum" value="0"/);
@@ -838,6 +857,7 @@ test("Island 108 preview plays the exact selected six-layer mix and stops on ret
 test("Preview never extends a Focus Sync journey or schedules years of tone automation", async () => {
   const app = harness({ withAudio: true });
   app.click("sync");
+  completeQmmPrelude(app);
   app.check("q-safe");
   app.check("q-headphones");
   assert.match(app.root.innerHTML, /opening Focus Sync stage only/);
@@ -908,6 +928,7 @@ test("No audio preview is allowed for a silent mix or the intentionally silent s
 test("Focus Sync voice and breathing companion are opt-in and stop on Return now", async () => {
   const app = harness({ withAudio: true, withVoice: true });
   app.click("sync");
+  completeQmmPrelude(app);
   assert.match(app.root.innerHTML, /id="q-guide-voice"/);
   assert.match(app.root.innerHTML, /id="q-guide-breath"/);
   assert.equal(app.spoken.length, 0, "narration defaults off");
@@ -940,6 +961,7 @@ test("Focus Sync voice and breathing companion are opt-in and stop on Return now
 test("Focus Sync keeps written prompts when no speech engine exists", () => {
   const app = harness();
   app.click("sync");
+  completeQmmPrelude(app);
   assert.match(app.root.innerHTML, /id="q-guide-voice" disabled/);
   assert.match(app.root.innerHTML, /browser has no speech voice available/);
   app.check("q-guide-breath", true);
@@ -1193,7 +1215,8 @@ test("QMM is an actual silent guided practice with timed cues and local receipts
   assert.equal(row.audio_params.engine, "none");
   assert.equal(row.quiet_mind.voice_opted_in, true);
   assert.equal(row.notes, "My attention wandered and returned.");
-  assert.match(app.root.innerHTML, /Continue to Threshold Explorer/);
+  assert.equal(row.quiet_mind.completed_timed_practice, false, "early return is not completion");
+  assert.doesNotMatch(app.root.innerHTML, /data-action="qmm-continue"/, "early return does not offer a follow-on");
 });
 
 test("QMM starts with voice disabled and returns without creating audio", async () => {
@@ -1210,4 +1233,50 @@ test("QMM starts with voice disabled and returns without creating audio", async 
   const row = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
   assert.equal(row.quiet_mind.voice_opted_in, false);
   assert.equal(row.quiet_mind.last_phase, "return");
+});
+
+test("advanced Focus Sync and Threshold Explorer always begin with fresh QMM", () => {
+  for (const target of ["explore", "sync"]) {
+    const app = harness({ withAudio: true });
+    app.click(target);
+    assert.match(app.root.innerHTML, /Quiet Mind · QMM/);
+    assert.match(app.root.innerHTML, /Foundation first/);
+    assert.match(app.root.innerHTML, /Your QMM practice/);
+    assert.equal(app.contexts.length, 0, "no target audio starts during QMM prelude");
+    assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+    completeQmmPrelude(app);
+    assert.match(app.root.innerHTML, target === "sync" ? /Complete itinerary · 17 stations/ : /Threshold Explorer/);
+    assert.match(app.root.innerHTML, /id="q-safe"/);
+    assert.match(app.root.innerHTML, /id="q-headphones"/);
+    assert.equal(app.contexts.length, 0, "target audio requires separate start and safety consent");
+    const rows = JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].preset, "Quiet Mind · QMM");
+    assert.equal(rows[0].quiet_mind.completed_timed_practice, true);
+    assert.equal(rows[0].quiet_mind.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
+  }
+});
+
+test("interrupting foundational QMM does not unlock the next meditation", () => {
+  const app = harness();
+  app.click("sync");
+  app.check("q-safe");
+  app.click("start");
+  app.advance(10000);
+  app.click("return");
+  app.click("save");
+  assert.doesNotMatch(app.root.innerHTML, /data-action="qmm-continue"/);
+  assert.equal(JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0].quiet_mind.completed_timed_practice, false);
+  app.click("home");
+  app.click("sync");
+  assert.match(app.root.innerHTML, /Foundation first/, "next attempt begins with QMM again");
+});
+
+test("passive listening and audio labs do not force QMM", () => {
+  for (const mode of ["listen", "sleep", "focus", "rife", "intention"]) {
+    const app = harness();
+    app.click(mode);
+    assert.doesNotMatch(app.root.innerHTML, /Foundation first/);
+    assert.doesNotMatch(app.root.innerHTML, /Your QMM practice/);
+  }
 });

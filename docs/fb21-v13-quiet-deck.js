@@ -60,6 +60,7 @@
   };
   // These are original audio-design profiles, not measured neurological states.
   const PROFILES = Object.freeze({
+    qmm: { label: "Quiet Mind · QMM", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     drift: { label: "Listen & drift", duration: 120, surf: 68, bass: 14, beat: 0, tones: true, carrier: 180, difference: 8, space: 20 },
     lost: { label: "Island 108 · LOST-inspired", island: true, duration: 6480,
       surf: 42, bass: 8, beat: 4, rain: 23, wind: 16, hum: 15, humNote: "C3",
@@ -105,6 +106,7 @@
     return ISLAND_SEGMENTS.length - 1;
   }
   const DURATIONS = Object.freeze({
+    qmm: [180, 300, 600, 900, 1200, 1800],
     settle: [60, 90, 120, 300, 600],
     drift: [120, 300, 900, 1500, 2700, 3600, 5400, 7200, 10800, 14400, 21600],
     lost: [900, 2700, 3600, 6480, 10800],
@@ -130,7 +132,7 @@
 
   const state = {
     screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8,
-    syncMinutes: 12, syncPlan: null, syncStage: 0, islandIndex: 0,
+    syncMinutes: 12, syncPlan: null, syncStage: 0, islandIndex: 0, qmmStage: 0, qmmVoice: false,
     rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
@@ -239,6 +241,10 @@
       : "Focus " + stage.level + ". " + stage.title + ".";
     window.FocusBridgeVoice.say(introduction + " " + stage.prompt);
   }
+  function speakQMM(stage) {
+    if (!state.qmmVoice || state.profile !== "qmm" || !voiceAvailable()) return;
+    window.FocusBridgeVoice.say(stage.voice);
+  }
   function breathCue() {
     const cycle = state.elapsedMs % 10000;
     return cycle < 4000 ? "Breathe in gently" : "Breathe out comfortably";
@@ -281,9 +287,13 @@
     if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // prevent old preview voice after switching modes
     state.previewMessage = "";
     state.previewError = "";
-    state.mode = mode === "settle" ? "settle" : "listen";
+    state.mode = mode === "settle" || mode === "qmm" ? "settle" : "listen";
     state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
     const profile = PROFILES[state.profile];
+    if (state.profile === "qmm" && !window.FocusBridgeQMM) {
+      state.error = "Quiet Mind guidance is unavailable. Reload the app to retry.";
+      state.screen = "home"; render(); return;
+    }
     if (state.profile === "intention" && !intentionEngine) {
       state.error = "Intention Studio did not load. Reload the page.";
       state.screen = "home"; render(); return;
@@ -294,6 +304,8 @@
       state.intentionNotice = "";
     }
     state.duration = mode === "settle" ? 90 : profile.duration;
+    state.qmmStage = 0;
+    state.qmmVoice = false; // deliberate per-session opt-in
     state.toneDifference = profile.difference;
     state.syncStage = 0;
     state.islandIndex = 0;
@@ -556,6 +568,7 @@
     state.paused = false;
     state.syncStage = 0;
     state.islandIndex = 0;
+    state.qmmStage = 0;
     state.sleepCueIndex = 0;
     state.intentionNextCue = state.profile === "intention" && intentionEngine
       ? (intentionEngine.CADENCES[state.intentionCadence] || null) : null;
@@ -577,6 +590,7 @@
     render();
     if (state.profile === "sync" && state.syncPlan)
       speakGate(window.FocusBridgeSync.stageAt(state.syncPlan, 0));
+    if (state.profile === "qmm") speakQMM(window.FocusBridgeQMM.stageAt(0, state.duration));
     if (state.profile === "sleep" && state.mode === "listen") {
       if (speakSleep("start") && state.sleepGuide) state.sleepCueIndex = 1;
     }
@@ -584,6 +598,8 @@
       intentionVoice();
   }
   function cue() {
+    if (state.profile === "qmm" && window.FocusBridgeQMM)
+      return window.FocusBridgeQMM.stageAt(state.elapsedMs / 1000, state.duration).prompt;
     if (state.profile === "lost")
       return ISLAND_SEGMENTS[islandStageAt(state.elapsedMs, state.duration)].cue;
     if (state.profile === "rife" && state.mode === "listen")
@@ -618,6 +634,14 @@
       }
       finishSession(false);
       return;
+    }
+    if (state.profile === "qmm" && !state.paused && window.FocusBridgeQMM) {
+      const phase = window.FocusBridgeQMM.stageAt(state.elapsedMs / 1000, state.duration);
+      if (phase.index !== state.qmmStage) {
+        state.qmmStage = phase.index;
+        render();
+        speakQMM(phase);
+      }
     }
     if (state.profile === "lost" && !state.paused) {
       const islandIndex = islandStageAt(state.elapsedMs, state.duration);
@@ -683,7 +707,7 @@
         return;
       }
     }
-    if ((state.voiceGuide || state.sleepGuide || state.intentionSpeak) && window.FocusBridgeVoice) {
+    if ((state.voiceGuide || state.qmmVoice || state.sleepGuide || state.intentionSpeak) && window.FocusBridgeVoice) {
       if (state.paused) window.FocusBridgeVoice.pause();
       else window.FocusBridgeVoice.resume();
     }
@@ -711,7 +735,7 @@
         ? crypto.randomUUID() : "quiet-" + Date.now(),
       timestamp: new Date().toISOString(),
       app: "FocusBridge21 Quiet Deck extended audio",
-      preset: state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
+      preset: state.profile === "qmm" ? PROFILES.qmm.label : state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
       target_gate: state.mode === "settle" || state.profile === "drift" ? 10 : null,
       duration_min: state.duration / 60,
       actual_elapsed_sec: elapsed,
@@ -732,8 +756,14 @@
         minutes_per_level: state.syncMinutes,
         interpretation: "Time-based labels and personal reflection, not detected states"
       } : null,
-      guidance_mode: "Quiet Deck " + state.mode,
-      voice_guidance_opted_in: state.profile === "sync" && state.voiceGuide && voiceAvailable(),
+      guidance_mode: state.profile === "qmm" ? "QMM silent-first guided attention" : "Quiet Deck " + state.mode,
+      quiet_mind: state.profile === "qmm" ? {
+        progression: "7 timed attention prompts",
+        last_phase: window.FocusBridgeQMM.stageAt(elapsed, state.duration).id,
+        voice_opted_in: state.qmmVoice && voiceAvailable(),
+        evidence_boundary: "Reflective attention practice; no measurement of thought silence or EEG"
+      } : null,
+      voice_guidance_opted_in: ((state.profile === "sync" && state.voiceGuide) || (state.profile === "qmm" && state.qmmVoice)) && voiceAvailable(),
       optional_breath_visual: state.breathGuide,
       intention_studio: state.profile === "intention" ? {
         voice_opted_in: state.intentionSpeak && voiceAvailable(),
@@ -808,6 +838,10 @@
         '<span class="q-choice-icon" aria-hidden="true">◌</span><span class="q-choice-kicker">NO HEADPHONES NEEDED</span>',
         '<strong>Just settle</strong><span>Quiet awareness, no tones. Start with 90 seconds.</span>',
         '<span class="q-choice-link">Begin gently →</span></button>',
+        '<button type="button" data-action="qmm" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">◯</span><span class="q-choice-kicker">SILENT-FIRST · 3 TO 30 MIN</span>',
+        '<strong>Quiet Mind · QMM</strong><span>Seven steps: soften your gaze, natural breath, open listening, and gentle release of thoughts.</span>',
+        '<span class="q-choice-link">Practice quiet attention →</span></button>',
         '<button type="button" data-action="listen" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">♫</span><span class="q-choice-kicker">STEREO HEADPHONES</span>',
         '<strong>Listen &amp; drift</strong><span>Soft original stereo tones and a gentle return.</span>',
@@ -897,7 +931,7 @@
               '" aria-pressed="' + (state.syncMinutes === minutes) + '">' +
               minutes + ' min/station · ' + formatTime(plan.totalSeconds) + '</button>';
           }).join("")
-        : DURATIONS[listen ? state.profile : "settle"].map((seconds) =>
+        : DURATIONS[state.profile === "qmm" ? "qmm" : listen ? state.profile : "settle"].map((seconds) =>
             '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
             '" data-action="duration" data-seconds="' + seconds +
             '" aria-pressed="' + (state.duration === seconds) + '">' +
@@ -907,8 +941,8 @@
           ).join("");
       content = [
         '<button type="button" class="q-back" data-action="back">← Back to ', PROFILES[state.profile]?.holistic ? 'Holistic Zone' : 'choices', '</button>',
-        '<div class="q-eyebrow">', listen ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
-        '<h1>', listen ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
+        '<div class="q-eyebrow">', listen || state.profile === "qmm" ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
+        '<h1>', listen || state.profile === "qmm" ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
         '<p class="q-lead">', listen
           ? PROFILES[state.profile].rife
             ? 'A browser-based audio oscillator inspired by the history of frequency experimentation. NOT a Rife RF device, an electromagnetic treatment, or a medical therapy. Audible Hz cannot diagnose or cure disease.'
@@ -919,7 +953,9 @@
                 : state.profile === "intention"
                 ? 'Create and read your own reflective script, with optional spoken voice and personalized ambience. No hidden audio or subconscious programming claims.'
                 : 'Original procedural sound with optional stereo tones. Presets are creative listening experiences, not verified brain-state induction.'
-          : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
+          : state.profile === "qmm"
+            ? 'A quiet, original seven-step attention practice adapted from The Book of Knowledge. No audio is needed. You are practicing noticing and returning, not forcing an empty mind.'
+            : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         listen && PROFILES[state.profile].holistic
           ? '<p class="q-comfort-note">' + safeText(PROFILES[state.profile].note) + '</p>'
           : '',
@@ -938,6 +974,17 @@
         '<div class="q-setup-step">STEP 2 OF 3 · CUSTOMIZE</div>',
         '<h2>', state.profile === "sync" ? 'Choose a pace for the complete journey' : 'How long feels comfortable?', '</h2>',
         '<div class="q-durations">', choices, '</div>',
+        state.profile === "qmm" && window.FocusBridgeQMM ? [
+          '<section class="q-panel q-qmm-plan" aria-label="Quiet Mind meditation progression">',
+          '<div class="q-setup-step">SEVEN STAGES · GENTLE AWARENESS</div><h3>Your QMM practice</h3>',
+          '<ol class="q-sync-stage-list">',
+          window.FocusBridgeQMM.STAGES.map(stage => '<li><strong>' + safeText(stage.title) + '</strong><span>' + safeText(stage.prompt) + '</span></li>').join(""),
+          '</ol><p class="q-detail">The sequence is inspired by Chapter 1 of <a href="https://www.scribd.com/doc/120678976/The-Book-Of-Knowledge" target="_blank" rel="noopener noreferrer">The Book of Knowledge (Anonymous)</a>; all wording here is original. This is not a claim of paranormal abilities or measured brain states.</p>',
+          '<label class="q-check" for="q-qmm-voice"><input type="checkbox" id="q-qmm-voice" ',
+          state.qmmVoice && voiceAvailable() ? 'checked' : '', voiceAvailable() ? '' : 'disabled',
+          '> <span><strong>Speak the seven prompts</strong><small>Optional browser narration. Off by default; voice availability and network use depend on your device.</small></span></label>',
+          '<p class="q-detail">Keep your eyes open when needed. Stop if distressed or disoriented. Return Now always remains available.</p></section>'
+        ].join("") : '',
         state.profile === "lost" ? [
           '<section class="q-island-panel" aria-label="Island 108 six chapters">',
           '<div class="q-island-kicker">THE NUMBERS · 4 8 15 16 23 42</div>',
@@ -1150,7 +1197,13 @@
         state.mode === "listen" ?
           safeText(PROFILES[state.profile].label.toUpperCase()) +
             (allSoundOff() ? ' · SILENT PRACTICE' : ' · SOUND ACTIVE') :
-          'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
+          state.profile === "qmm" ? 'QUIET MIND · INTENTIONALLY SILENT' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
+        state.profile === "qmm" && window.FocusBridgeQMM ? [
+          '<section class="q-sync-active q-qmm-active" aria-label="Quiet Mind stage">',
+          '<div class="q-sync-step">QMM · STAGE ', state.qmmStage + 1, ' OF 7</div>',
+          '<h2>', safeText(window.FocusBridgeQMM.STAGES[state.qmmStage].title), '</h2>',
+          '<p class="q-detail">No thought-free score. Each gentle return counts as practice.</p></section>'
+        ].join("") : '',
         syncStation ? [
           '<section class="q-sync-active" aria-label="Focus Sync stage">',
           '<div class="q-sync-step">', syncStation.kind === "return"
@@ -1223,7 +1276,9 @@
         '<p class="q-lead">Your reflection is in the existing Signal Ledger, available in the full cockpit.',
         ' You did not have to reach any special state for this session to count.</p>',
         '<div class="q-actions"><button type="button" class="q-primary" data-action="home">Back to Quiet Deck</button>',
-        '<button type="button" class="q-secondary" data-action="lab">View the full ledger &amp; labs</button></div>'
+        '<button type="button" class="q-secondary" data-action="lab">View the full ledger &amp; labs</button>',
+        state.profile === "qmm" ? '<button type="button" class="q-secondary" data-action="explore">Continue to Threshold Explorer →</button>' : '',
+        '</div>'
       ].join("");
     }
     root.innerHTML = frame(content);
@@ -1232,7 +1287,7 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "qmm", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();
@@ -1361,6 +1416,10 @@
     if (event.target.id === "q-guide-voice" && state.profile === "sync") {
       state.voiceGuide = voiceAvailable() && event.target.checked;
       saveGuidePreferences(); render();
+    }
+    if (event.target.id === "q-qmm-voice" && state.profile === "qmm" && state.screen === "prepare") {
+      state.qmmVoice = voiceAvailable() && event.target.checked;
+      render();
     }
     if (event.target.id === "q-guide-breath") {
       state.breathGuide = event.target.checked;

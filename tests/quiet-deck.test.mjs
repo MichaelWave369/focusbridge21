@@ -110,6 +110,7 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   runInNewContext(read("docs/fb21-voice-guide.js"), { window });
   runInNewContext(read("docs/fb21-sleep-studio.js"), { window });
   runInNewContext(read("docs/fb21-intention-studio.js"), { window, Date: FakeDate });
+  runInNewContext(read("docs/fb21-qmm.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -147,7 +148,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine|focusbridge21-v2-6-sleep-intentions|focusbridge21-v2-7-intention-studio|focusbridge21-v2-8-seamless-surf)/);
+  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine|focusbridge21-v2-6-sleep-intentions|focusbridge21-v2-7-intention-studio|focusbridge21-v2-9-qmm-foundation)/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -448,10 +449,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has exactly nine first-run cards including Rife Frequency Lab", () => {
+test("Quiet Deck has exactly ten first-run cards including Rife Frequency Lab", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 9, "nine home cards form a 3 by 3 grid");
+  assert.equal(choices.length, 10, "QMM adds a tenth home card");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -623,10 +624,10 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
   assert.equal(receipt.audio_params.stereo_tones, false);
 });
 
-test("Island 108 is a discoverable fan tribute without breaking the nine-box grid", () => {
+test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 9);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 10);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1150,4 +1151,63 @@ test("Intention Studio supports private silent reading and voice-only sessions w
     app.click("return");
     assert.ok(app.voiceOps.includes("cancel"), "Return Now cancels any voice");
   }
+});
+
+
+test("QMM is an actual silent guided practice with timed cues and local receipts", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  assert.match(app.root.innerHTML, /Quiet Mind · QMM/);
+  app.click("qmm");
+  assert.match(app.root.innerHTML, /seven-step attention practice/);
+  assert.match(app.root.innerHTML, /Your QMM practice/);
+  assert.match(app.root.innerHTML, /3 min/);
+  assert.match(app.root.innerHTML, /30 min/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+  assert.match(app.root.innerHTML, /id="q-qmm-voice"/);
+  app.click("start");
+  assert.doesNotMatch(app.root.innerHTML, /Return now/, "safety check remains required");
+  app.check("q-safe");
+  app.click("duration", "300");
+  app.check("q-qmm-voice", true);
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(app.root.innerHTML, /STAGE 1 OF 7/);
+  assert.equal(app.contexts.length, 0, "QMM stays silent; optional speech does not create oscillator audio");
+  assert.equal(app.spoken.length, 1, "one opt-in start cue");
+  app.advance(40000);
+  assert.match(app.root.innerHTML, /STAGE 2 OF 7/);
+  assert.equal(app.spoken.length, 2);
+  app.click("pause");
+  const speechAtPause = app.spoken.length;
+  app.advance(60000);
+  assert.equal(app.spoken.length, speechAtPause);
+  app.click("pause");
+  app.advance(80000);
+  assert.match(app.root.innerHTML, /Return now/);
+  app.click("return");
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  app.note("My attention wandered and returned.");
+  app.click("save");
+  const row = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(row.preset, "Quiet Mind · QMM");
+  assert.equal(row.audio_params.engine, "none");
+  assert.equal(row.quiet_mind.voice_opted_in, true);
+  assert.equal(row.notes, "My attention wandered and returned.");
+  assert.match(app.root.innerHTML, /Continue to Threshold Explorer/);
+});
+
+test("QMM starts with voice disabled and returns without creating audio", async () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  app.click("qmm");
+  app.check("q-safe");
+  app.click("start");
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(app.contexts.length, 0);
+  assert.equal(app.spoken.length, 0);
+  app.advance(600000);
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  app.click("save");
+  const row = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(row.quiet_mind.voice_opted_in, false);
+  assert.equal(row.quiet_mind.last_phase, "return");
 });

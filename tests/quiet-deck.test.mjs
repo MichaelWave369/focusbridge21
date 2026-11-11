@@ -540,6 +540,7 @@ test("all soundscape profiles expose rain, wind and 25-note HUM with defaults of
   const app = harness();
   for (const profile of ["listen", "sleep", "focus", "explore", "sync"]) {
     app.click(profile);
+    if (profile === "explore" || profile === "sync") completeQmmPrelude(app);
     assert.match(app.root.innerHTML, /id="q-mix-rain" value="0"/);
     assert.match(app.root.innerHTML, /id="q-mix-wind" value="0"/);
     assert.match(app.root.innerHTML, /id="q-mix-hum" value="0"/);
@@ -1214,7 +1215,8 @@ test("QMM is an actual silent guided practice with timed cues and local receipts
   assert.equal(row.audio_params.engine, "none");
   assert.equal(row.quiet_mind.voice_opted_in, true);
   assert.equal(row.notes, "My attention wandered and returned.");
-  assert.match(app.root.innerHTML, /Continue to Threshold Explorer/);
+  assert.equal(row.quiet_mind.completed_timed_practice, false, "early return is not completion");
+  assert.doesNotMatch(app.root.innerHTML, /data-action="qmm-continue"/, "early return does not offer a follow-on");
 });
 
 test("QMM starts with voice disabled and returns without creating audio", async () => {

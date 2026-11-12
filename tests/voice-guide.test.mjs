@@ -67,6 +67,6 @@ test("both browser entrypoints load optional voice guide before Quiet Deck and c
     assert.ok(voiceAt > 0 && voiceAt < quietAt);
   }
   const worker = readFileSync(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(worker, /focusbridge21-v2-(?:4-guided-audio|5-master-audio-engine|6-sleep-intentions|7-intention-studio|8-seamless-surf|9-qmm-foundation)/);
+  assert.match(worker, /focusbridge21-v2-(?:4-guided-audio|5-master-audio-engine|6-sleep-intentions|7-intention-studio|8-seamless-surf|9-qmm-foundation)|focusbridge21-v3-0-going-deeper/);
   assert.match(worker, /fb21-voice-guide\.js/);
 });

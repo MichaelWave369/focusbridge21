@@ -111,12 +111,13 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   runInNewContext(read("docs/fb21-sleep-studio.js"), { window });
   runInNewContext(read("docs/fb21-intention-studio.js"), { window, Date: FakeDate });
   runInNewContext(read("docs/fb21-qmm.js"), { window });
+  runInNewContext(read("docs/fb21-gdm.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
   assert.ok(root, "quiet root exists");
-  const click = (action, seconds, minutes, frequency) => root.listeners.click({
-    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency } }) }
+  const click = (action, seconds, minutes, frequency, visual) => root.listeners.click({
+    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual } }) }
   });
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
@@ -135,6 +136,18 @@ function harness({ withAudio = false, withVoice = false } = {}) {
     get reloads() { return reloads; } };
 }
 
+function completeGdmPrelude(app) {
+  assert.match(app.root.innerHTML, /Going Deeper · GDM/);
+  assert.match(app.root.innerHTML, /Your GDM practice/);
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  app.click("save");
+  assert.match(app.root.innerHTML, /data-action="gdm-continue"/);
+  app.click("gdm-continue");
+}
 function completeQmmPrelude(app) {
   assert.match(app.root.innerHTML, /Quiet Mind · QMM/);
   assert.match(app.root.innerHTML, /Foundation first/);
@@ -147,6 +160,7 @@ function completeQmmPrelude(app) {
   assert.match(app.root.innerHTML, /Continue to/);
   app.click("qmm-continue");
   assert.doesNotMatch(app.root.innerHTML, /Foundation first/);
+  completeGdmPrelude(app);
 }
 
 test("both Pages entrypoints reference Quiet Deck while retaining the original app", () => {
@@ -156,14 +170,15 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-v13-quiet-deck\.js/);
     assert.match(html, /fb21-focus-sync\.js/);
     assert.match(html, /fb21-rife-lab\.js/);
+    assert.match(html, /fb21-gdm\.js/);
+    assert.ok(html.indexOf("fb21-gdm.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-rife-lab.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
       "the sequence helper loads before Quiet Deck");
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /(?:focusbridge21-v1-(?:3-quiet-deck|4-original-soundscape|5-audio-feedback|6-extended-audio|7-onboarding|8-holistic-comfort|9-focus-sync)|focusbridge21-v2-0-rife-audio-lab|focusbridge21-v2-1-weather-hum|focusbridge21-v2-2-island-108|focusbridge21-v2-3-mix-preview|focusbridge21-v2-4-guided-audio|focusbridge21-v2-5-master-audio-engine|focusbridge21-v2-6-sleep-intentions|focusbridge21-v2-7-intention-studio|focusbridge21-v2-9-qmm-foundation)/);
-  assert.match(read("service-worker.js"), /focusbridge21-v2-9-qmm-foundation-qmm-first/, "QMM first release must invalidate old offline JS");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-0-going-deeper/, "GDM release must refresh old PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -468,10 +483,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has exactly ten first-run cards including Rife Frequency Lab", () => {
+test("Quiet Deck has eleven first-run cards including GDM and Rife Frequency Lab", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 10, "QMM adds a tenth home card");
+  assert.equal(choices.length, 11, "QMM and GDM add two independent home cards");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -647,7 +662,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 10);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 11);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1236,7 +1251,7 @@ test("QMM starts with voice disabled and returns without creating audio", async 
   assert.equal(row.quiet_mind.last_phase, "return");
 });
 
-test("advanced Focus Sync and Threshold Explorer always begin with fresh QMM", () => {
+test("advanced Focus Sync and Threshold Explorer require QMM then GDM", () => {
   for (const target of ["explore", "sync"]) {
     const app = harness({ withAudio: true });
     app.click(target);
@@ -1251,10 +1266,13 @@ test("advanced Focus Sync and Threshold Explorer always begin with fresh QMM", (
     assert.match(app.root.innerHTML, /id="q-headphones"/);
     assert.equal(app.contexts.length, 0, "target audio requires separate start and safety consent");
     const rows = JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
-    assert.equal(rows.length, 1);
-    assert.equal(rows[0].preset, "Quiet Mind · QMM");
-    assert.equal(rows[0].quiet_mind.completed_timed_practice, true);
-    assert.equal(rows[0].quiet_mind.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
+    assert.equal(rows.length, 2);
+    assert.equal(rows[1].preset, "Quiet Mind · QMM");
+    assert.equal(rows[1].quiet_mind.completed_timed_practice, true);
+    assert.equal(rows[1].quiet_mind.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
+    assert.equal(rows[0].preset, "Going Deeper · GDM");
+    assert.equal(rows[0].going_deeper.completed_timed_practice, true);
+    assert.equal(rows[0].going_deeper.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
   }
 });
 
@@ -1280,4 +1298,104 @@ test("passive listening and audio labs do not force QMM", () => {
     assert.doesNotMatch(app.root.innerHTML, /Foundation first/);
     assert.doesNotMatch(app.root.innerHTML, /Your QMM practice/);
   }
+});
+
+test("direct Going Deeper enters QMM first, offers three imagery choices, then runs silently", () => {
+  const app = harness({ withVoice: true, withAudio: true });
+  app.click("gdm");
+  assert.match(app.root.innerHTML, /Foundation first/);
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  app.click("save");
+  assert.match(app.root.innerHTML, /Continue to Going Deeper/);
+  app.click("qmm-continue");
+  assert.match(app.root.innerHTML, /Your GDM practice/);
+  app.click("duration", 180);
+  assert.match(app.root.innerHTML, /Ladder into quiet/);
+  assert.match(app.root.innerHTML, /Backward escalator/);
+  assert.match(app.root.innerHTML, /Stillness alternative/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+  assert.match(app.root.innerHTML, /id="q-gdm-voice"/);
+  app.click("gdm-visual", undefined, undefined, undefined, "still");
+  assert.match(app.root.innerHTML, /Skip movement imagery/);
+  app.check("q-safe");
+  app.click("start");
+  assert.match(app.root.innerHTML, /GDM · STAGE 1 OF 5/);
+  assert.equal(app.spoken.length, 0);
+  assert.equal(app.contexts.length, 0, "GDM does not create oscillator audio");
+  app.advance(180000);
+  app.click("save");
+  const rows = JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].preset, "Going Deeper · GDM");
+  assert.equal(rows[0].target_gate, null, "no EEG gate inferred");
+  assert.equal(rows[0].going_deeper.visual_choice, "still");
+  assert.equal(rows[0].going_deeper.last_phase, "return");
+  assert.equal(rows[0].going_deeper.completed_timed_practice, true);
+  assert.equal(rows[0].going_deeper.voice_opted_in, false);
+  assert.match(app.root.innerHTML, /Continue to Threshold Explorer/);
+});
+
+test("GDM optional browser guidance speaks per phase, and Return Now blocks continuation", () => {
+  const app = harness({ withVoice: true });
+  app.click("explore");
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  app.click("save");
+  app.click("qmm-continue");
+  app.click("duration", 180);
+  app.click("gdm-visual", undefined, undefined, undefined, "escalator");
+  assert.match(app.root.innerHTML, /Backward escalator/);
+  app.check("q-gdm-voice");
+  app.check("q-safe");
+  app.click("start");
+  assert.equal(app.spoken.length, 1);
+  app.advance(35000);
+  assert.equal(app.spoken.length, 2);
+  assert.match(app.spoken[1], /escalator/);
+  app.click("pause");
+  const count = app.spoken.length;
+  app.advance(60000);
+  assert.equal(app.spoken.length, count);
+  app.click("pause");
+  app.click("return");
+  app.click("save");
+  const row = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(row.going_deeper.completed_timed_practice, false);
+  assert.equal(row.going_deeper.visual_choice, "escalator");
+  assert.equal(row.going_deeper.voice_opted_in, true);
+  assert.doesNotMatch(app.root.innerHTML, /data-action="gdm-continue"/);
+  app.click("home");
+  app.click("explore");
+  assert.match(app.root.innerHTML, /Foundation first/, "next attempt restarts QMM");
+});
+
+test("GDM only permits handoff after finishing both timed foundation steps", () => {
+  const app = harness({ withAudio: true });
+  app.click("sync");
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  app.click("save");
+  app.click("qmm-continue");
+  assert.match(app.root.innerHTML, /Second foundation/);
+  app.click("duration", 180);
+  assert.equal(app.contexts.length, 0);
+  app.click("start");
+  assert.doesNotMatch(app.root.innerHTML, /GDM · STAGE/, "GDM has independent consent");
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  app.click("save");
+  assert.match(app.root.innerHTML, /Continue to Focus Sync/);
+  app.click("gdm-continue");
+  assert.match(app.root.innerHTML, /Complete itinerary · 17 stations/);
+  assert.match(app.root.innerHTML, /id="q-safe"/);
+  assert.match(app.root.innerHTML, /id="q-headphones"/);
+  assert.equal(app.contexts.length, 0);
 });

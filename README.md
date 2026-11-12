@@ -6,6 +6,17 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## Chapter 2 Going Deeper: QMM → GDM → optional exploration
+
+- **QMM** is the first step for all dedicated Quiet Deck meditation/exploration routes. Selecting **Going Deeper (GDM)**, **Threshold Explorer** or **Focus Sync** begins with a quiet-mind practice, not a direct jump to advanced sessions.
+- **GDM** follows QMM as a new silent-first Chapter 2 exercise. It offers an imagined ladder, backward-moving escalator, or no-motion stillness alternative, with a gentle imagined landing and grounded return. The physical body stays still.
+- Timers offer **3, 5, 10, 15, 20 and 30 minutes** for each foundation. Optional original browser-spoken cues are off by default. Each session has a new safety check, Pause/Resume, Return Now and private local receipts.
+- A completed practice offers **voluntary continuation** to the next stage; early returns cannot silently advance. Completing a timer is never described as proof of Alpha/Theta EEG, trance or astral projection.
+- Passive listening, sleep, productivity focus, intentions, comfort sound and waveform labs continue to work independently. The older full laboratory is not yet subject to these new Quiet Deck routes.
+- Both Pages entrypoints and the offline service worker preload the GDM module; regression tests cover safe routing and consent.
+
+Read [QMM foundations](docs/QMM_FOUNDATION.md) and [Chapter 2 Going Deeper implementation](docs/GDM_GOING_DEEPER.md).
+
 ## v2.8 Seamless Surf Wrap: eliminate the 11-second seam dropout
 
 - Fixed the original ocean-surf noise buffer's repeated 25 ms fade-to-silence notch. The surf's end now crossfades into the **preceding natural noise samples** over ~750 ms, maintaining an audible continuous bed instead of a short silent pulse every 11 seconds.

@@ -142,6 +142,7 @@
     gdmStage: 0, gdmVoice: false, gdmVisual: "ladder", gdmNext: null,
     energyStage: 0, energyVoice: false, energyVisual: "glow", energyNext: null,
     teleStage: 0, teleVoice: false, targetLab: null,
+    atlas: { category: "all", search: "", selected: "root" },
     rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
@@ -336,6 +337,17 @@
     state.qmmNext = null;
     state.gdmNext = null;
     state.energyNext = null;
+    if (mode === "atlas") {
+      stopPreview("", false);
+      stopAudio();
+      clearInterval(state.timer);
+      if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
+      state.screen = "atlas";
+      state.profile = "atlas";
+      state.atlas = { category: "all", search: "", selected: "root" };
+      render();
+      return;
+    }
     if (mode === "targetlab" && completedQMM) {
       stopPreview("", false);
       stopAudio();
@@ -1105,6 +1117,10 @@
         '<span class="q-choice-icon" aria-hidden="true">▣</span><span class="q-choice-kicker">CHAPTER 3 · BLIND TARGET EXPERIMENT</span>',
         '<strong>Blind Target Lab</strong><span>Twenty hidden four-choice targets, locked guesses and chance-baseline results. No external surveillance.</span>',
         '<span class="q-choice-link">Begin with Quiet Mind →</span></button>',
+        '<button type="button" data-action="atlas" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">CHAPTER 4 · REFERENCE, NOT MEDITATION</span>',
+        '<strong>Human Body Atlas</strong><span>Explore the book\'s chakras, Dan Tiens and Hara model alongside established anatomy and evidence.</span>',
+        '<span class="q-choice-link">Open the atlas →</span></button>',
         '<button type="button" data-action="listen" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">♫</span><span class="q-choice-kicker">STEREO HEADPHONES</span>',
         '<strong>Listen &amp; drift</strong><span>Soft original stereo tones and a gentle return.</span>',
@@ -1171,6 +1187,10 @@
         '<p class="q-holistic-alert"><strong>When to seek care:</strong> A sudden extremely severe headache, weakness, confusion, severe abdominal pain, vomiting blood, or inability to keep fluids down requires prompt medical attention. This app cannot assess symptoms or provide treatment.</p>',
         '<button type="button" class="q-secondary" data-action="settle">Choose silence instead</button></div>'
       ].join("");
+    } else if (state.screen === "atlas") {
+      content = window.FocusBridgeBodyAtlas
+        ? window.FocusBridgeBodyAtlas.renderAtlas(state.atlas)
+        : '<p role="alert">Human Body Atlas is unavailable. Reload the app to retry.</p>';
     } else if (state.screen === "targetlab") {
       const lab = state.targetLab, engine = window.FocusBridgeTeleVisualization;
       const able = !!(engine && window.crypto && typeof window.crypto.getRandomValues === "function");
@@ -1714,7 +1734,7 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "qmm", "gdm", "energy", "tele", "targetlab", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "qmm", "gdm", "energy", "tele", "targetlab", "atlas", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "qmm-continue" && state.screen === "saved" &&
         state.profile === "qmm" && !state.interrupted &&
         state.elapsedMs >= state.duration * 1000 - 1000) {
@@ -1736,6 +1756,21 @@
     else if (action === "tele-targetlab" && state.screen === "saved" &&
         state.profile === "tele" && !state.interrupted &&
         state.elapsedMs >= state.duration * 1000 - 1000) selectMode("targetlab", true);
+    else if (action === "atlas-filter" && state.screen === "atlas" && window.FocusBridgeBodyAtlas) {
+      const group = button.dataset.group;
+      if (window.FocusBridgeBodyAtlas.GROUPS.some(g => g.id === group)) {
+        state.atlas.category = group;
+        state.atlas.selected = null;
+        render();
+      }
+    }
+    else if (action === "atlas-open" && state.screen === "atlas" && window.FocusBridgeBodyAtlas) {
+      const id = button.dataset.atlasId;
+      if (window.FocusBridgeBodyAtlas.get(id)) {
+        state.atlas.selected = id;
+        render();
+      }
+    }
     else if (action === "target-begin" && state.screen === "targetlab") beginTargetBlock();
     else if (action === "target-guess" && state.screen === "targetlab")
       guessTarget(button.dataset.targetIndex);
@@ -1921,6 +1956,22 @@
     }
   });
   root.addEventListener("input", (event) => {
+    if (event.target.id === "q-atlas-search" && state.screen === "atlas" && window.FocusBridgeBodyAtlas) {
+      const next = String(event.target.value || "").slice(0, 100);
+      const cursor = Number.isInteger(event.target.selectionStart) ? event.target.selectionStart : next.length;
+      state.atlas.search = next;
+      state.atlas.selected = null;
+      render();
+      // Preserve keyboard focus across this small view rerender.
+      const field = root.querySelector("#q-atlas-search");
+      if (field && typeof field.focus === "function") {
+        field.focus();
+        if (typeof field.setSelectionRange === "function") {
+          try { field.setSelectionRange(cursor, cursor); } catch {}
+        }
+      }
+      return;
+    }
     if (event.target.id === "q-note") state.note = event.target.value;
     if (state.profile === "intention" && state.screen === "prepare" && intentionEngine) {
       if (event.target.id === "q-intention-title")

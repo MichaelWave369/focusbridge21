@@ -54,5 +54,5 @@ test("Chapter 4 atlas loads in both entrypoints and offline service worker",()=>
     assert.ok(html.indexOf("fb21-body-atlas.js")<html.indexOf("fb21-v13-quiet-deck.js"));
   }
   assert.match(read("service-worker.js"),/docs\/fb21-body-atlas\.js/);
-  assert.match(read("service-worker.js"),/focusbridge21-v3-3-chapter4-atlas/);
+  assert.match(read("service-worker.js"),/focusbridge21-v3-4-chapters45/);
 });

@@ -44,5 +44,5 @@ test("New Chapter 4 and 5 engines load before Quiet Deck in both HTML files and 
    assert.ok(html.indexOf("fb21-chapters45.js") < html.indexOf("fb21-v13-quiet-deck.js"));
  }
  assert.match(read("service-worker.js"),/docs\/fb21-chapters45\.js/);
- assert.match(read("service-worker.js"),/focusbridge21-v3-5-chapter6-energy/);
+ assert.match(read("service-worker.js"),/focusbridge21-v3-6-chapter7-cleansing/);
 });

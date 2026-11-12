@@ -122,12 +122,13 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
   runInNewContext(read("docs/fb21-body-atlas.js"), { window });
   runInNewContext(read("docs/fb21-chapters45.js"), { window });
   runInNewContext(read("docs/fb21-chapter6-energy.js"), { window });
+  runInNewContext(read("docs/fb21-chapter7-cleansing.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate, crypto: browserCrypto, Uint32Array });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
   assert.ok(root, "quiet root exists");
-  const click = (action, seconds, minutes, frequency, visual, targetIndex, group, atlasId, theme) => root.listeners.click({
-    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual, targetIndex, group, atlasId, theme } }) }
+  const click = (action, seconds, minutes, frequency, visual, targetIndex, group, atlasId, theme, style) => root.listeners.click({
+    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual, targetIndex, group, atlasId, theme, style } }) }
   });
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
@@ -200,6 +201,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-body-atlas\.js/);
     assert.match(html, /fb21-chapters45\.js/);
     assert.match(html, /fb21-chapter6-energy\.js/);
+    assert.match(html, /fb21-chapter7-cleansing\.js/);
     assert.ok(html.indexOf("fb21-gdm.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-rife-lab.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
@@ -207,7 +209,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v3-5-chapter6-energy/, "Chapter 6 must refresh the PWA cache");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-6-chapter7-cleansing/, "Chapter 7 must refresh the PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -512,10 +514,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has eighteen first-run cards including Chapter 6 practice", () => {
+test("Quiet Deck has nineteen first-run cards including Chapter 7 cleansing imagery", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 18, "Chapter 6 adds an energy-imagery card");
+  assert.equal(choices.length, 19, "Chapter 7 adds a separate bottom-up color imagery card");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -691,7 +693,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 18);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 19);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1827,5 +1829,88 @@ test("Chapter 6 cannot bypass QMM if the foundation ends early",()=>{
  app.advance(10000);
  app.click("return");
  app.click("save");
+ assert.doesNotMatch(app.root.innerHTML,/data-action="qmm-continue"/);
+});
+
+test("Chapter 7 follows QMM and preserves bottom-up chakra order, colors, and front/back source details",()=>{
+ const app=harness({withAudio:true,withVoice:true});
+ app.click("cleanse7");
+ assert.match(app.root.innerHTML,/Foundation first/);
+ assert.match(app.root.innerHTML,/Your QMM practice/);
+ app.click("duration",180);app.check("q-safe");app.click("start");
+ app.advance(180000);app.click("save");
+ assert.match(app.root.innerHTML,/Continue to Seven-Center Cleansing Imagery/);
+ app.click("qmm-continue");
+ const preview=app.root.innerHTML;
+ assert.match(preview,/Your Seven-Center Cleansing Imagery practice/);
+ assert.match(preview,/ROOT TO CROWN/);
+ assert.match(preview,/Symbolic release/);
+ assert.match(preview,/Colors only/);
+ assert.match(preview,/Two imagined points: front and back/);
+ assert.match(preview,/Light blue to deeper blue/);
+ assert.match(preview,/Golden-white/);
+ assert.match(preview,/meditation cannot replace medical care/);
+ assert.doesNotMatch(preview,/id="q-headphones"/);
+ assert.match(preview,/id="q-cleanse7-voice"/);
+ const sourceOrder=["Root","Sacral","Solar Plexus","Heart","Throat","Third Eye","Crown"];
+ let last=-1;
+ for(const name of sourceOrder) {
+   const i=preview.indexOf("<strong>"+name+" · ");
+   assert.ok(i>last,name+" appears in source order");
+   last=i;
+ }
+ app.click("cleanse7-style",undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,"observe");
+ assert.match(app.root.innerHTML,/There is no need to identify or release anything/);
+ app.click("duration",180);app.check("q-safe");app.click("start");
+ assert.match(app.root.innerHTML,/CHAPTER 7 · STAGE 1 OF 10/);
+ assert.equal(app.contexts.length,0,"imagery never creates audio oscillators");
+ assert.equal(app.spoken.length,0,"voice defaults off");
+ app.advance(180000);app.click("save");
+ const rows=JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+ assert.equal(rows.length,2);
+ const row=rows[0];
+ assert.equal(row.preset,"Seven-Center Cleansing Imagery");
+ assert.equal(row.target_gate,null);
+ assert.equal(row.audio_params.engine,"none");
+ assert.equal(row.cleansing_imagery.imagery_style,"observe");
+ assert.equal(row.cleansing_imagery.last_phase,"return");
+ assert.equal(row.cleansing_imagery.completed_timed_practice,true);
+ assert.deepEqual(row.cleansing_imagery.sequence,sourceOrder);
+ assert.deepEqual(row.cleansing_imagery.color_sequence,[
+   "Red","Orange","Yellow","Green","Light blue to deeper blue","Light purple","Golden-white"
+ ]);
+ assert.equal(rows[1].quiet_mind.next_exercise,"Seven-Center Cleansing Imagery");
+});
+
+test("Chapter 7 opt-in voice, phase clock, pausing, and early return stay safe",()=>{
+ const app=harness({withVoice:true});
+ app.click("cleanse7");
+ app.click("duration",180);app.check("q-safe");app.click("start");
+ app.advance(180000);app.click("save");app.click("qmm-continue");
+ app.click("duration",180);
+ app.check("q-cleanse7-voice");
+ app.check("q-safe");app.click("start");
+ assert.equal(app.spoken.length,1);
+ app.advance(22000);
+ assert.ok(app.spoken.length>=2,"spoken cues start once per new phase");
+ app.click("pause");
+ const previous=app.spoken.length;
+ app.advance(45000);
+ assert.equal(app.spoken.length,previous,"paused session should not speak new cues");
+ app.click("pause");
+ app.click("return");app.click("save");
+ const row=JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+ assert.equal(row.cleansing_imagery.completed_timed_practice,false);
+ assert.equal(row.cleansing_imagery.voice_opted_in,true);
+ assert.doesNotMatch(app.root.innerHTML,/data-action="cleanse7-continue"/);
+ app.click("home");app.click("cleanse7");
+ assert.match(app.root.innerHTML,/Foundation first/,"fresh QMM is needed on the next attempt");
+});
+
+test("Chapter 7 cannot be started after an interrupted QMM",()=>{
+ const app=harness();
+ app.click("cleanse7");
+ app.check("q-safe");app.click("start");
+ app.advance(10000);app.click("return");app.click("save");
  assert.doesNotMatch(app.root.innerHTML,/data-action="qmm-continue"/);
 });

@@ -727,3 +727,24 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
   #fb21-quiet-root .q-atlas-layout { grid-template-columns: 1fr; }
   #fb21-quiet-root .q-atlas-results { max-height: 240px; }
 }
+
+/* Chapter 7 symbolic, text-labelled color dots. Color never conveys meaning alone. */
+#fb21-quiet-root .q-cleansing-swatch {
+  display: inline-block;
+  vertical-align: middle;
+  flex: 0 0 auto;
+  width: .95rem;
+  height: .95rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.65);
+  margin-right: .45rem;
+  box-shadow: 0 0 0 2px rgba(10,30,40,.24);
+}
+#fb21-quiet-root .q-cleansing-stage-list li {
+  position: relative;
+}
+#fb21-quiet-root .q-cleansing-stage-list small {
+  display: block;
+  margin: .3rem 0;
+  color: #c1d6de;
+}

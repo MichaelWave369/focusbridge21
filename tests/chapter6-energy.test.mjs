@@ -40,5 +40,5 @@ test("Chapter 6 script loads before Quiet Deck in both entrypoints and in the of
   assert.ok(html.indexOf("fb21-chapter6-energy.js")<html.indexOf("fb21-v13-quiet-deck.js"));
  }
  assert.match(read("service-worker.js"),/docs\/fb21-chapter6-energy\.js/);
- assert.match(read("service-worker.js"),/focusbridge21-v3-5-chapter6-energy/);
+ assert.match(read("service-worker.js"),/focusbridge21-v3-6-chapter7-cleansing/);
 });

@@ -56,6 +56,6 @@ test("sleep module is loaded before Quiet Deck on both entrypoints, and cached f
     assert.ok(html.indexOf("fb21-sleep-studio.js") < html.indexOf("fb21-v13-quiet-deck.js"));
   }
   const worker = readFileSync(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(worker, /focusbridge21-v2-(?:6-sleep-intentions|7-intention-studio|8-seamless-surf|9-qmm-foundation)/);
+  assert.match(worker, /focusbridge21-v2-(?:6-sleep-intentions|7-intention-studio|8-seamless-surf|9-qmm-foundation)|focusbridge21-v3-0-going-deeper/);
   assert.match(worker, /fb21-sleep-studio\.js/);
 });

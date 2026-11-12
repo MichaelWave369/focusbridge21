@@ -15,7 +15,7 @@ const soundscapeWindow = {};
 runInNewContext(read("docs/fb21-soundscape.js"), { window: soundscapeWindow, Math });
 const HUM_NOTES = soundscapeWindow.FocusBridgeSoundscape.HUM_NOTES;
 
-function harness({ withAudio = false, withVoice = false } = {}) {
+function harness({ withAudio = false, withVoice = false, withCrypto = true } = {}) {
   let clock = Date.now();
   const elements = [];
   const timers = new Map();
@@ -27,6 +27,10 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   const spoken = [], voiceOps = [];
   let reloads = 0;
   let nextTimer = 1;
+  let randomIndex = 0;
+  const browserCrypto = withCrypto ? {
+    getRandomValues(buffer) { buffer[0] = randomIndex++; return buffer; }
+  } : undefined;
   class FakeDate extends Date { static now() { return clock; } }
   class FakeNode {
     constructor() {
@@ -73,6 +77,7 @@ function harness({ withAudio = false, withVoice = false } = {}) {
     }
   };
   const window = {
+    crypto: browserCrypto,
     addEventListener() {},
     location: { reload() { reloads++; } },
     FocusBridgeSoundscape: { HUM_NOTES, schedule(ctx, options, seconds) {
@@ -113,12 +118,13 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   runInNewContext(read("docs/fb21-qmm.js"), { window });
   runInNewContext(read("docs/fb21-gdm.js"), { window });
   runInNewContext(read("docs/fb21-breathing-energy.js"), { window });
+  runInNewContext(read("docs/fb21-tele-visualization.js"), { window, Uint32Array });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
-    setInterval, clearInterval, Date: FakeDate });
+    setInterval, clearInterval, Date: FakeDate, crypto: browserCrypto, Uint32Array });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
   assert.ok(root, "quiet root exists");
-  const click = (action, seconds, minutes, frequency, visual) => root.listeners.click({
-    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual } }) }
+  const click = (action, seconds, minutes, frequency, visual, targetIndex) => root.listeners.click({
+    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual, targetIndex } }) }
   });
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
@@ -186,6 +192,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-rife-lab\.js/);
     assert.match(html, /fb21-gdm\.js/);
     assert.match(html, /fb21-breathing-energy\.js/);
+    assert.match(html, /fb21-tele-visualization\.js/);
     assert.ok(html.indexOf("fb21-gdm.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-rife-lab.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
@@ -193,7 +200,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v3-1-breathing-energy/, "new BE practice must refresh PWA cache");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-2-tele-visualization/, "Chapter 3 must refresh the offline PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -498,10 +505,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has twelve first-run cards including Breathing Energy and Rife Frequency Lab", () => {
+test("Quiet Deck has fourteen first-run cards including Chapter 3 experiments", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 12, "QMM, GDM and Breathing Energy add three meditation cards");
+  assert.equal(choices.length, 14, "Chapter 3 adds Tele-Visualization and Blind Target Lab cards");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -677,7 +684,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 12);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 14);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1502,4 +1509,88 @@ test("Breathing Energy opt-in voice follows stages, pauses, and safely blocks ea
   app.click("home");
   app.click("sync");
   assert.match(app.root.innerHTML, /Foundation first/, "fresh journey requires fresh QMM again");
+});
+
+test("Tele-Visualization follows QMM without forcing GDM/energy, showing Chapter 3 forest and pool", () => {
+  const app = harness({withAudio:true,withVoice:true});
+  app.click("tele");
+  assert.match(app.root.innerHTML,/Foundation first/);
+  assert.match(app.root.innerHTML,/Your QMM practice/);
+  app.click("duration",180);
+  app.check("q-safe");app.click("start");
+  app.advance(180000);app.click("save");
+  assert.match(app.root.innerHTML,/Continue to Tele-Visualization/);
+  app.click("qmm-continue");
+  assert.match(app.root.innerHTML,/Your Tele-Visualization practice/);
+  assert.match(app.root.innerHTML,/mist-covered pool/);
+  assert.match(app.root.innerHTML,/four times/);
+  assert.doesNotMatch(app.root.innerHTML,/Your GDM practice/);
+  assert.doesNotMatch(app.root.innerHTML,/id="q-headphones"/);
+  app.click("duration",180);
+  app.check("q-tele-voice");app.check("q-safe");app.click("start");
+  assert.match(app.root.innerHTML,/TELE-VISUALIZATION · STAGE 1 OF 7/);
+  assert.equal(app.spoken.length,1);
+  assert.equal(app.contexts.length,0);
+  app.advance(180000);app.click("save");
+  const rows=JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+  assert.equal(rows.length,2);
+  assert.equal(rows[0].preset,"Tele-Visualization");
+  assert.equal(rows[0].tele_visualization.last_phase,"return");
+  assert.equal(rows[0].tele_visualization.completed_timed_practice,true);
+  assert.equal(rows[0].tele_visualization.voice_opted_in,true);
+  assert.match(app.root.innerHTML,/Open Blind Target Lab/);
+  app.click("tele-targetlab");
+  assert.match(app.root.innerHTML,/Blind Target <em>Lab/);
+  assert.match(app.root.innerHTML,/Begin 20 trials/);
+});
+test("Chapter 3 blind target lab locks all guesses until the complete 20-trial block and saves raw data", () => {
+  const app=harness();
+  app.click("targetlab");
+  assert.match(app.root.innerHTML,/Quiet Mind · QMM/);
+  app.click("duration",180);app.check("q-safe");app.click("start");
+  app.advance(180000);app.click("save");
+  const qmmRow=JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(qmmRow.quiet_mind.next_exercise,"Blind Target Lab");
+  app.click("qmm-continue");
+  assert.match(app.root.innerHTML,/Twenty|20 trials/);
+  app.click("target-begin");
+  assert.match(app.root.innerHTML,/BLIND TRIAL 1 OF 20/);
+  assert.doesNotMatch(app.root.innerHTML,/Hidden target:/);
+  for(let i=0;i<20;i++){
+    app.click("target-guess",undefined,undefined,undefined,undefined,i%4);
+    if(i<19) {
+      assert.match(app.root.innerHTML,new RegExp("BLIND TRIAL "+(i+2)+" OF 20"));
+      assert.doesNotMatch(app.root.innerHTML,/Hidden target:/);
+    }
+  }
+  assert.match(app.root.innerHTML,/BLOCK COMPLETE/);
+  assert.match(app.root.innerHTML,/20 of 20 correct/);
+  assert.match(app.root.innerHTML,/Chance expectation: 5 out of 20/);
+  assert.match(app.root.innerHTML,/Hidden target:/);
+  assert.match(app.root.innerHTML,/A single block cannot establish unusual perception/);
+  const rows=JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+  assert.equal(rows.length,2);
+  assert.equal(rows[0].preset,"Blind Target Lab");
+  assert.equal(rows[0].tele_target_lab.trials,20);
+  assert.equal(rows[0].tele_target_lab.hits,20);
+  assert.equal(rows[0].tele_target_lab.chance_baseline,.25);
+  assert.equal(rows[0].tele_target_lab.guesses.length,20);
+  assert.equal(rows[0].tele_target_lab.targets.length,20);
+  app.click("target-begin");
+  assert.match(app.root.innerHTML,/BLIND TRIAL 1 OF 20/,"fresh blocks have no prior target feedback");
+});
+test("Chapter 3 no secure randomness prevents fake testing; early Return Now blocks lab handoff", () => {
+  const app=harness({withCrypto:false});
+  app.click("tele");
+  app.click("duration",180);app.check("q-safe");app.click("start");
+  app.advance(10000);app.click("return");app.click("save");
+  assert.doesNotMatch(app.root.innerHTML,/data-action="tele-targetlab"/);
+  app.click("home");
+  app.click("targetlab");
+  app.click("duration",180);app.check("q-safe");app.click("start");
+  app.advance(180000);app.click("save");app.click("qmm-continue");
+  assert.match(app.root.innerHTML,/does not support the required secure random selection/);
+  app.click("target-begin");
+  assert.doesNotMatch(app.root.innerHTML,/BLIND TRIAL 1 OF 20/);
+  assert.equal(JSON.parse(app.storage.get("focusbridge21-ledger-v1")).length,2);
 });

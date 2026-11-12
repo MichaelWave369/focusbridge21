@@ -60,4 +60,4 @@ The local Signal Ledger records selected imagery, final stage, elapsed time, whe
 
 Meditation and imagery can provoke discomfort for some people. If dizzy, breathless, anxious or disoriented, stop; open your eyes and notice your surroundings. Nothing here is a medical intervention, spiritual certification or measured external phenomenon.
 
-**Next source-derived direction:** Chapter 3, "Remote Viewing/Tele-Visualization," introduces both an immersive forest-and-river visualization and an attempted blind-target guessing exercise. They should be separated into **subjective imagery training** and **explicitly testable guesses**, without treating unverified perception as fact or targeting third parties without consent.
+**New Chapter 3 implementation:** [Tele-Visualization and Blind Target Lab](TELE_VISUALIZATION.md) now separately provide the source-inspired forest/river exercise and a browser-only blinded four-choice guessing block. The latter does not establish remote perception.

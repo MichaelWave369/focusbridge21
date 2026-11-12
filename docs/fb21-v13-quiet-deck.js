@@ -63,6 +63,7 @@
     qmm: { label: "Quiet Mind · QMM", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     gdm: { label: "Going Deeper · GDM", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     energy: { label: "Breathing Energy", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
+    tele: { label: "Tele-Visualization", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     drift: { label: "Listen & drift", duration: 120, surf: 68, bass: 14, beat: 0, tones: true, carrier: 180, difference: 8, space: 20 },
     lost: { label: "Island 108 · LOST-inspired", island: true, duration: 6480,
       surf: 42, bass: 8, beat: 4, rain: 23, wind: 16, hum: 15, humNote: "C3",
@@ -111,6 +112,7 @@
     qmm: [180, 300, 600, 900, 1200, 1800],
     gdm: [180, 300, 600, 900, 1200, 1800],
     energy: [180, 300, 600, 900, 1200, 1800],
+    tele: [180, 300, 600, 900, 1200, 1800],
     settle: [60, 90, 120, 300, 600],
     drift: [120, 300, 900, 1500, 2700, 3600, 5400, 7200, 10800, 14400, 21600],
     lost: [900, 2700, 3600, 6480, 10800],
@@ -139,6 +141,7 @@
     syncMinutes: 12, syncPlan: null, syncStage: 0, islandIndex: 0, qmmStage: 0, qmmVoice: false, qmmNext: null,
     gdmStage: 0, gdmVoice: false, gdmVisual: "ladder", gdmNext: null,
     energyStage: 0, energyVoice: false, energyVisual: "glow", energyNext: null,
+    teleStage: 0, teleVoice: false, targetLab: null,
     rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
@@ -259,6 +262,10 @@
     if (!state.energyVoice || state.profile !== "energy" || !voiceAvailable()) return;
     window.FocusBridgeVoice.say(stage.voice);
   }
+  function speakTele(stage) {
+    if (!state.teleVoice || state.profile !== "tele" || !voiceAvailable()) return;
+    window.FocusBridgeVoice.say(stage.voice);
+  }
   function breathCue() {
     const cycle = state.elapsedMs % 10000;
     return cycle < 4000 ? "Breathe in gently" : "Breathe out comfortably";
@@ -302,7 +309,7 @@
   // Timed completion is not neurological certification; every transition is
   // voluntary and demands a fresh safety check.
   function selectMode(mode, completedQMM = false, completedGDM = false, completedEnergy = false) {
-    if (["gdm", "energy", "explore", "sync"].includes(mode) && !completedQMM) {
+    if (["gdm", "energy", "explore", "sync", "tele", "targetlab"].includes(mode) && !completedQMM) {
       selectMode("qmm");
       if (state.screen === "prepare" && state.profile === "qmm") {
         state.qmmNext = mode;
@@ -329,11 +336,22 @@
     state.qmmNext = null;
     state.gdmNext = null;
     state.energyNext = null;
+    if (mode === "targetlab" && completedQMM) {
+      stopPreview("", false);
+      stopAudio();
+      if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
+      clearInterval(state.timer);
+      state.screen = "targetlab";
+      state.profile = "targetlab";
+      state.targetLab = { status: "ready", rounds: [], targetIndex: null, error: "", saved: false };
+      render();
+      return;
+    }
     stopPreview("", false);
     if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // prevent old preview voice after switching modes
     state.previewMessage = "";
     state.previewError = "";
-    state.mode = ["settle", "qmm", "gdm", "energy"].includes(mode) ? "settle" : "listen";
+    state.mode = ["settle", "qmm", "gdm", "energy", "tele"].includes(mode) ? "settle" : "listen";
     state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
     const profile = PROFILES[state.profile];
     if (state.profile === "qmm" && !window.FocusBridgeQMM) {
@@ -346,6 +364,10 @@
     }
     if (state.profile === "energy" && !window.FocusBridgeBreathingEnergy) {
       state.error = "Breathing Energy guidance is unavailable. Reload the app to retry.";
+      state.screen = "home"; render(); return;
+    }
+    if (state.profile === "tele" && !window.FocusBridgeTeleVisualization) {
+      state.error = "Tele-Visualization guidance is unavailable. Reload to retry.";
       state.screen = "home"; render(); return;
     }
     if (state.profile === "intention" && !intentionEngine) {
@@ -366,6 +388,8 @@
     state.energyStage = 0;
     state.energyVoice = false;
     state.energyVisual = "glow";
+    state.teleStage = 0;
+    state.teleVoice = false;
     state.toneDifference = profile.difference;
     state.syncStage = 0;
     state.islandIndex = 0;
@@ -637,6 +661,7 @@
     state.qmmStage = 0;
     state.gdmStage = 0;
     state.energyStage = 0;
+    state.teleStage = 0;
     state.sleepCueIndex = 0;
     state.intentionNextCue = state.profile === "intention" && intentionEngine
       ? (intentionEngine.CADENCES[state.intentionCadence] || null) : null;
@@ -661,6 +686,7 @@
     if (state.profile === "qmm") speakQMM(window.FocusBridgeQMM.stageAt(0, state.duration));
     if (state.profile === "gdm") speakGDM(window.FocusBridgeGDM.stageAt(0, state.duration, state.gdmVisual));
     if (state.profile === "energy") speakEnergy(window.FocusBridgeBreathingEnergy.stageAt(0, state.duration, state.energyVisual));
+    if (state.profile === "tele") speakTele(window.FocusBridgeTeleVisualization.stageAt(0, state.duration));
     if (state.profile === "sleep" && state.mode === "listen") {
       if (speakSleep("start") && state.sleepGuide) state.sleepCueIndex = 1;
     }
@@ -674,6 +700,8 @@
       return window.FocusBridgeGDM.stageAt(state.elapsedMs / 1000, state.duration, state.gdmVisual).prompt;
     if (state.profile === "energy" && window.FocusBridgeBreathingEnergy)
       return window.FocusBridgeBreathingEnergy.stageAt(state.elapsedMs / 1000, state.duration, state.energyVisual).prompt;
+    if (state.profile === "tele" && window.FocusBridgeTeleVisualization)
+      return window.FocusBridgeTeleVisualization.stageAt(state.elapsedMs / 1000, state.duration).prompt;
     if (state.profile === "lost")
       return ISLAND_SEGMENTS[islandStageAt(state.elapsedMs, state.duration)].cue;
     if (state.profile === "rife" && state.mode === "listen")
@@ -731,6 +759,14 @@
         state.energyStage = phase.index;
         render();
         speakEnergy(phase);
+      }
+    }
+    if (state.profile === "tele" && !state.paused && window.FocusBridgeTeleVisualization) {
+      const phase = window.FocusBridgeTeleVisualization.stageAt(state.elapsedMs / 1000, state.duration);
+      if (phase.index !== state.teleStage) {
+        state.teleStage = phase.index;
+        render();
+        speakTele(phase);
       }
     }
     if (state.profile === "lost" && !state.paused) {
@@ -797,7 +833,7 @@
         return;
       }
     }
-    if ((state.voiceGuide || state.qmmVoice || state.gdmVoice || state.energyVoice || state.sleepGuide || state.intentionSpeak) && window.FocusBridgeVoice) {
+    if ((state.voiceGuide || state.qmmVoice || state.gdmVoice || state.energyVoice || state.teleVoice || state.sleepGuide || state.intentionSpeak) && window.FocusBridgeVoice) {
       if (state.paused) window.FocusBridgeVoice.pause();
       else window.FocusBridgeVoice.resume();
     }
@@ -825,8 +861,8 @@
         ? crypto.randomUUID() : "quiet-" + Date.now(),
       timestamp: new Date().toISOString(),
       app: "FocusBridge21 Quiet Deck extended audio",
-      preset: ["qmm", "gdm", "energy"].includes(state.profile) ? PROFILES[state.profile].label : state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
-      target_gate: state.mode === "settle" && !["qmm", "gdm", "energy"].includes(state.profile) || state.profile === "drift" ? 10 : null,
+      preset: ["qmm", "gdm", "energy", "tele"].includes(state.profile) ? PROFILES[state.profile].label : state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
+      target_gate: state.mode === "settle" && !["qmm", "gdm", "energy", "tele"].includes(state.profile) || state.profile === "drift" ? 10 : null,
       duration_min: state.duration / 60,
       actual_elapsed_sec: elapsed,
       island_108: state.profile === "lost" ? {
@@ -846,11 +882,11 @@
         minutes_per_level: state.syncMinutes,
         interpretation: "Time-based labels and personal reflection, not detected states"
       } : null,
-      guidance_mode: state.profile === "qmm" ? "QMM silent-first guided attention" : state.profile === "gdm" ? "GDM silent-first guided visualization" : state.profile === "energy" ? "Breathing Energy: guided imagination" : "Quiet Deck " + state.mode,
+      guidance_mode: state.profile === "qmm" ? "QMM silent-first guided attention" : state.profile === "gdm" ? "GDM silent-first guided visualization" : state.profile === "energy" ? "Breathing Energy: guided imagination" : state.profile === "tele" ? "Tele-Visualization: guided imagination" : "Quiet Deck " + state.mode,
       quiet_mind: state.profile === "qmm" ? {
         progression: "7 timed attention prompts",
         completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
-        next_exercise: state.qmmNext ? PROFILES[state.qmmNext].label : null,
+        next_exercise: state.qmmNext === "targetlab" ? "Blind Target Lab" : (state.qmmNext ? PROFILES[state.qmmNext]?.label || null : null),
         last_phase: window.FocusBridgeQMM.stageAt(elapsed, state.duration).id,
         voice_opted_in: state.qmmVoice && voiceAvailable(),
         evidence_boundary: "Reflective attention practice; no measurement of thought silence or EEG"
@@ -874,10 +910,18 @@
         voice_opted_in: state.energyVoice && voiceAvailable(),
         evidence_boundary: "Imagined light and self-reported body sensations; no detection or transfer of external energy"
       } : null,
+      tele_visualization: state.profile === "tele" ? {
+        progression: "7-stage forest, river, misty pool and imagined echo",
+        last_phase: window.FocusBridgeTeleVisualization.stageAt(elapsed, state.duration).id,
+        completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
+        voice_opted_in: state.teleVoice && voiceAvailable(),
+        evidence_boundary: "Imagined scene detail; not verified perception of another place"
+      } : null,
       voice_guidance_opted_in: ((state.profile === "sync" && state.voiceGuide) ||
         (state.profile === "qmm" && state.qmmVoice) ||
         (state.profile === "gdm" && state.gdmVoice) ||
-        (state.profile === "energy" && state.energyVoice)) && voiceAvailable(),
+        (state.profile === "energy" && state.energyVoice) ||
+        (state.profile === "tele" && state.teleVoice)) && voiceAvailable(),
       optional_breath_visual: state.profile === "sync" && state.breathGuide,
       intention_studio: state.profile === "intention" ? {
         voice_opted_in: state.intentionSpeak && voiceAvailable(),
@@ -927,6 +971,95 @@
       render();
     }
   }
+  // The Chapter 3 digital target practice is a self-contained, casual blind
+  // experiment. We never show a target until all 20 guesses have been locked.
+  // This differs from the author's friend-placed object in an adjacent room.
+  function beginTargetBlock() {
+    if (state.screen !== "targetlab" || !state.targetLab ||
+        !["ready", "complete"].includes(state.targetLab.status) ||
+        !window.FocusBridgeTeleVisualization) return;
+    const index = window.FocusBridgeTeleVisualization.chooseTarget(window.crypto);
+    if (index === null) {
+      state.targetLab.error = "Secure browser randomness is unavailable. No target block was started.";
+      render();
+      return;
+    }
+    state.targetLab = {status:"active",rounds:[],targetIndex:index,error:"",saved:false};
+    render();
+  }
+  function guessTarget(choice) {
+    const lab = state.targetLab, engine = window.FocusBridgeTeleVisualization;
+    if (state.screen !== "targetlab" || !lab || !engine || lab.status !== "active") return;
+    const guess = Number(choice);
+    if (!Number.isInteger(guess) || guess < 0 || guess >= engine.TARGETS.length) return;
+    // Target selection happened before the guess. The target stays hidden
+    // until the complete block is over, preventing trial-by-trial feedback.
+    const rounds = [...lab.rounds,{guess,target:lab.targetIndex}];
+    if (rounds.length < engine.TRIAL_COUNT) {
+      const next = engine.chooseTarget(window.crypto);
+      if (next === null) {
+        lab.status = "error";
+        lab.error = "Randomness became unavailable. This incomplete block was discarded.";
+        lab.rounds = [];
+        lab.targetIndex = null;
+        render(); return;
+      }
+      lab.rounds = rounds;
+      lab.targetIndex = next;
+      render(); return;
+    }
+    const outcome = engine.scoreBlock(rounds);
+    if (!outcome) {
+      lab.status = "error";
+      lab.error = "Invalid trial data. Nothing was scored or saved.";
+      lab.rounds = [];
+      lab.targetIndex = null;
+      render(); return;
+    }
+    lab.status = "complete";
+    lab.rounds = rounds;
+    lab.targetIndex = null;
+    lab.outcome = outcome;
+    // Full raw block is recorded once in the existing, local-only Signal
+    // Ledger so the guess and target lists cannot be revised inside the UI.
+    // Browser storage is editable by its owner, and this is not independent
+    // scientific verification.
+    let ledger = [];
+    try {
+      const old = JSON.parse(localStorage.getItem(LEDGER_KEY) || "[]");
+      if (Array.isArray(old)) ledger = old;
+    } catch {}
+    try {
+      const receipt = {
+        session_id:"tele-target-" + Date.now(),
+        timestamp:new Date().toISOString(),
+        app:"FocusBridge21 Quiet Deck",
+        preset:"Blind Target Lab",
+        target_gate:null,
+        duration_min:null,
+        actual_elapsed_sec:null,
+        guidance_mode:"Chapter 3 browser-only four-choice target block",
+        tele_target_lab:{
+          method:"20 independent browser-random 4-choice targets; no feedback until last guess",
+          trials:outcome.trials,
+          hits:outcome.hits,
+          chance_baseline:outcome.chanceProbability,
+          expected_chance_hits:outcome.expectedChanceHits,
+          guesses:rounds.map(x=>engine.TARGETS[x.guess].id),
+          targets:rounds.map(x=>engine.TARGETS[x.target].id),
+          evidence_boundary:"Uncontrolled browser exercise; no evidence of remote perception"
+        },
+        notes:"",
+        claim_boundary:"This digital matching task is not the author's physical hidden-object protocol or proof of remote viewing."
+      };
+      localStorage.setItem(LEDGER_KEY,JSON.stringify([receipt,...ledger]));
+      lab.saved = true;
+    } catch {
+      lab.error = "Completed block is visible here, but browser storage could not save it.";
+    }
+    render();
+  }
+
   function frame(inner) {
     return [
       '<div class="q-shell">',
@@ -964,6 +1097,14 @@
         '<span class="q-choice-icon" aria-hidden="true">✧</span><span class="q-choice-kicker">CHAPTER 2 · REQUIRES QMM + GDM</span>',
         '<strong>Breathing Energy</strong><span>Explore the book\'s golden-white light metaphor with comfortable breathing and a grounded return.</span>',
         '<span class="q-choice-link">Start at QMM →</span></button>',
+        '<button type="button" data-action="tele" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">♧</span><span class="q-choice-kicker">CHAPTER 3 · AFTER QMM</span>',
+        '<strong>Tele-Visualization</strong><span>Imagine the forest, river and mist-covered pool described in the book.</span>',
+        '<span class="q-choice-link">Start with Quiet Mind →</span></button>',
+        '<button type="button" data-action="targetlab" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">▣</span><span class="q-choice-kicker">CHAPTER 3 · BLIND TARGET EXPERIMENT</span>',
+        '<strong>Blind Target Lab</strong><span>Twenty hidden four-choice targets, locked guesses and chance-baseline results. No external surveillance.</span>',
+        '<span class="q-choice-link">Begin with Quiet Mind →</span></button>',
         '<button type="button" data-action="listen" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">♫</span><span class="q-choice-kicker">STEREO HEADPHONES</span>',
         '<strong>Listen &amp; drift</strong><span>Soft original stereo tones and a gentle return.</span>',
@@ -1030,6 +1171,53 @@
         '<p class="q-holistic-alert"><strong>When to seek care:</strong> A sudden extremely severe headache, weakness, confusion, severe abdominal pain, vomiting blood, or inability to keep fluids down requires prompt medical attention. This app cannot assess symptoms or provide treatment.</p>',
         '<button type="button" class="q-secondary" data-action="settle">Choose silence instead</button></div>'
       ].join("");
+    } else if (state.screen === "targetlab") {
+      const lab = state.targetLab, engine = window.FocusBridgeTeleVisualization;
+      const able = !!(engine && window.crypto && typeof window.crypto.getRandomValues === "function");
+      content = [
+        '<button type="button" class="q-back" data-action="home">← Back to Quiet Deck</button>',
+        '<div class="q-eyebrow">CHAPTER 3 · PART 2 · AFTER QMM</div>',
+        '<h1>Blind Target <em>Lab.</em></h1>',
+        '<p class="q-lead">A browser-only adaptation of the book\'s hidden-object exercise. A random target is chosen before each guess and concealed until the entire block is finished. This does not see into another room or reveal anyone\'s private activities.</p>',
+        '<section class="q-panel" aria-label="Blind-target exercise">',
+        '<p class="q-detail"><strong>Fixed protocol:</strong> 20 trials, four possible targets per trial, 25% expected chance accuracy. No feedback until all 20 guesses are locked. Choose without outside hints. A score here is not scientific evidence of extrasensory perception.</p>',
+        lab && lab.status === "ready" ? [
+          '<h2>Ready for a blind block?</h2>',
+          '<p class="q-detail">The targets will be drawn using your browser\'s cryptographic random generator. No remote server or physical room target is involved.</p>',
+          '<div class="q-actions"><button type="button" class="q-primary" data-action="target-begin" ', able ? '' : 'disabled',
+          '>Begin 20 trials</button></div>'
+        ].join("") : '',
+        lab && lab.status === "active" ? [
+          '<div class="q-setup-step">BLIND TRIAL ', lab.rounds.length + 1, ' OF ', engine.TRIAL_COUNT, '</div>',
+          '<h2>Target selected and hidden.</h2>',
+          '<p class="q-detail">Which of these four images do you guess? Your answer locks immediately. Results are withheld until the entire block ends.</p>',
+          '<div class="q-durations q-target-choices">',
+          engine.TARGETS.map((target, i) =>
+            '<button type="button" class="q-duration" data-action="target-guess" data-target-index="' + i + '">' +
+            safeText(target.label) + '</button>').join(""),
+          '</div><p class="q-detail">No current hit count is shown. Leaving this page discards an unfinished block.</p>'
+        ].join("") : '',
+        lab && lab.status === "complete" && lab.outcome ? [
+          '<div class="q-setup-step">BLOCK COMPLETE · FEEDBACK UNLOCKED</div>',
+          '<h2>', lab.outcome.hits, ' of ', lab.outcome.trials, ' correct</h2>',
+          '<p class="q-detail">Chance expectation: ', lab.outcome.expectedChanceHits, ' out of ', lab.outcome.trials,
+          ' (', Math.round(lab.outcome.chanceProbability * 100),
+          '%). A single block cannot establish unusual perception. Selection and browser storage are not independently audited.</p>',
+          '<ol class="q-sync-stage-list">',
+          lab.rounds.map((r, i) =>
+            '<li><strong>Trial ' + (i + 1) + ' · ' + (r.guess === r.target ? 'Match' : 'No match') +
+            '</strong><span>Guessed: ' + safeText(engine.TARGETS[r.guess].label) +
+            ' · Hidden target: ' + safeText(engine.TARGETS[r.target].label) + '</span></li>').join(""),
+          '</ol>',
+          '<p class="q-detail">', lab.saved ? 'Raw guesses and targets were saved in your local Signal Ledger.' :
+            'This result could not be saved in your local Signal Ledger.', '</p>',
+          '<button type="button" class="q-secondary" data-action="target-begin" ', able ? '' : 'disabled',
+          '>Begin another independent block →</button>'
+        ].join("") : '',
+        lab && lab.error ? '<p role="alert" class="q-error">' + safeText(lab.error) + '</p>' : '',
+        !able ? '<p class="q-detail">This browser does not support the required secure random selection. The experiment cannot start without it.</p>' : '',
+        '</section>'
+      ].join("");
     } else if (state.screen === "prepare") {
       const listen = state.mode === "listen";
       const needsHeadphones = listen && headphoneRequired() && !state.headphones;
@@ -1053,7 +1241,7 @@
               '" aria-pressed="' + (state.syncMinutes === minutes) + '">' +
               minutes + ' min/station · ' + formatTime(plan.totalSeconds) + '</button>';
           }).join("")
-        : DURATIONS[["qmm", "gdm", "energy"].includes(state.profile) ? state.profile : listen ? state.profile : "settle"].map((seconds) =>
+        : DURATIONS[["qmm", "gdm", "energy", "tele"].includes(state.profile) ? state.profile : listen ? state.profile : "settle"].map((seconds) =>
             '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
             '" data-action="duration" data-seconds="' + seconds +
             '" aria-pressed="' + (state.duration === seconds) + '">' +
@@ -1063,8 +1251,8 @@
           ).join("");
       content = [
         '<button type="button" class="q-back" data-action="back">← Back to ', PROFILES[state.profile]?.holistic ? 'Holistic Zone' : 'choices', '</button>',
-        '<div class="q-eyebrow">', listen || ["qmm", "gdm", "energy"].includes(state.profile) ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
-        '<h1>', listen || ["qmm", "gdm", "energy"].includes(state.profile) ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
+        '<div class="q-eyebrow">', listen || ["qmm", "gdm", "energy", "tele"].includes(state.profile) ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
+        '<h1>', listen || ["qmm", "gdm", "energy", "tele"].includes(state.profile) ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
         '<p class="q-lead">', listen
           ? PROFILES[state.profile].rife
             ? 'A browser-based audio oscillator inspired by the history of frequency experimentation. NOT a Rife RF device, an electromagnetic treatment, or a medical therapy. Audible Hz cannot diagnose or cure disease.'
@@ -1081,7 +1269,9 @@
               ? 'Chapter 2 builds upon QMM. Imagine a comfortable descent, then rest and return. Any falling sensation is purely imagined. No EEG or out-of-body state is measured.'
               : state.profile === "energy"
                 ? 'Chapter 2 follows QMM and GDM with breathing and golden-white light imagery. Here breathing stays natural, imagery stays optional, and no energy effect is claimed.'
-                : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
+                : state.profile === "tele"
+                  ? 'Chapter 3 part 1: after QMM, imagine a forest, downstream river, mist-covered pool and four echoes. The scene is imagination, not verified remote perception.'
+                  : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         listen && PROFILES[state.profile].holistic
           ? '<p class="q-comfort-note">' + safeText(PROFILES[state.profile].note) + '</p>'
           : '',
@@ -1102,6 +1292,8 @@
         '<div class="q-durations">', choices, '</div>',
         state.profile === "qmm" && state.qmmNext ? [
           '<p class="q-comfort-note" role="status"><strong>Foundation first.</strong> Complete this QMM practice, return gently, and then choose to continue to ',
+          state.qmmNext === "tele" ? safeText(PROFILES.tele.label) :
+          state.qmmNext === "targetlab" ? "Blind Target Lab" :
           state.qmmNext === "gdm" ? safeText(PROFILES.gdm.label) :
           safeText(PROFILES.gdm.label) + ' and then ' + safeText(PROFILES.energy.label) +
             (state.qmmNext === "energy" ? '' : ' before ' + safeText(PROFILES[state.qmmNext].label)), '. You can stop at any time without continuing.</p>'
@@ -1140,6 +1332,18 @@
           '> <span><strong>Speak the six original cues</strong><small>Optional browser speech, off by default. Some voices may use online services.</small></span></label>',
           '<p class="q-detail">Stop if you feel dizzy, breathless, distressed or disoriented. This is not a breathing challenge or measured physiological intervention.</p>',
           '</section>'
+        ].join("") : '',
+        state.profile === "tele" && window.FocusBridgeTeleVisualization ? [
+          '<section class="q-panel q-tele-plan" aria-label="Tele-Visualization chapter 3 journey">',
+          '<div class="q-setup-step">CHAPTER 3 · PART 1 · AFTER QMM</div><h3>Your Tele-Visualization practice</h3>',
+          '<p class="q-detail">The original exercise asks you to picture a forest, follow a river, reach a mist-covered pool with a smooth grey wall and greenery, then imagine the pool saying your name four times. Keep your eyes relaxed. We skip the book\'s eye-straining upward focus suggestion.</p>',
+          '<ol class="q-sync-stage-list">',
+          window.FocusBridgeTeleVisualization.STAGES.map(s =>
+            '<li><strong>' + safeText(s.title) + '</strong><span>' + safeText(s.prompt) + '</span></li>').join(""),
+          '</ol><label class="q-check" for="q-tele-voice"><input type="checkbox" id="q-tele-voice" ',
+          state.teleVoice && voiceAvailable() ? 'checked' : '', voiceAvailable() ? '' : 'disabled',
+          '> <span><strong>Speak the seven scene cues</strong><small>Optional original browser voice; off by default.</small></span></label>',
+          '<p class="q-detail">Imagining a place vividly is not evidence of visiting it. Stop any time if uncomfortable or disoriented.</p></section>'
         ].join("") : '',
         state.profile === "gdm" && window.FocusBridgeGDM ? [
           '<section class="q-panel q-gdm-plan" aria-label="Going Deeper meditation progression">',
@@ -1390,7 +1594,7 @@
         state.mode === "listen" ?
           safeText(PROFILES[state.profile].label.toUpperCase()) +
             (allSoundOff() ? ' · SILENT PRACTICE' : ' · SOUND ACTIVE') :
-          state.profile === "qmm" ? 'QUIET MIND · INTENTIONALLY SILENT' : state.profile === "gdm" ? 'GOING DEEPER · INTENTIONALLY SILENT' : state.profile === "energy" ? 'BREATHING ENERGY · INTENTIONALLY SILENT' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
+          state.profile === "qmm" ? 'QUIET MIND · INTENTIONALLY SILENT' : state.profile === "gdm" ? 'GOING DEEPER · INTENTIONALLY SILENT' : state.profile === "energy" ? 'BREATHING ENERGY · INTENTIONALLY SILENT' : state.profile === "tele" ? 'TELE-VISUALIZATION · INTENTIONALLY SILENT' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         state.profile === "qmm" && window.FocusBridgeQMM ? [
           '<section class="q-sync-active q-qmm-active" aria-label="Quiet Mind stage">',
           '<div class="q-sync-step">QMM · STAGE ', state.qmmStage + 1, ' OF 7</div>',
@@ -1409,6 +1613,12 @@
           '<div class="q-sync-step">BREATHING ENERGY · STAGE ', state.energyStage + 1, ' OF 6</div>',
           '<h2>', safeText(window.FocusBridgeBreathingEnergy.STAGES[state.energyStage].title), '</h2>',
           '<p class="q-detail">No fixed breath timing. Any light is imagined, and sensations are subjective.</p></section>'
+        ].join("") : '',
+        state.profile === "tele" && window.FocusBridgeTeleVisualization ? [
+          '<section class="q-sync-active q-tele-active" aria-label="Chapter 3 imagined scene stage">',
+          '<div class="q-sync-step">TELE-VISUALIZATION · STAGE ', state.teleStage + 1, ' OF 7</div>',
+          '<h2>', safeText(window.FocusBridgeTeleVisualization.STAGES[state.teleStage].title), '</h2>',
+          '<p class="q-detail">This is imaginative scene-building, not verified travel or external sensing.</p></section>'
         ].join("") : '',
         syncStation ? [
           '<section class="q-sync-active" aria-label="Focus Sync stage">',
@@ -1485,13 +1695,16 @@
         '<button type="button" class="q-secondary" data-action="lab">View the full ledger &amp; labs</button>',
         state.profile === "qmm" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="qmm-continue">Continue to ' +
-            safeText(PROFILES.gdm.label) + ' →</button>' : '',
+            safeText(state.qmmNext === "tele" ? PROFILES.tele.label :
+              state.qmmNext === "targetlab" ? "Blind Target Lab" : PROFILES.gdm.label) + ' →</button>' : '',
         state.profile === "gdm" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="gdm-continue">Continue to ' +
             safeText(PROFILES.energy.label) + ' →</button>' : '',
         state.profile === "energy" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="energy-continue">Continue to ' +
             safeText(PROFILES[state.energyNext || "explore"].label) + ' →</button>' : '',
+        state.profile === "tele" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
+          ? '<button type="button" class="q-secondary" data-action="tele-targetlab">Open Blind Target Lab →</button>' : '',
         '</div>'
       ].join("");
     }
@@ -1501,7 +1714,7 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "qmm", "gdm", "energy", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "qmm", "gdm", "energy", "tele", "targetlab", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "qmm-continue" && state.screen === "saved" &&
         state.profile === "qmm" && !state.interrupted &&
         state.elapsedMs >= state.duration * 1000 - 1000) {
@@ -1520,6 +1733,12 @@
       const target = state.energyNext || "explore";
       selectMode(target, true, true, true); // each preceding timed session was completed
     }
+    else if (action === "tele-targetlab" && state.screen === "saved" &&
+        state.profile === "tele" && !state.interrupted &&
+        state.elapsedMs >= state.duration * 1000 - 1000) selectMode("targetlab", true);
+    else if (action === "target-begin" && state.screen === "targetlab") beginTargetBlock();
+    else if (action === "target-guess" && state.screen === "targetlab")
+      guessTarget(button.dataset.targetIndex);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();
@@ -1669,6 +1888,10 @@
     }
     if (event.target.id === "q-energy-voice" && state.profile === "energy" && state.screen === "prepare") {
       state.energyVoice = voiceAvailable() && event.target.checked;
+      render();
+    }
+    if (event.target.id === "q-tele-voice" && state.profile === "tele" && state.screen === "prepare") {
+      state.teleVoice = voiceAvailable() && event.target.checked;
       render();
     }
     if (event.target.id === "q-guide-breath") {

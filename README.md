@@ -6,6 +6,17 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## Chapter 4: Human Body / Chakra Atlas
+
+A searchable, **source-critical reference** is now available directly from Quiet Deck. It catalogs **17 named concepts** across the book's seven major chakras, Dan Tiens and related centers, Tan Tien / Hara descriptions and Cerebellum Chakra, plus its 1–50 dimensional number ranges and its seven-center light-meditation sequence.
+
+- Every entry separates the **book's assertions** from established biological anatomy and an explicit **evidence / health-claim caution**. The source's claims that chakra imbalance causes cancers, infections, mental illnesses or other diseases are **not medically established**, and this is not diagnostic or treatment software.
+- Search terms and topic filters work entirely in the browser; user-entered search strings are escaped before rendering. Responsive, keyboard-accessible navigation does not access personal health information.
+- Chapter 4 extends through PDF page 15; we do not invent descriptions for chakras 8–50. Browsing the atlas does not require QMM because this is reference material. Any future guided chakra-imagery session should begin with QMM as a separate, voluntary practice.
+- Both GitHub Pages entrypoints and the offline PWA cache include the atlas.
+
+Read [Chapter 4 source coverage and anatomy references](docs/CHAPTER4_BODY_ATLAS.md).
+
 ## Chapter 3: Tele-Visualization and Blind Target Lab
 
 - **Tele-Visualization** is a silent-first seven-stage imaginative scene inspired by Chapter 3 of *The Book of Knowledge*: forest, downstream river, misty stone pool, imagined echoes and grounded return.

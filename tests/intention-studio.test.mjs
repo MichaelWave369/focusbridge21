@@ -110,6 +110,6 @@ test("both entrypoints load Intention Studio before Quiet Deck and cache it for 
     assert.ok(html.indexOf("fb21-intention-studio.js") < html.indexOf("fb21-v13-quiet-deck.js"));
   }
   const worker = readFileSync(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(worker, /focusbridge21-v2-(?:7-intention-studio|8-seamless-surf|9-qmm-foundation)|focusbridge21-v3-0-going-deeper|focusbridge21-v3-1-breathing-energy|focusbridge21-v3-2-tele-visualization|focusbridge21-v3-3-chapter4-atlas|focusbridge21-v3-4-chapters45|focusbridge21-v3-5-chapter6-energy/);
+  assert.match(worker, /focusbridge21-v2-(?:7-intention-studio|8-seamless-surf|9-qmm-foundation)|focusbridge21-v3-0-going-deeper|focusbridge21-v3-1-breathing-energy|focusbridge21-v3-2-tele-visualization|focusbridge21-v3-3-chapter4-atlas|focusbridge21-v3-4-chapters45|focusbridge21-v3-5-chapter6-energy|focusbridge21-v3-6-chapter7-cleansing/);
   assert.match(worker, /fb21-intention-studio\.js/);
 });

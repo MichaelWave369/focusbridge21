@@ -31,7 +31,7 @@ test("Breathing Energy uses deterministic six-stage progression with a grounded 
 test("imagery is optional and no stage demands held breaths or energy effects", () => {
   const be = engine();
   for (const visual of Object.keys(be.VISUALS)) {
-    const breath = be.stageAt(35, 300, visual);
+    const breath = be.stageAt(55, 300, visual);
     assert.equal(breath.id, "breath");
     assert.match(breath.prompt, /Do not force depth, hold your breath, or count/);
     const image = be.stageAt(115, 300, visual);

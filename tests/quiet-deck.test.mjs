@@ -121,12 +121,13 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
   runInNewContext(read("docs/fb21-tele-visualization.js"), { window, Uint32Array });
   runInNewContext(read("docs/fb21-body-atlas.js"), { window });
   runInNewContext(read("docs/fb21-chapters45.js"), { window });
+  runInNewContext(read("docs/fb21-chapter6-energy.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate, crypto: browserCrypto, Uint32Array });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
   assert.ok(root, "quiet root exists");
-  const click = (action, seconds, minutes, frequency, visual, targetIndex, group, atlasId) => root.listeners.click({
-    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual, targetIndex, group, atlasId } }) }
+  const click = (action, seconds, minutes, frequency, visual, targetIndex, group, atlasId, theme) => root.listeners.click({
+    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual, targetIndex, group, atlasId, theme } }) }
   });
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
@@ -198,6 +199,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-tele-visualization\.js/);
     assert.match(html, /fb21-body-atlas\.js/);
     assert.match(html, /fb21-chapters45\.js/);
+    assert.match(html, /fb21-chapter6-energy\.js/);
     assert.ok(html.indexOf("fb21-gdm.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-rife-lab.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
@@ -205,7 +207,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v3-4-chapters45/, "new guided chapters must refresh PWA cache");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-5-chapter6-energy/, "Chapter 6 must refresh the PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -510,10 +512,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has seventeen first-run cards including Chapter 4 and 5 practices", () => {
+test("Quiet Deck has eighteen first-run cards including Chapter 6 practice", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 17, "Chapters 4/5 add two guided cards");
+  assert.equal(choices.length, 18, "Chapter 6 adds an energy-imagery card");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -689,7 +691,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 17);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 18);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1742,4 +1744,88 @@ test("Stopping QMM or GDM early cannot unlock Chapter 4/5 practices",()=>{
  assert.doesNotMatch(b.root.innerHTML,/data-action="gdm-continue"/);
  b.click("home");b.click("clair");
  assert.match(b.root.innerHTML,/Foundation first/);
+});
+
+test("Chapter 6 has a QMM-first route and offers all four guided imagery paths without needing headphones", () => {
+ const app=harness({withAudio:true,withVoice:true});
+ app.click("energy6");
+ assert.match(app.root.innerHTML,/Foundation first/);
+ assert.match(app.root.innerHTML,/Your QMM practice/);
+ app.click("duration",180);
+ app.check("q-safe");
+ app.click("start");
+ app.advance(180000);
+ app.click("save");
+ assert.match(app.root.innerHTML,/Continue to Controlling Energy/);
+ app.click("qmm-continue");
+ assert.match(app.root.innerHTML,/Your Controlling Energy practice/);
+ for(const label of ["Mental-body and limbs","Earth connection imagery","Imagined water exchange","Forest and living-things imagery"]){
+   assert.match(app.root.innerHTML,new RegExp(label));
+ }
+ assert.doesNotMatch(app.root.innerHTML,/id="q-headphones"/);
+ assert.match(app.root.innerHTML,/id="q-energy6-voice"/);
+ assert.match(app.root.innerHTML,/No actual water, electrical equipment/);
+ app.click("energy6-theme",undefined,undefined,undefined,undefined,undefined,undefined,undefined,"water");
+ assert.match(app.root.innerHTML,/Imagined water exchange/);
+ assert.match(app.root.innerHTML,/Right-to-left imagined ripple/);
+ app.click("duration",180);
+ app.check("q-safe");
+ app.click("start");
+ assert.match(app.root.innerHTML,/CHAPTER 6 · Imagined water exchange · STAGE 1 OF 6/);
+ assert.equal(app.contexts.length,0,"imagery-only chapter never starts oscillator audio");
+ assert.equal(app.spoken.length,0,"narration off by default");
+ app.advance(180000);
+ app.click("save");
+ const rows=JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+ assert.equal(rows.length,2);
+ assert.equal(rows[0].preset,"Controlling Energy · Imagery Studio");
+ assert.equal(rows[0].target_gate,null);
+ assert.equal(rows[0].audio_params.engine,"none");
+ assert.equal(rows[0].controlling_energy_imagery.theme,"water");
+ assert.equal(rows[0].controlling_energy_imagery.last_phase,"return");
+ assert.equal(rows[0].controlling_energy_imagery.completed_timed_practice,true);
+ assert.equal(rows[0].controlling_energy_imagery.voice_opted_in,false);
+ assert.equal(rows[1].quiet_mind.next_exercise,"Controlling Energy · Imagery Studio");
+});
+
+test("Chapter 6 voice cues follow selection, pause, and early Return Now prevents advancement", () => {
+ const app=harness({withVoice:true});
+ app.click("energy6");
+ app.click("duration",180);
+ app.check("q-safe");app.click("start");app.advance(180000);app.click("save");
+ app.click("qmm-continue");
+ app.click("energy6-theme",undefined,undefined,undefined,undefined,undefined,undefined,undefined,"forest");
+ assert.match(app.root.innerHTML,/Forest and living-things imagery/);
+ app.click("duration",180);
+ app.check("q-energy6-voice");
+ app.check("q-safe");
+ app.click("start");
+ assert.equal(app.spoken.length,1);
+ app.advance(26000);
+ assert.ok(app.spoken.length>=2,"phase changes get one optional cue");
+ app.click("pause");
+ const before=app.spoken.length;
+ app.advance(55000);
+ assert.equal(app.spoken.length,before,"voice remains paused");
+ app.click("pause");
+ app.click("return");
+ app.click("save");
+ const row=JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+ assert.equal(row.controlling_energy_imagery.theme,"forest");
+ assert.equal(row.controlling_energy_imagery.completed_timed_practice,false);
+ assert.equal(row.controlling_energy_imagery.voice_opted_in,true);
+ assert.doesNotMatch(app.root.innerHTML,/data-action="energy6-continue"/);
+ app.click("home");
+ app.click("energy6");
+ assert.match(app.root.innerHTML,/Foundation first/,"new practice requires fresh QMM");
+});
+test("Chapter 6 cannot bypass QMM if the foundation ends early",()=>{
+ const app=harness();
+ app.click("energy6");
+ app.check("q-safe");
+ app.click("start");
+ app.advance(10000);
+ app.click("return");
+ app.click("save");
+ assert.doesNotMatch(app.root.innerHTML,/data-action="qmm-continue"/);
 });

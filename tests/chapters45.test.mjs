@@ -33,7 +33,7 @@ test("Chapter 5 clarifies source sequence and subjective listening limits", () =
  assert.match(engine.STAGES[0].prompt,/Quiet Mind and Going Deeper/);
  assert.match(engine.STAGES[4].prompt,/not collecting messages/);
  assert.match(engine.STAGES[5].prompt,/actual sounds and any imagined echoes/);
- assert.match(engine.STAGES[6].prompt,/real room/);
+ assert.match(engine.STAGES[6].prompt,/your room/);
  assert.equal(engine.stageAt(300,300).id,"return");
  assert.equal(engine.stageAt(-1,300).id,"arrive");
 });

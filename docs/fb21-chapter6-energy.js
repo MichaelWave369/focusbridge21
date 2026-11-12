@@ -25,7 +25,7 @@
         stage("hands", "Hands: outward and inward", .19, "Without needing to move, imagine a soft glow extending from one hand and returning, then repeat with the other hand."),
         stage("feet", "Feet: outward and inward", .19, "Imagine a gentle glow reaching each foot and settling again. Nothing physical needs to move or radiate."),
         stage("rest", "Rest with normal sensations", .10, "Notice only sensations you actually have. No warmth, tingling, or special power is required."),
-        stage("ground", "Return to the room", .10, "Look around, feel both hands and feet, and return attention to the real room.")
+        stage("return", "Return to the room", .10, "Look around, feel both hands and feet, and return attention to the real room.")
       ])
     }),
     earth: Object.freeze({

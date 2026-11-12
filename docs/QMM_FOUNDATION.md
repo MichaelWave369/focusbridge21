@@ -63,6 +63,8 @@ Ending QMM early is always allowed and never unlocks the follow-on button. The l
 
 This prerequisite applies to dedicated meditative exploration paths in the current Quiet Deck. **Listen & drift, Deep Focus for work, Sleep Sanctuary, Intention Studio, the Holistic Zone, and Rife Frequency Lab** remain independent because they are listening, productivity, reflection, comfort, or audio-test tools rather than the book's meditations. The legacy full laboratory retains its current controls; this change does not silently claim to intercept every possible old entrypoint.
 
+Chapter 3 has **two additional routes after QMM**, separate from the QMM → GDM → Breathing Energy route used by Focus Sync: the quiet **Tele-Visualization** scene and a 20-trial **Blind Target Lab**. Chapter 3 itself requires QMM but does not explicitly require GDM or Breathing Energy. The lab is a browser-only, chance-baseline guessing exercise, not remote perception. See [Tele-Visualization](TELE_VISUALIZATION.md).
+
 **Going Deeper Meditation (GDM)** is the second stage and **Breathing Energy** is the third, as the book's Chapter 2 specifies. Keep all transitions voluntary, preserve Return Now, and never assert that a neurological or paranormal gate was achieved.
 
 **Philosophy:** Curiosity is welcome. Claims stay bounded to what the app actually observes.

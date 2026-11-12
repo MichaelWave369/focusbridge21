@@ -6,6 +6,18 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## Chapter 6: Controlling Energy · Imagery Studio
+
+Chapter 6 of the user's recovered *The Book of Knowledge* (Anonymous, **PDF pages 17–18**) is now a **QMM-first**, silent-only guided-imagery practice with four separately selectable paths: **Mental-body and limbs**, **Earth connection**, **Imagined water exchange**, and **Forest and living-things imagery**.
+
+- Preserves the book's source organization while changing all physical instructions to **comfortable, stationary mental visualization**. Water is *imagined*, not used; users do not need to get wet, go barefoot, stand up, or interact with electronics near water.
+- The book makes extraordinary claims about controlling water, life force, auras, minds and matter. These are **unverified author assertions**, not implemented capabilities or effects.
+- Each path has its own timed stages and grounded return. Durations are **3/5/10/15/20/30 minutes**, with optional voice cues off by default. The local Signal Ledger stores selected path, duration and completion status, not any fictitious energy measurement.
+- A fresh, completed **Quiet Mind Meditation** is required before entering Chapter 6; each separate session requires safety confirmation. Early Return Now never unlocks the next practice.
+- Both web entrypoints and the offline service worker include the new Chapter 6 guidance module.
+
+Read [the Chapter 6 source and implementation guide](docs/CHAPTER6_ENERGY_IMAGERY.md).
+
 ## Chapters 4–5: Guided Light Visualization and Listening Imagery
 
 Two new, **silent-first** Quiet Deck practices preserve the user's recovered *The Book of Knowledge* chapter structure while clearly separating original interpretation from verified effects:

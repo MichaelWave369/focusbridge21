@@ -1504,19 +1504,6 @@
           '<p class="q-detail">All colors are imagined. No heat, tingling, eye effort or bodily changes are required. If anything feels uncomfortable, use Return now.</p>',
           '</section>'
         ].join("") : '',
-        state.profile === "cleanse7" && window.FocusBridgeCleansing ? [
-          '<section class="q-sync-active q-cleansing-active" aria-label="Chapter 7 symbolic color stage">',
-          '<div class="q-sync-step">CHAPTER 7 · STAGE ', state.cleanse7Stage + 1, ' OF ',
-          window.FocusBridgeCleansing.STAGES.length, '</div>',
-          '<h2>', safeText(window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].title), '</h2>',
-          window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].color ? [
-            '<p class="q-detail"><span class="q-cleansing-swatch" aria-hidden="true" style="background-color:',
-            safeText(window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].hex),
-            '"></span>', safeText(window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].color),
-            ' · ', safeText(window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].points), '</p>'
-          ].join("") : '',
-          '<p class="q-detail">This is symbolic imagery. No medical or supernatural effect is measured.</p></section>'
-        ].join("") : '',
         state.profile === "energy6" && window.FocusBridgeEnergyImagery ? [
           '<section class="q-panel q-energy6-plan" aria-label="Chapter 6 imaginative energy movement">',
           '<div class="q-setup-step">CHAPTER 6 · QMM FIRST · ALL MOVEMENT IMAGINED</div>',
@@ -1879,6 +1866,19 @@
           window.FocusBridgeEnergyImagery.THEMES[state.energy6Theme].stages.length, '</div>',
           '<h2>', safeText(window.FocusBridgeEnergyImagery.THEMES[state.energy6Theme].stages[state.energy6Stage].title), '</h2>',
           '<p class="q-detail">A subjective, imagined experience; no external effect is tested here.</p></section>'
+        ].join("") : '',
+        state.profile === "cleanse7" && window.FocusBridgeCleansing ? [
+          '<section class="q-sync-active q-cleansing-active" aria-label="Chapter 7 symbolic color stage">',
+          '<div class="q-sync-step">CHAPTER 7 · STAGE ', state.cleanse7Stage + 1, ' OF ',
+          window.FocusBridgeCleansing.STAGES.length, '</div>',
+          '<h2>', safeText(window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].title), '</h2>',
+          window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].color ? [
+            '<p class="q-detail"><span class="q-cleansing-swatch" aria-hidden="true" style="background-color:',
+            safeText(window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].hex),
+            '"></span>', safeText(window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].color),
+            ' · ', safeText(window.FocusBridgeCleansing.STAGES[state.cleanse7Stage].points), '</p>'
+          ].join("") : '',
+          '<p class="q-detail">This is symbolic imagery. No medical or supernatural effect is measured.</p></section>'
         ].join("") : '',
         chapterEngine() ? [
           '<section class="q-sync-active q-chapter-active" aria-label="Book-derived imagery stage">',

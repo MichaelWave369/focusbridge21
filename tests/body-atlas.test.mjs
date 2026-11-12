@@ -28,7 +28,7 @@ test("Chapter 4 faithfully inventories named concepts without inventing 8–50 a
 });
 test("Atlas text search and categories work, escape dynamic query and mark unsupported causation",()=>{
   const a=atlas();
-  assert.equal(a.find().length,16);
+  assert.equal(a.find().length,17);
   assert.equal(a.find("root").length,1);
   assert.equal(a.find("six inches","dan").length,2);
   assert.equal(a.find("Tan Tien","hara").length,1);

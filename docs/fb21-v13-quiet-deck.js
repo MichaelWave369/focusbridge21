@@ -878,7 +878,7 @@
         (state.profile === "qmm" && state.qmmVoice) ||
         (state.profile === "gdm" && state.gdmVoice) ||
         (state.profile === "energy" && state.energyVoice)) && voiceAvailable(),
-      optional_breath_visual: state.breathGuide,
+      optional_breath_visual: state.profile === "sync" && state.breathGuide,
       intention_studio: state.profile === "intention" ? {
         voice_opted_in: state.intentionSpeak && voiceAvailable(),
         cadence: state.intentionCadence,
@@ -1377,6 +1377,7 @@
       ].join("");
     } else if (state.screen === "running") {
       const remaining = formatTime(state.duration - state.elapsedMs / 1000);
+      const showBreathCompanion = state.profile === "sync" && state.breathGuide;
       const syncStation = state.profile === "sync" && state.syncPlan
         ? window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000) : null;
       content = [
@@ -1435,10 +1436,10 @@
           state.rife.intensity, '% of the limited software gain</p>',
           '<p class="q-detail">Audio only. No RF transmission, disease treatment, or measured body response.</p></section>'
         ].join("") : '',
-        '<div class="q-orb', state.breathGuide ? ' q-orb-guided' : '',
+        '<div class="q-orb', showBreathCompanion ? ' q-orb-guided' : '',
         state.paused ? ' q-orb-paused' : '', '" aria-hidden="true" style="animation-delay:-',
         (state.elapsedMs / 1000).toFixed(2), 's"><div class="q-orb-inner"></div></div>',
-        state.breathGuide ? '<p id="q-breath-phase" class="q-breath-phase" role="status">' +
+        showBreathCompanion ? '<p id="q-breath-phase" class="q-breath-phase" role="status">' +
           (state.paused ? 'Breathing companion paused' : breathCue()) + '</p>' : '',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
         '<p id="fb21-q-cue" class="q-cue">', state.paused ? 'Paused. Return whenever you like.' : cue(), '</p>',

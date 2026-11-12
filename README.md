@@ -6,6 +6,19 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## Chapter 7: Seven-Center Cleansing Imagery
+
+The recovered *The Book of Knowledge* (Anonymous, **PDF pages 19–21**) describes a **QMM-first**, **Root-to-Crown** series of symbolic color exercises. This new Quiet Deck profile preserves the author's seven-center order, specified colors, and front/back imagery while **rejecting medical or supernatural claims as verified results**.
+
+- **Root red → Sacral orange → Solar Plexus yellow → Heart green → Throat light/deep blue → Third Eye light purple → Crown golden-white.** The author describes one point at Root/Crown and two front/back points for the intermediate centers. The app labels them as **imagined**, not physical chakra organs.
+- Choose **Symbolic Release** (gently imagine a worry becoming lighter) or **Colors Only** (imagine colors without any emotional-cleansing framing).
+- Ten timed phases including a comfortable arrival and grounded return. **3/5/10/15/20/30-minute** sessions, silent by default, with optional opt-in browser voice, local receipts, Pause/Resume and Return Now.
+- A fresh completed **Quiet Mind (QMM)** is required before entering this chapter. No GDM or Breathing Energy step is invented. Chapter 4's light exercise remains separate because its sequence is **Crown-to-Root**, opposite Chapter 7.
+- The book asserts that chakras cause disease and that cleansing can heal serious illnesses. Those statements are **unsupported** and must not be treated as diagnosis or treatment; the app claims no verified health, energy or psychic outcome.
+- Both web entrypoints and the updated offline PWA cache include Chapter 7.
+
+Read the [Chapter 7 source, color mapping and safety guide](docs/CHAPTER7_CLEANSING.md).
+
 ## Chapter 6: Controlling Energy · Imagery Studio
 
 Chapter 6 of the user's recovered *The Book of Knowledge* (Anonymous, **PDF pages 17–18**) is now a **QMM-first**, silent-only guided-imagery practice with four separately selectable paths: **Mental-body and limbs**, **Earth connection**, **Imagined water exchange**, and **Forest and living-things imagery**.

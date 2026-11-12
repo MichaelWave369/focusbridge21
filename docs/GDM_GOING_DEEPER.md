@@ -16,9 +16,9 @@ GDM is a standalone, **silent-first** timed meditation profile that **cannot be 
 1. QMM (3, 5, 10, 15, 20, or 30 minutes) with safety check, timer, optional speech, and grounded ending.
 2. Voluntary Continue to GDM, with a fresh safety check. QMM may be ended early at any time, but early exit does not offer continuation.
 3. GDM (3, 5, 10, 15, 20, or 30 minutes), with five phases and a fully optional imaginary motion choice.
-4. Return/reflect. After finishing GDM, users may choose to continue into Threshold Explorer or their originally selected Focus Sync session. A new safety and headphones check applies to that session.
+4. Return/reflect. After finishing GDM, users may choose to continue into **Breathing Energy**. This third rung also has a fresh safety check. After it, a completed session can optionally hand off to Threshold Explorer or the originally selected Focus Sync journey, with a new safety/headphone check.
 
-**QMM -> GDM -> chosen exploration target** is required when a user selects either Focus Sync or Threshold Explorer from the Quiet Deck home screen. Standalone QMM offers GDM next; standalone GDM (after QMM) offers Threshold Explorer next. The user is never automatically advanced.
+**QMM → GDM → Breathing Energy → chosen exploration target** is now the Quiet Deck route when a user selects Focus Sync or Threshold Explorer. Standalone QMM offers GDM; standalone GDM offers Breathing Energy. The user is never automatically advanced.
 
 ## GDM's five phases
 
@@ -48,8 +48,8 @@ A user can change the selected imagery before starting. Spoken guidance is off b
 - The local Signal Ledger records the timed stage reached, visual selection, whether guidance was opted into, session length, intended next exercise and optional reflection. Completion means finishing a timed practice, **not mastery**.
 - Passive listening, Sleep Sanctuary, Deep Focus for work, Intention Studio, comfort audio and Rife Frequency Lab remain independent. The separate legacy laboratory has not been rewritten to force QMM.
 
-## Future additions from Chapter 2
+## New third rung from Chapter 2
 
-The book also has a subsection on “Breathing Energy,” which follows both QMM and GDM in the author's sequence. It uses imaginative golden-white light and a sponge metaphor. If adopted later, it should remain a symbolic visualization with comfortable natural breathing, without forced hyperventilation, medical claims, or assertions that imagined energy physically entered the body.
+**Breathing Energy is implemented.** The book's subsection follows QMM and GDM, using a sponge and golden-white light metaphor. Our adaptation preserves the imagery but avoids forced breathing and any claim of literal energy transfer. See [Breathing Energy](BREATHING_ENERGY.md).
 
 **Product principle:** The book supplies the historical conceptual sequence. FocusBridge21 supplies original prompts, clear consent, transparent evidence boundaries, private receipts and a reliable return.

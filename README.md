@@ -6,6 +6,17 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## Chapters 4–5: Guided Light Visualization and Listening Imagery
+
+Two new, **silent-first** Quiet Deck practices preserve the user's recovered *The Book of Knowledge* chapter structure while clearly separating original interpretation from verified effects:
+
+- **Seven-Center Light Meditation** (Chapter 4, PDF pages 14–15): **QMM first**, then an optional imagined white/golden light moving in the author's order: Crown → Third Eye → Throat → Heart → Solar Plexus → Sacral → Root. It offers gentle resting and reorientation. A timed practice cannot demonstrate that a chakra opened or a disease was treated.
+- **Clairaudience · Listening Imagery** (Chapter 5, PDF page 16): **QMM → GDM** as expressly required in the source, then attention to the ears, real ambient sounds and *imagined* waves moving outward and back. The book asserts messages from spiritual realms; the app **does not** seek or validate supernatural messages, and never treats unexplained voices as instructions.
+- Both have **3–30-minute options**, optional browser narration (off by default), new safety confirmation at each step, grounded Return Now and private local Signal Ledger receipts. Ending a prerequisite early cannot unlock the next exercise.
+- Existing sound tools, the reference-only Human Body Atlas, and the other meditation routes retain their behavior.
+
+Read [the source-derived practice guide and safeguards](docs/CHAPTERS4_5_GUIDED_PRACTICES.md).
+
 ## Chapter 4: Human Body / Chakra Atlas
 
 A searchable, **source-critical reference** is now available directly from Quiet Deck. It catalogs **17 named concepts** across the book's seven major chakras, Dan Tiens and related centers, Tan Tien / Hara descriptions and Cerebellum Chakra, plus its 1–50 dimensional number ranges and its seven-center light-meditation sequence.

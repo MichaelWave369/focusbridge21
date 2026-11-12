@@ -1540,7 +1540,7 @@ test("Tele-Visualization follows QMM without forcing GDM/energy, showing Chapter
   assert.equal(rows[0].tele_visualization.voice_opted_in,true);
   assert.match(app.root.innerHTML,/Open Blind Target Lab/);
   app.click("tele-targetlab");
-  assert.match(app.root.innerHTML,/Blind Target Lab/);
+  assert.match(app.root.innerHTML,/Blind Target <em>Lab/);
   assert.match(app.root.innerHTML,/Begin 20 trials/);
 });
 test("Chapter 3 blind target lab locks all guesses until the complete 20-trial block and saves raw data", () => {

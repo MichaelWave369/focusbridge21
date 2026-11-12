@@ -633,3 +633,97 @@ body.fb21-quiet-mode #fb21-quiet-root { display: block !important; min-height: 1
   }
   #fb21-quiet-root .q-preview-panel .q-actions button { width: 100%; }
 }
+
+/* Chapter 4 source-critical atlas: responsive, keyboard-accessible reference cards. */
+#fb21-quiet-root .q-atlas-search {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  margin: 10px 0 14px;
+  border: 1px solid #90bdb7;
+  border-radius: 12px;
+  background: #09212d;
+  color: #f1fafb;
+  padding: 10px 14px;
+  font: inherit;
+}
+#fb21-quiet-root .q-atlas-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#fb21-quiet-root .q-atlas-filters button { min-height: 38px; }
+#fb21-quiet-root .q-atlas-selected {
+  border-color: #b1efca !important;
+  background: #1c4950 !important;
+  color: #f7fff9 !important;
+}
+#fb21-quiet-root .q-atlas-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, .9fr) minmax(0, 1.5fr);
+  gap: 18px;
+  align-items: start;
+}
+#fb21-quiet-root .q-atlas-results {
+  display: grid;
+  gap: 8px;
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+#fb21-quiet-root .q-atlas-item {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  width: 100%;
+  padding: 12px;
+  border-radius: 11px;
+  border: 1px solid #759c9e88;
+  background: #102833;
+  color: #e6f6f6;
+  cursor: pointer;
+  font: inherit;
+}
+#fb21-quiet-root .q-atlas-item small {
+  color: #bfd7d9;
+  font-size: .83rem;
+  line-height: 1.4;
+}
+#fb21-quiet-root .q-atlas-detail {
+  background: #0b232e;
+  border: 1px solid #65948d91;
+  border-radius: 13px;
+  padding: 18px;
+}
+#fb21-quiet-root .q-atlas-detail h2 { margin: 7px 0 13px; }
+#fb21-quiet-root .q-atlas-detail h3 {
+  color: #c8f2df;
+  font-size: 1.02rem;
+  margin: 20px 0 7px;
+}
+#fb21-quiet-root .q-atlas-detail p { line-height: 1.65; color: #e0eded; }
+#fb21-quiet-root .q-atlas-range-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(120px,1fr));
+  gap: 8px;
+}
+#fb21-quiet-root .q-atlas-range {
+  border: 1px solid #7da6a280;
+  border-radius: 10px;
+  padding: 11px;
+  display: grid;
+  gap: 3px;
+  background: #102b35;
+}
+#fb21-quiet-root .q-atlas-range strong { color: #b5edd7; }
+#fb21-quiet-root .q-atlas-range span { font-size: .81rem; }
+#fb21-quiet-root .q-atlas-item:focus-visible,
+#fb21-quiet-root .q-atlas-filters button:focus-visible,
+#fb21-quiet-root .q-atlas-search:focus-visible {
+  outline: 3px solid #e3f9a9;
+  outline-offset: 3px;
+}
+@media(max-width: 680px) {
+  #fb21-quiet-root .q-atlas-layout { grid-template-columns: 1fr; }
+  #fb21-quiet-root .q-atlas-results { max-height: 240px; }
+}

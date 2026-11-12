@@ -971,6 +971,95 @@
       render();
     }
   }
+  // The Chapter 3 digital target practice is a self-contained, casual blind
+  // experiment. We never show a target until all 20 guesses have been locked.
+  // This differs from the author's friend-placed object in an adjacent room.
+  function beginTargetBlock() {
+    if (state.screen !== "targetlab" || !state.targetLab ||
+        !["ready", "complete"].includes(state.targetLab.status) ||
+        !window.FocusBridgeTeleVisualization) return;
+    const index = window.FocusBridgeTeleVisualization.chooseTarget(window.crypto);
+    if (index === null) {
+      state.targetLab.error = "Secure browser randomness is unavailable. No target block was started.";
+      render();
+      return;
+    }
+    state.targetLab = {status:"active",rounds:[],targetIndex:index,error:"",saved:false};
+    render();
+  }
+  function guessTarget(choice) {
+    const lab = state.targetLab, engine = window.FocusBridgeTeleVisualization;
+    if (state.screen !== "targetlab" || !lab || !engine || lab.status !== "active") return;
+    const guess = Number(choice);
+    if (!Number.isInteger(guess) || guess < 0 || guess >= engine.TARGETS.length) return;
+    // Target selection happened before the guess. The target stays hidden
+    // until the complete block is over, preventing trial-by-trial feedback.
+    const rounds = [...lab.rounds,{guess,target:lab.targetIndex}];
+    if (rounds.length < engine.TRIAL_COUNT) {
+      const next = engine.chooseTarget(window.crypto);
+      if (next === null) {
+        lab.status = "error";
+        lab.error = "Randomness became unavailable. This incomplete block was discarded.";
+        lab.rounds = [];
+        lab.targetIndex = null;
+        render(); return;
+      }
+      lab.rounds = rounds;
+      lab.targetIndex = next;
+      render(); return;
+    }
+    const outcome = engine.scoreBlock(rounds);
+    if (!outcome) {
+      lab.status = "error";
+      lab.error = "Invalid trial data. Nothing was scored or saved.";
+      lab.rounds = [];
+      lab.targetIndex = null;
+      render(); return;
+    }
+    lab.status = "complete";
+    lab.rounds = rounds;
+    lab.targetIndex = null;
+    lab.outcome = outcome;
+    // Full raw block is recorded once in the existing, local-only Signal
+    // Ledger so the guess and target lists cannot be revised inside the UI.
+    // Browser storage is editable by its owner, and this is not independent
+    // scientific verification.
+    let ledger = [];
+    try {
+      const old = JSON.parse(localStorage.getItem(LEDGER_KEY) || "[]");
+      if (Array.isArray(old)) ledger = old;
+    } catch {}
+    try {
+      const receipt = {
+        session_id:"tele-target-" + Date.now(),
+        timestamp:new Date().toISOString(),
+        app:"FocusBridge21 Quiet Deck",
+        preset:"Blind Target Lab",
+        target_gate:null,
+        duration_min:null,
+        actual_elapsed_sec:null,
+        guidance_mode:"Chapter 3 browser-only four-choice target block",
+        tele_target_lab:{
+          method:"20 independent browser-random 4-choice targets; no feedback until last guess",
+          trials:outcome.trials,
+          hits:outcome.hits,
+          chance_baseline:outcome.chanceProbability,
+          expected_chance_hits:outcome.expectedChanceHits,
+          guesses:rounds.map(x=>engine.TARGETS[x.guess].id),
+          targets:rounds.map(x=>engine.TARGETS[x.target].id),
+          evidence_boundary:"Uncontrolled browser exercise; no evidence of remote perception"
+        },
+        notes:"",
+        claim_boundary:"This digital matching task is not the author's physical hidden-object protocol or proof of remote viewing."
+      };
+      localStorage.setItem(LEDGER_KEY,JSON.stringify([receipt,...ledger]));
+      lab.saved = true;
+    } catch {
+      lab.error = "Completed block is visible here, but browser storage could not save it.";
+    }
+    render();
+  }
+
   function frame(inner) {
     return [
       '<div class="q-shell">',
@@ -1081,6 +1170,53 @@
         '<p>Quiet, hydration, rest, and appropriate medical care may matter more than audio. Sound can worsen some headaches and nausea. Stop if the sound feels unpleasant.</p>',
         '<p class="q-holistic-alert"><strong>When to seek care:</strong> A sudden extremely severe headache, weakness, confusion, severe abdominal pain, vomiting blood, or inability to keep fluids down requires prompt medical attention. This app cannot assess symptoms or provide treatment.</p>',
         '<button type="button" class="q-secondary" data-action="settle">Choose silence instead</button></div>'
+      ].join("");
+    } else if (state.screen === "targetlab") {
+      const lab = state.targetLab, engine = window.FocusBridgeTeleVisualization;
+      const able = !!(engine && window.crypto && typeof window.crypto.getRandomValues === "function");
+      content = [
+        '<button type="button" class="q-back" data-action="home">← Back to Quiet Deck</button>',
+        '<div class="q-eyebrow">CHAPTER 3 · PART 2 · AFTER QMM</div>',
+        '<h1>Blind Target <em>Lab.</em></h1>',
+        '<p class="q-lead">A browser-only adaptation of the book\'s hidden-object exercise. A random target is chosen before each guess and concealed until the entire block is finished. This does not see into another room or reveal anyone\'s private activities.</p>',
+        '<section class="q-panel" aria-label="Blind-target exercise">',
+        '<p class="q-detail"><strong>Fixed protocol:</strong> 20 trials, four possible targets per trial, 25% expected chance accuracy. No feedback until all 20 guesses are locked. Choose without outside hints. A score here is not scientific evidence of extrasensory perception.</p>',
+        lab && lab.status === "ready" ? [
+          '<h2>Ready for a blind block?</h2>',
+          '<p class="q-detail">The targets will be drawn using your browser\'s cryptographic random generator. No remote server or physical room target is involved.</p>',
+          '<div class="q-actions"><button type="button" class="q-primary" data-action="target-begin" ', able ? '' : 'disabled',
+          '>Begin 20 trials</button></div>'
+        ].join("") : '',
+        lab && lab.status === "active" ? [
+          '<div class="q-setup-step">BLIND TRIAL ', lab.rounds.length + 1, ' OF ', engine.TRIAL_COUNT, '</div>',
+          '<h2>Target selected and hidden.</h2>',
+          '<p class="q-detail">Which of these four images do you guess? Your answer locks immediately. Results are withheld until the entire block ends.</p>',
+          '<div class="q-durations q-target-choices">',
+          engine.TARGETS.map((target, i) =>
+            '<button type="button" class="q-duration" data-action="target-guess" data-target-index="' + i + '">' +
+            safeText(target.label) + '</button>').join(""),
+          '</div><p class="q-detail">No current hit count is shown. Leaving this page discards an unfinished block.</p>'
+        ].join("") : '',
+        lab && lab.status === "complete" && lab.outcome ? [
+          '<div class="q-setup-step">BLOCK COMPLETE · FEEDBACK UNLOCKED</div>',
+          '<h2>', lab.outcome.hits, ' of ', lab.outcome.trials, ' correct</h2>',
+          '<p class="q-detail">Chance expectation: ', lab.outcome.expectedChanceHits, ' out of ', lab.outcome.trials,
+          ' (', Math.round(lab.outcome.chanceProbability * 100),
+          '%). A single block cannot establish unusual perception. Selection and browser storage are not independently audited.</p>',
+          '<ol class="q-sync-stage-list">',
+          lab.rounds.map((r, i) =>
+            '<li><strong>Trial ' + (i + 1) + ' · ' + (r.guess === r.target ? 'Match' : 'No match') +
+            '</strong><span>Guessed: ' + safeText(engine.TARGETS[r.guess].label) +
+            ' · Hidden target: ' + safeText(engine.TARGETS[r.target].label) + '</span></li>').join(""),
+          '</ol>',
+          '<p class="q-detail">', lab.saved ? 'Raw guesses and targets were saved in your local Signal Ledger.' :
+            'This result could not be saved in your local Signal Ledger.', '</p>',
+          '<button type="button" class="q-secondary" data-action="target-begin" ', able ? '' : 'disabled',
+          '>Begin another independent block →</button>'
+        ].join("") : '',
+        lab && lab.error ? '<p role="alert" class="q-error">' + safeText(lab.error) + '</p>' : '',
+        !able ? '<p class="q-detail">This browser does not support the required secure random selection. The experiment cannot start without it.</p>' : '',
+        '</section>'
       ].join("");
     } else if (state.screen === "prepare") {
       const listen = state.mode === "listen";
@@ -1599,6 +1735,9 @@
     else if (action === "tele-targetlab" && state.screen === "saved" &&
         state.profile === "tele" && !state.interrupted &&
         state.elapsedMs >= state.duration * 1000 - 1000) selectMode("targetlab", true);
+    else if (action === "target-begin" && state.screen === "targetlab") beginTargetBlock();
+    else if (action === "target-guess" && state.screen === "targetlab")
+      guessTarget(button.dataset.targetIndex);
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
     else if (action === "back") returnToChoices();

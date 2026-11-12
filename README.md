@@ -6,6 +6,17 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## Chapter 3: Tele-Visualization and Blind Target Lab
+
+- **Tele-Visualization** is a silent-first seven-stage imaginative scene inspired by Chapter 3 of *The Book of Knowledge*: forest, downstream river, misty stone pool, imagined echoes and grounded return.
+- **QMM comes first.** Unlike the existing Focus Sync/Threshold Explorer route, Chapter 3 itself specifically names QMM as its prerequisite; no extra GDM or Breathing Energy requirement is invented.
+- **Blind Target Lab** is a separate, browser-only 20-trial experiment with four hidden possibilities per trial. The target is randomly chosen before the guess, choices lock, and all feedback is withheld until the block ends. Baseline chance accuracy is 25%. Raw guesses and targets are saved to a local Signal Ledger receipt after completion.
+- Browser randomness is required; unsupported browsers cannot begin a block. No cameras, other devices, private locations, nonconsenting people or real-world remote perception are involved.
+- The two features are **not proof of remote viewing, astral projection or ESP**. The book's physical hidden-object challenge is different from this digital matching test.
+- Optional narration is off by default. Pause, Return Now, privacy, consent and the existing sound tools are preserved. Both Pages routes and the offline PWA precache include Chapter 3.
+
+Read [Chapter 3: Tele-Visualization and Blind Target Lab](docs/TELE_VISUALIZATION.md).
+
 ## Chapter 2 Breathing Energy: QMM → GDM → imagery → exploration
 
 The book's sequence is now part of FocusBridge21's **Quiet Deck**:

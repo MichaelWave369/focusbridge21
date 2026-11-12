@@ -120,6 +120,7 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
   runInNewContext(read("docs/fb21-breathing-energy.js"), { window });
   runInNewContext(read("docs/fb21-tele-visualization.js"), { window, Uint32Array });
   runInNewContext(read("docs/fb21-body-atlas.js"), { window });
+  runInNewContext(read("docs/fb21-chapters45.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate, crypto: browserCrypto, Uint32Array });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -196,6 +197,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-breathing-energy\.js/);
     assert.match(html, /fb21-tele-visualization\.js/);
     assert.match(html, /fb21-body-atlas\.js/);
+    assert.match(html, /fb21-chapters45\.js/);
     assert.ok(html.indexOf("fb21-gdm.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-rife-lab.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
@@ -203,7 +205,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v3-3-chapter4-atlas/, "Chapter 4 must refresh the offline PWA cache");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-4-chapters45/, "new guided chapters must refresh PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -508,10 +510,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has fifteen first-run cards including Chapter 4 Human Body Atlas", () => {
+test("Quiet Deck has seventeen first-run cards including Chapter 4 and 5 practices", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 15, "Chapter 4 adds the searchable Human Body Atlas card");
+  assert.equal(choices.length, 17, "Chapters 4/5 add two guided cards");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -687,7 +689,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 15);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 17);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1638,4 +1640,106 @@ test("Atlas user search is escaped even inside the interactive Quiet Deck",()=>{
   assert.doesNotMatch(app.root.innerHTML,/<img src=x onerror=/);
   assert.match(app.root.innerHTML,/&lt;img/);
   assert.match(app.root.innerHTML,/0 topics found/);
+});
+
+test("Chapter 4 seven-center light imagery goes through QMM, follows Crown to Root and records a quiet session", () => {
+ const app=harness({withAudio:true,withVoice:true});
+ app.click("chakra");
+ assert.match(app.root.innerHTML,/Foundation first/);
+ assert.match(app.root.innerHTML,/Quiet Mind · QMM/);
+ app.click("duration",180);
+ app.check("q-safe");
+ app.click("start");
+ app.advance(180000);
+ app.click("save");
+ assert.match(app.root.innerHTML,/Continue to Seven-Center Light Meditation/);
+ app.click("qmm-continue");
+ assert.match(app.root.innerHTML,/Your Seven-Center Light Meditation practice/);
+ const html=app.root.innerHTML;
+ const order=["Crown","Third Eye","Throat","Heart","Solar Plexus","Sacral","Root"];
+ let before=-1;
+ for(const name of order){
+   const at=html.indexOf("<strong>"+name);
+   assert.ok(at>before && at>=0,"guided stages match book order: "+name);
+   before=at;
+ }
+ assert.match(html,/not established/);
+ assert.match(html,/id="q-chapter-voice"/);
+ assert.doesNotMatch(html,/id="q-headphones"/);
+ app.click("duration",180);
+ app.check("q-safe");
+ app.click("start");
+ assert.match(app.root.innerHTML,/CHAPTER 4 · STAGE 1 OF 10/);
+ assert.equal(app.contexts.length,0);
+ assert.equal(app.spoken.length,0,"spoken cues default off");
+ app.advance(180000);
+ app.click("save");
+ const rows=JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+ assert.equal(rows.length,2);
+ assert.equal(rows[0].preset,"Seven-Center Light Meditation");
+ assert.equal(rows[0].target_gate,null);
+ assert.equal(rows[0].audio_params.engine,"none");
+ assert.equal(rows[0].chakra_light.last_phase,"return");
+ assert.equal(rows[0].chakra_light.completed_timed_practice,true);
+ assert.deepEqual(rows[0].chakra_light.sequence,order);
+});
+test("Chapter 5 requires both QMM and GDM, never Breathing Energy, and voice requires opt-in",()=>{
+ const app=harness({withVoice:true,withAudio:true});
+ app.click("clair");
+ assert.match(app.root.innerHTML,/Quiet Mind · QMM/);
+ assert.match(app.root.innerHTML,/Going Deeper.*then.*Clairaudience/);
+ app.click("duration",180);
+ app.check("q-safe");app.click("start");app.advance(180000);app.click("save");
+ assert.match(app.root.innerHTML,/Continue to Going Deeper/);
+ app.click("qmm-continue");
+ assert.match(app.root.innerHTML,/Your GDM practice/);
+ assert.match(app.root.innerHTML,/Second foundation/);
+ assert.match(app.root.innerHTML,/Clairaudience/);
+ app.click("duration",180);
+ app.check("q-safe");app.click("start");app.advance(180000);app.click("save");
+ assert.match(app.root.innerHTML,/Continue to Clairaudience/);
+ app.click("gdm-continue");
+ assert.match(app.root.innerHTML,/Your Clairaudience · Listening Imagery practice/);
+ assert.doesNotMatch(app.root.innerHTML,/Your Breathing Energy practice/);
+ assert.match(app.root.innerHTML,/No messages or voices are required|no messages or voices are required/);
+ assert.match(app.root.innerHTML,/id="q-safe"/);
+ assert.doesNotMatch(app.root.innerHTML,/id="q-headphones"/);
+ app.click("duration",180);
+ app.check("q-chapter-voice",true);
+ app.check("q-safe");
+ app.click("start");
+ assert.match(app.root.innerHTML,/CHAPTER 5 · STAGE 1 OF 7/);
+ assert.equal(app.spoken.length,1);
+ assert.equal(app.contexts.length,0);
+ app.advance(35000);
+ assert.ok(app.spoken.length>=2);
+ app.click("pause");
+ const atPause=app.spoken.length;
+ app.advance(60000);
+ assert.equal(app.spoken.length,atPause);
+ app.click("pause");
+ app.advance(180000);
+ app.click("save");
+ const rows=JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+ assert.equal(rows.length,3);
+ assert.equal(rows[0].preset,"Clairaudience · Listening Imagery");
+ assert.equal(rows[0].clairaudience_imagery.completed_timed_practice,true);
+ assert.equal(rows[0].clairaudience_imagery.voice_opted_in,true);
+ assert.equal(rows[0].clairaudience_imagery.last_phase,"return");
+ assert.equal(rows[1].going_deeper.next_exercise,"Clairaudience · Listening Imagery");
+ assert.equal(rows[2].quiet_mind.next_exercise,"Clairaudience · Listening Imagery");
+});
+test("Stopping QMM or GDM early cannot unlock Chapter 4/5 practices",()=>{
+ const a=harness();
+ a.click("chakra");
+ a.check("q-safe");a.click("start");a.advance(10000);a.click("return");a.click("save");
+ assert.doesNotMatch(a.root.innerHTML,/data-action="qmm-continue"/);
+ const b=harness();
+ b.click("clair");
+ b.click("duration",180);b.check("q-safe");b.click("start");b.advance(180000);
+ b.click("save");b.click("qmm-continue");
+ b.check("q-safe");b.click("start");b.advance(15000);b.click("return");b.click("save");
+ assert.doesNotMatch(b.root.innerHTML,/data-action="gdm-continue"/);
+ b.click("home");b.click("clair");
+ assert.match(b.root.innerHTML,/Foundation first/);
 });

@@ -6,16 +6,19 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
-## Chapter 2 Going Deeper: QMM → GDM → optional exploration
+## Chapter 2 Breathing Energy: QMM → GDM → imagery → exploration
 
-- **QMM** is the first step for all dedicated Quiet Deck meditation/exploration routes. Selecting **Going Deeper (GDM)**, **Threshold Explorer** or **Focus Sync** begins with a quiet-mind practice, not a direct jump to advanced sessions.
-- **GDM** follows QMM as a new silent-first Chapter 2 exercise. It offers an imagined ladder, backward-moving escalator, or no-motion stillness alternative, with a gentle imagined landing and grounded return. The physical body stays still.
-- Timers offer **3, 5, 10, 15, 20 and 30 minutes** for each foundation. Optional original browser-spoken cues are off by default. Each session has a new safety check, Pause/Resume, Return Now and private local receipts.
-- A completed practice offers **voluntary continuation** to the next stage; early returns cannot silently advance. Completing a timer is never described as proof of Alpha/Theta EEG, trance or astral projection.
-- Passive listening, sleep, productivity focus, intentions, comfort sound and waveform labs continue to work independently. The older full laboratory is not yet subject to these new Quiet Deck routes.
-- Both Pages entrypoints and the offline service worker preload the GDM module; regression tests cover safe routing and consent.
+The book's sequence is now part of FocusBridge21's **Quiet Deck**:
 
-Read [QMM foundations](docs/QMM_FOUNDATION.md) and [Chapter 2 Going Deeper implementation](docs/GDM_GOING_DEEPER.md).
+- **QMM: Quiet Mind Meditation** develops gentle attentional settling.
+- **GDM: Going Deeper** follows with an imagined ladder, escalator or no-motion relaxation route.
+- **Breathing Energy** is the new third rung. The book describes natural-feeling breath and golden-white-light/sponge imagery; our original adaptation has **no forced deep breathing**, timing ratios, breath holding, medical claims, or expectation of perceiving literal external energy. Choose golden-white glow, soft white light or nonvisual body awareness.
+- **Threshold Explorer or Focus Sync**, when selected, now route through all three preparatory sessions. Users can exit any stage. Continuing requires completion of the chosen time, a grounded return, an explicit click and a fresh safety check. Completing a timer never certifies a mind state.
+- Each foundation offers **3, 5, 10, 15, 20, or 30 minutes**, optional spoken cues (off by default), Pause/Return Now and privacy-preserving local Signal Ledger receipts.
+- Ordinary soundscapes, sleep, productivity focus, intentions, comfort tools and waveform labs stay independent. The legacy full laboratory does not yet share this new routing.
+- Both GitHub Pages entrypoints and the offline service worker precache the new modules, with automated regression tests.
+
+Implementation documentation: [QMM](docs/QMM_FOUNDATION.md), [GDM](docs/GDM_GOING_DEEPER.md), [Breathing Energy](docs/BREATHING_ENERGY.md).
 
 ## v2.8 Seamless Surf Wrap: eliminate the 11-second seam dropout
 

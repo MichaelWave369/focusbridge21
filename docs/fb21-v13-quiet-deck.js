@@ -64,6 +64,8 @@
     gdm: { label: "Going Deeper · GDM", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     energy: { label: "Breathing Energy", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     tele: { label: "Tele-Visualization", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
+    chakra: { label: "Seven-Center Light Meditation", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
+    clair: { label: "Clairaudience · Listening Imagery", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     drift: { label: "Listen & drift", duration: 120, surf: 68, bass: 14, beat: 0, tones: true, carrier: 180, difference: 8, space: 20 },
     lost: { label: "Island 108 · LOST-inspired", island: true, duration: 6480,
       surf: 42, bass: 8, beat: 4, rain: 23, wind: 16, hum: 15, humNote: "C3",
@@ -113,6 +115,8 @@
     gdm: [180, 300, 600, 900, 1200, 1800],
     energy: [180, 300, 600, 900, 1200, 1800],
     tele: [180, 300, 600, 900, 1200, 1800],
+    chakra: [180, 300, 600, 900, 1200, 1800],
+    clair: [180, 300, 600, 900, 1200, 1800],
     settle: [60, 90, 120, 300, 600],
     drift: [120, 300, 900, 1500, 2700, 3600, 5400, 7200, 10800, 14400, 21600],
     lost: [900, 2700, 3600, 6480, 10800],
@@ -142,6 +146,7 @@
     gdmStage: 0, gdmVoice: false, gdmVisual: "ladder", gdmNext: null,
     energyStage: 0, energyVoice: false, energyVisual: "glow", energyNext: null,
     teleStage: 0, teleVoice: false, targetLab: null,
+    chapterStage: 0, chapterVoice: false,
     atlas: { category: "all", search: "", selected: "root" },
     rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
     safe: false,
@@ -267,6 +272,14 @@
     if (!state.teleVoice || state.profile !== "tele" || !voiceAvailable()) return;
     window.FocusBridgeVoice.say(stage.voice);
   }
+  function chapterEngine() {
+    return state.profile === "chakra" ? window.FocusBridgeChakraLight :
+      state.profile === "clair" ? window.FocusBridgeClairaudience : null;
+  }
+  function speakChapter(stage) {
+    if (!state.chapterVoice || !chapterEngine() || !voiceAvailable()) return;
+    window.FocusBridgeVoice.say(stage.voice);
+  }
   function breathCue() {
     const cycle = state.elapsedMs % 10000;
     return cycle < 4000 ? "Breathe in gently" : "Breathe out comfortably";
@@ -310,7 +323,7 @@
   // Timed completion is not neurological certification; every transition is
   // voluntary and demands a fresh safety check.
   function selectMode(mode, completedQMM = false, completedGDM = false, completedEnergy = false) {
-    if (["gdm", "energy", "explore", "sync", "tele", "targetlab"].includes(mode) && !completedQMM) {
+    if (["gdm", "energy", "explore", "sync", "tele", "targetlab", "chakra", "clair"].includes(mode) && !completedQMM) {
       selectMode("qmm");
       if (state.screen === "prepare" && state.profile === "qmm") {
         state.qmmNext = mode;
@@ -318,7 +331,7 @@
       }
       return;
     }
-    if (["energy", "explore", "sync"].includes(mode) && !completedGDM) {
+    if (["energy", "explore", "sync", "clair"].includes(mode) && !completedGDM) {
       selectMode("gdm", true);
       if (state.screen === "prepare" && state.profile === "gdm") {
         state.gdmNext = mode;
@@ -363,7 +376,7 @@
     if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // prevent old preview voice after switching modes
     state.previewMessage = "";
     state.previewError = "";
-    state.mode = ["settle", "qmm", "gdm", "energy", "tele"].includes(mode) ? "settle" : "listen";
+    state.mode = ["settle", "qmm", "gdm", "energy", "tele", "chakra", "clair"].includes(mode) ? "settle" : "listen";
     state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
     const profile = PROFILES[state.profile];
     if (state.profile === "qmm" && !window.FocusBridgeQMM) {
@@ -380,6 +393,10 @@
     }
     if (state.profile === "tele" && !window.FocusBridgeTeleVisualization) {
       state.error = "Tele-Visualization guidance is unavailable. Reload to retry.";
+      state.screen = "home"; render(); return;
+    }
+    if (["chakra", "clair"].includes(state.profile) && !chapterEngine()) {
+      state.error = "Chapter 4/5 guidance is unavailable. Reload to retry.";
       state.screen = "home"; render(); return;
     }
     if (state.profile === "intention" && !intentionEngine) {
@@ -402,6 +419,8 @@
     state.energyVisual = "glow";
     state.teleStage = 0;
     state.teleVoice = false;
+    state.chapterStage = 0;
+    state.chapterVoice = false;
     state.toneDifference = profile.difference;
     state.syncStage = 0;
     state.islandIndex = 0;
@@ -674,6 +693,7 @@
     state.gdmStage = 0;
     state.energyStage = 0;
     state.teleStage = 0;
+    state.chapterStage = 0;
     state.sleepCueIndex = 0;
     state.intentionNextCue = state.profile === "intention" && intentionEngine
       ? (intentionEngine.CADENCES[state.intentionCadence] || null) : null;
@@ -699,6 +719,7 @@
     if (state.profile === "gdm") speakGDM(window.FocusBridgeGDM.stageAt(0, state.duration, state.gdmVisual));
     if (state.profile === "energy") speakEnergy(window.FocusBridgeBreathingEnergy.stageAt(0, state.duration, state.energyVisual));
     if (state.profile === "tele") speakTele(window.FocusBridgeTeleVisualization.stageAt(0, state.duration));
+    if (chapterEngine()) speakChapter(chapterEngine().stageAt(0, state.duration));
     if (state.profile === "sleep" && state.mode === "listen") {
       if (speakSleep("start") && state.sleepGuide) state.sleepCueIndex = 1;
     }
@@ -714,6 +735,7 @@
       return window.FocusBridgeBreathingEnergy.stageAt(state.elapsedMs / 1000, state.duration, state.energyVisual).prompt;
     if (state.profile === "tele" && window.FocusBridgeTeleVisualization)
       return window.FocusBridgeTeleVisualization.stageAt(state.elapsedMs / 1000, state.duration).prompt;
+    if (chapterEngine()) return chapterEngine().stageAt(state.elapsedMs / 1000, state.duration).prompt;
     if (state.profile === "lost")
       return ISLAND_SEGMENTS[islandStageAt(state.elapsedMs, state.duration)].cue;
     if (state.profile === "rife" && state.mode === "listen")
@@ -781,6 +803,14 @@
         speakTele(phase);
       }
     }
+    if (chapterEngine() && !state.paused) {
+      const phase = chapterEngine().stageAt(state.elapsedMs / 1000, state.duration);
+      if (phase.index !== state.chapterStage) {
+        state.chapterStage = phase.index;
+        render();
+        speakChapter(phase);
+      }
+    }
     if (state.profile === "lost" && !state.paused) {
       const islandIndex = islandStageAt(state.elapsedMs, state.duration);
       if (islandIndex !== state.islandIndex) {
@@ -845,7 +875,7 @@
         return;
       }
     }
-    if ((state.voiceGuide || state.qmmVoice || state.gdmVoice || state.energyVoice || state.teleVoice || state.sleepGuide || state.intentionSpeak) && window.FocusBridgeVoice) {
+    if ((state.voiceGuide || state.qmmVoice || state.gdmVoice || state.energyVoice || state.teleVoice || state.chapterVoice || state.sleepGuide || state.intentionSpeak) && window.FocusBridgeVoice) {
       if (state.paused) window.FocusBridgeVoice.pause();
       else window.FocusBridgeVoice.resume();
     }
@@ -873,8 +903,8 @@
         ? crypto.randomUUID() : "quiet-" + Date.now(),
       timestamp: new Date().toISOString(),
       app: "FocusBridge21 Quiet Deck extended audio",
-      preset: ["qmm", "gdm", "energy", "tele"].includes(state.profile) ? PROFILES[state.profile].label : state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
-      target_gate: state.mode === "settle" && !["qmm", "gdm", "energy", "tele"].includes(state.profile) || state.profile === "drift" ? 10 : null,
+      preset: ["qmm", "gdm", "energy", "tele", "chakra", "clair"].includes(state.profile) ? PROFILES[state.profile].label : state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
+      target_gate: state.mode === "settle" && !["qmm", "gdm", "energy", "tele", "chakra", "clair"].includes(state.profile) || state.profile === "drift" ? 10 : null,
       duration_min: state.duration / 60,
       actual_elapsed_sec: elapsed,
       island_108: state.profile === "lost" ? {
@@ -894,7 +924,7 @@
         minutes_per_level: state.syncMinutes,
         interpretation: "Time-based labels and personal reflection, not detected states"
       } : null,
-      guidance_mode: state.profile === "qmm" ? "QMM silent-first guided attention" : state.profile === "gdm" ? "GDM silent-first guided visualization" : state.profile === "energy" ? "Breathing Energy: guided imagination" : state.profile === "tele" ? "Tele-Visualization: guided imagination" : "Quiet Deck " + state.mode,
+      guidance_mode: state.profile === "qmm" ? "QMM silent-first guided attention" : state.profile === "gdm" ? "GDM silent-first guided visualization" : state.profile === "energy" ? "Breathing Energy: guided imagination" : state.profile === "tele" ? "Tele-Visualization: guided imagination" : chapterEngine() ? "Source-attributed, silent-first guided imagery" : "Quiet Deck " + state.mode,
       quiet_mind: state.profile === "qmm" ? {
         progression: "7 timed attention prompts",
         completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
@@ -929,11 +959,28 @@
         voice_opted_in: state.teleVoice && voiceAvailable(),
         evidence_boundary: "Imagined scene detail; not verified perception of another place"
       } : null,
+      chakra_light: state.profile === "chakra" ? {
+        book_chapter: 4,
+        sequence: ["Crown", "Third Eye", "Throat", "Heart", "Solar Plexus", "Sacral", "Root"],
+        last_phase: window.FocusBridgeChakraLight.stageAt(elapsed, state.duration).id,
+        completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
+        voice_opted_in: state.chapterVoice && voiceAvailable(),
+        evidence_boundary: "Symbolic light visualization only; no chakra opening, bioenergy, or health effect measured"
+      } : null,
+      clairaudience_imagery: state.profile === "clair" ? {
+        book_chapter: 5,
+        practice: "Auditory attention and symbolic outward/returning wave",
+        last_phase: window.FocusBridgeClairaudience.stageAt(elapsed, state.duration).id,
+        completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
+        voice_opted_in: state.chapterVoice && voiceAvailable(),
+        evidence_boundary: "No evidence of voices or messages from another realm; ordinary hearing and imagination distinguished"
+      } : null,
       voice_guidance_opted_in: ((state.profile === "sync" && state.voiceGuide) ||
         (state.profile === "qmm" && state.qmmVoice) ||
         (state.profile === "gdm" && state.gdmVoice) ||
         (state.profile === "energy" && state.energyVoice) ||
-        (state.profile === "tele" && state.teleVoice)) && voiceAvailable(),
+        (state.profile === "tele" && state.teleVoice) ||
+        (["chakra", "clair"].includes(state.profile) && state.chapterVoice)) && voiceAvailable(),
       optional_breath_visual: state.profile === "sync" && state.breathGuide,
       intention_studio: state.profile === "intention" ? {
         voice_opted_in: state.intentionSpeak && voiceAvailable(),
@@ -1121,6 +1168,14 @@
         '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">CHAPTER 4 · REFERENCE, NOT MEDITATION</span>',
         '<strong>Human Body Atlas</strong><span>Explore the book\'s chakras, Dan Tiens and Hara model alongside established anatomy and evidence.</span>',
         '<span class="q-choice-link">Open the atlas →</span></button>',
+        '<button type="button" data-action="chakra" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">✳</span><span class="q-choice-kicker">CHAPTER 4 · AFTER QMM</span>',
+        '<strong>Seven-Center Light Meditation</strong><span>Crown-to-Root imagined white or golden light, with no claims of healing or chakra opening.</span>',
+        '<span class="q-choice-link">Begin with Quiet Mind →</span></button>',
+        '<button type="button" data-action="clair" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">◉</span><span class="q-choice-kicker">CHAPTER 5 · AFTER QMM + GDM</span>',
+        '<strong>Clairaudience · Listening Imagery</strong><span>Explore auditory attention and imagined waves. No external messages or voices are required.</span>',
+        '<span class="q-choice-link">Begin with Quiet Mind →</span></button>',
         '<button type="button" data-action="listen" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">♫</span><span class="q-choice-kicker">STEREO HEADPHONES</span>',
         '<strong>Listen &amp; drift</strong><span>Soft original stereo tones and a gentle return.</span>',
@@ -1261,7 +1316,7 @@
               '" aria-pressed="' + (state.syncMinutes === minutes) + '">' +
               minutes + ' min/station · ' + formatTime(plan.totalSeconds) + '</button>';
           }).join("")
-        : DURATIONS[["qmm", "gdm", "energy", "tele"].includes(state.profile) ? state.profile : listen ? state.profile : "settle"].map((seconds) =>
+        : DURATIONS[["qmm", "gdm", "energy", "tele", "chakra", "clair"].includes(state.profile) ? state.profile : listen ? state.profile : "settle"].map((seconds) =>
             '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
             '" data-action="duration" data-seconds="' + seconds +
             '" aria-pressed="' + (state.duration === seconds) + '">' +
@@ -1271,8 +1326,8 @@
           ).join("");
       content = [
         '<button type="button" class="q-back" data-action="back">← Back to ', PROFILES[state.profile]?.holistic ? 'Holistic Zone' : 'choices', '</button>',
-        '<div class="q-eyebrow">', listen || ["qmm", "gdm", "energy", "tele"].includes(state.profile) ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
-        '<h1>', listen || ["qmm", "gdm", "energy", "tele"].includes(state.profile) ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
+        '<div class="q-eyebrow">', listen || ["qmm", "gdm", "energy", "tele", "chakra", "clair"].includes(state.profile) ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
+        '<h1>', listen || ["qmm", "gdm", "energy", "tele", "chakra", "clair"].includes(state.profile) ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
         '<p class="q-lead">', listen
           ? PROFILES[state.profile].rife
             ? 'A browser-based audio oscillator inspired by the history of frequency experimentation. NOT a Rife RF device, an electromagnetic treatment, or a medical therapy. Audible Hz cannot diagnose or cure disease.'
@@ -1291,7 +1346,11 @@
                 ? 'Chapter 2 follows QMM and GDM with breathing and golden-white light imagery. Here breathing stays natural, imagery stays optional, and no energy effect is claimed.'
                 : state.profile === "tele"
                   ? 'Chapter 3 part 1: after QMM, imagine a forest, downstream river, mist-covered pool and four echoes. The scene is imagination, not verified remote perception.'
-                  : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
+                  : state.profile === "chakra"
+                    ? 'Chapter 4: after QMM, imagine gentle light from Crown down to Root. The book calls tingling evidence a chakra is open, but this is not established.'
+                    : state.profile === "clair"
+                      ? 'Chapter 5: after QMM and GDM, gently listen and imagine outward/returning awareness. The book proposes messages from other realms; this practice does not validate that claim.'
+                      : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         listen && PROFILES[state.profile].holistic
           ? '<p class="q-comfort-note">' + safeText(PROFILES[state.profile].note) + '</p>'
           : '',
@@ -1312,6 +1371,8 @@
         '<div class="q-durations">', choices, '</div>',
         state.profile === "qmm" && state.qmmNext ? [
           '<p class="q-comfort-note" role="status"><strong>Foundation first.</strong> Complete this QMM practice, return gently, and then choose to continue to ',
+          ["tele", "chakra"].includes(state.qmmNext) ? safeText(PROFILES[state.qmmNext].label) :
+          state.qmmNext === "clair" ? safeText(PROFILES.gdm.label) + " then " + safeText(PROFILES.clair.label) :
           state.qmmNext === "tele" ? safeText(PROFILES.tele.label) :
           state.qmmNext === "targetlab" ? "Blind Target Lab" :
           state.qmmNext === "gdm" ? safeText(PROFILES.gdm.label) :
@@ -1320,13 +1381,31 @@
         ].join("") : '',
         state.profile === "gdm" && state.gdmNext ? [
           '<p class="q-comfort-note" role="status"><strong>Second foundation.</strong> Complete Going Deeper, reorient, and then choose whether to continue to ',
-          safeText(PROFILES.energy.label),
-          state.gdmNext === "energy" ? '' : ' before ' + safeText(PROFILES[state.gdmNext].label),
+          state.gdmNext === "clair" ? safeText(PROFILES.clair.label) : safeText(PROFILES.energy.label),
+          state.gdmNext === "energy" || state.gdmNext === "clair" ? '' : ' before ' + safeText(PROFILES[state.gdmNext].label),
           '. No transition is automatic.</p>'
         ].join("") : '',
         state.profile === "energy" && state.energyNext ? [
           '<p class="q-comfort-note" role="status"><strong>Third foundation.</strong> Finish this breathing-imagery session, reorient, and then decide whether to continue to ',
           safeText(PROFILES[state.energyNext].label), '. This is always optional.</p>'
+        ].join("") : '',
+        ["chakra", "clair"].includes(state.profile) && chapterEngine() ? [
+          '<section class="q-panel q-chapter-practice" aria-label="Book-derived practice progression">',
+          '<div class="q-setup-step">', state.profile === "chakra" ?
+            'CHAPTER 4 · AFTER QUIET MIND' : 'CHAPTER 5 · AFTER QUIET MIND + GOING DEEPER', '</div>',
+          '<h3>Your ', safeText(PROFILES[state.profile].label), ' practice</h3>',
+          '<p class="q-detail">', state.profile === "chakra" ?
+            'The book guides glowing light from Crown to Root. We preserve its order, but do not claim that sensations prove chakra opening or offer treatment.' :
+            'The author describes focusing on the ears and imagining energy moving outward and back. We interpret this as sensory attention and imaginative sound, not listening for real messages from another realm.', '</p>',
+          '<ol class="q-sync-stage-list">',
+          chapterEngine().STAGES.map(stage =>
+            '<li><strong>' + safeText(stage.title) + '</strong><span>' + safeText(stage.prompt) + '</span></li>').join(""),
+          '</ol>',
+          '<label class="q-check" for="q-chapter-voice"><input type="checkbox" id="q-chapter-voice" ',
+          state.chapterVoice && voiceAvailable() ? 'checked' : '', voiceAvailable() ? '' : 'disabled',
+          '> <span><strong>Read prompts aloud</strong><small>Optional browser voice, off every new session; reading the cues is enough.</small></span></label>',
+          '<p class="q-detail">If thoughts, imagery or sounds feel disturbing, stop, open your eyes and orient to the real room. You never need a special sensation or any voice. If hearing voices is distressing or persistent, seek qualified medical support.</p>',
+          '</section>'
         ].join("") : '',
         state.profile === "energy" && window.FocusBridgeBreathingEnergy ? [
           '<section class="q-panel q-energy-plan" aria-label="Breathing Energy progression">',
@@ -1614,7 +1693,7 @@
         state.mode === "listen" ?
           safeText(PROFILES[state.profile].label.toUpperCase()) +
             (allSoundOff() ? ' · SILENT PRACTICE' : ' · SOUND ACTIVE') :
-          state.profile === "qmm" ? 'QUIET MIND · INTENTIONALLY SILENT' : state.profile === "gdm" ? 'GOING DEEPER · INTENTIONALLY SILENT' : state.profile === "energy" ? 'BREATHING ENERGY · INTENTIONALLY SILENT' : state.profile === "tele" ? 'TELE-VISUALIZATION · INTENTIONALLY SILENT' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
+          state.profile === "qmm" ? 'QUIET MIND · INTENTIONALLY SILENT' : state.profile === "gdm" ? 'GOING DEEPER · INTENTIONALLY SILENT' : state.profile === "energy" ? 'BREATHING ENERGY · INTENTIONALLY SILENT' : state.profile === "tele" ? 'TELE-VISUALIZATION · INTENTIONALLY SILENT' : state.profile === "chakra" ? 'SEVEN-CENTER LIGHT · INTENTIONALLY SILENT' : state.profile === "clair" ? 'LISTENING IMAGERY · INTENTIONALLY SILENT' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         state.profile === "qmm" && window.FocusBridgeQMM ? [
           '<section class="q-sync-active q-qmm-active" aria-label="Quiet Mind stage">',
           '<div class="q-sync-step">QMM · STAGE ', state.qmmStage + 1, ' OF 7</div>',
@@ -1639,6 +1718,13 @@
           '<div class="q-sync-step">TELE-VISUALIZATION · STAGE ', state.teleStage + 1, ' OF 7</div>',
           '<h2>', safeText(window.FocusBridgeTeleVisualization.STAGES[state.teleStage].title), '</h2>',
           '<p class="q-detail">This is imaginative scene-building, not verified travel or external sensing.</p></section>'
+        ].join("") : '',
+        chapterEngine() ? [
+          '<section class="q-sync-active q-chapter-active" aria-label="Book-derived imagery stage">',
+          '<div class="q-sync-step">CHAPTER ', state.profile === "chakra" ? '4' : '5',
+          ' · STAGE ', state.chapterStage + 1, ' OF ', chapterEngine().STAGES.length, '</div>',
+          '<h2>', safeText(chapterEngine().STAGES[state.chapterStage].title), '</h2>',
+          '<p class="q-detail">Subjective imagery and attention; no supernatural or medical state detected.</p></section>'
         ].join("") : '',
         syncStation ? [
           '<section class="q-sync-active" aria-label="Focus Sync stage">',
@@ -1715,11 +1801,11 @@
         '<button type="button" class="q-secondary" data-action="lab">View the full ledger &amp; labs</button>',
         state.profile === "qmm" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="qmm-continue">Continue to ' +
-            safeText(state.qmmNext === "tele" ? PROFILES.tele.label :
+            safeText(["tele", "chakra"].includes(state.qmmNext) ? PROFILES[state.qmmNext].label :
               state.qmmNext === "targetlab" ? "Blind Target Lab" : PROFILES.gdm.label) + ' →</button>' : '',
         state.profile === "gdm" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="gdm-continue">Continue to ' +
-            safeText(PROFILES.energy.label) + ' →</button>' : '',
+            safeText(state.gdmNext === "clair" ? PROFILES.clair.label : PROFILES.energy.label) + ' →</button>' : '',
         state.profile === "energy" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="energy-continue">Continue to ' +
             safeText(PROFILES[state.energyNext || "explore"].label) + ' →</button>' : '',
@@ -1734,7 +1820,7 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "qmm", "gdm", "energy", "tele", "targetlab", "atlas", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "qmm", "gdm", "energy", "tele", "chakra", "clair", "targetlab", "atlas", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "qmm-continue" && state.screen === "saved" &&
         state.profile === "qmm" && !state.interrupted &&
         state.elapsedMs >= state.duration * 1000 - 1000) {
@@ -1927,6 +2013,11 @@
     }
     if (event.target.id === "q-tele-voice" && state.profile === "tele" && state.screen === "prepare") {
       state.teleVoice = voiceAvailable() && event.target.checked;
+      render();
+    }
+    if (event.target.id === "q-chapter-voice" && state.screen === "prepare" &&
+        ["chakra", "clair"].includes(state.profile)) {
+      state.chapterVoice = voiceAvailable() && event.target.checked;
       render();
     }
     if (event.target.id === "q-guide-breath") {

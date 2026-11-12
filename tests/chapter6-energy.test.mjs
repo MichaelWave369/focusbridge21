@@ -27,7 +27,7 @@ test("Chapter 6 keeps actual water, movement, people-reading, and claimed effect
  const all=Object.values(e.THEMES).flatMap(x=>x.stages.map(p=>p.prompt)).join(" ");
  assert.match(all,/no.*wet hands/i);
  assert.match(all,/barefoot/i);
- assert.match(all,/does not.*establish what another person thinks/i);
+ assert.match(all,/cannot establish what another person thinks/i);
  assert.match(all,/not physical plasma/i);
  assert.match(all,/No actual energy, water, or object is moved/i);
  assert.match(e.stageAt(100,300,"body").prompt,/mental image|ordinary awareness|imagine/i);

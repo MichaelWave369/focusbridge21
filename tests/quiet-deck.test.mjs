@@ -1606,7 +1606,7 @@ test("Chapter 4 Human Body Atlas opens as a reference without forcing QMM, and f
   assert.doesNotMatch(app.root.innerHTML,/Foundation first/);
   assert.doesNotMatch(app.root.innerHTML,/id="q-safe"/);
   assert.equal(app.contexts.length,0,"reference view starts no audio");
-  assert.match(app.root.innerHTML,/16 topics found/);
+  assert.match(app.root.innerHTML,/17 topics found/);
   assert.match(app.root.innerHTML,/Root \/ Base Chakra/);
   assert.match(app.root.innerHTML,/Chakras 1–50/);
   assert.match(app.root.innerHTML,/not.*medical facts/);

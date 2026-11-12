@@ -112,6 +112,7 @@ function harness({ withAudio = false, withVoice = false } = {}) {
   runInNewContext(read("docs/fb21-intention-studio.js"), { window, Date: FakeDate });
   runInNewContext(read("docs/fb21-qmm.js"), { window });
   runInNewContext(read("docs/fb21-gdm.js"), { window });
+  runInNewContext(read("docs/fb21-breathing-energy.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -136,6 +137,18 @@ function harness({ withAudio = false, withVoice = false } = {}) {
     get reloads() { return reloads; } };
 }
 
+function completeEnergyPrelude(app) {
+  assert.match(app.root.innerHTML, /Breathing Energy/);
+  assert.match(app.root.innerHTML, /Your Breathing Energy practice/);
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  assert.match(app.root.innerHTML, /GENTLE RETURN/);
+  app.click("save");
+  assert.match(app.root.innerHTML, /data-action="energy-continue"/);
+  app.click("energy-continue");
+}
 function completeGdmPrelude(app) {
   assert.match(app.root.innerHTML, /Going Deeper · GDM/);
   assert.match(app.root.innerHTML, /Your GDM practice/);
@@ -147,6 +160,7 @@ function completeGdmPrelude(app) {
   app.click("save");
   assert.match(app.root.innerHTML, /data-action="gdm-continue"/);
   app.click("gdm-continue");
+  completeEnergyPrelude(app);
 }
 function completeQmmPrelude(app) {
   assert.match(app.root.innerHTML, /Quiet Mind · QMM/);
@@ -171,6 +185,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-focus-sync\.js/);
     assert.match(html, /fb21-rife-lab\.js/);
     assert.match(html, /fb21-gdm\.js/);
+    assert.match(html, /fb21-breathing-energy\.js/);
     assert.ok(html.indexOf("fb21-gdm.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-rife-lab.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
@@ -178,7 +193,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v3-0-going-deeper/, "GDM release must refresh old PWA cache");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-1-breathing-energy/, "new BE practice must refresh PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -483,10 +498,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has eleven first-run cards including GDM and Rife Frequency Lab", () => {
+test("Quiet Deck has twelve first-run cards including Breathing Energy and Rife Frequency Lab", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 11, "QMM and GDM add two independent home cards");
+  assert.equal(choices.length, 12, "QMM, GDM and Breathing Energy add three meditation cards");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -662,7 +677,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 11);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 12);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1251,7 +1266,7 @@ test("QMM starts with voice disabled and returns without creating audio", async 
   assert.equal(row.quiet_mind.last_phase, "return");
 });
 
-test("advanced Focus Sync and Threshold Explorer require QMM then GDM", () => {
+test("advanced Focus Sync and Threshold Explorer require QMM, GDM, then Breathing Energy", () => {
   for (const target of ["explore", "sync"]) {
     const app = harness({ withAudio: true });
     app.click(target);
@@ -1266,13 +1281,16 @@ test("advanced Focus Sync and Threshold Explorer require QMM then GDM", () => {
     assert.match(app.root.innerHTML, /id="q-headphones"/);
     assert.equal(app.contexts.length, 0, "target audio requires separate start and safety consent");
     const rows = JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
-    assert.equal(rows.length, 2);
-    assert.equal(rows[1].preset, "Quiet Mind · QMM");
-    assert.equal(rows[1].quiet_mind.completed_timed_practice, true);
-    assert.equal(rows[1].quiet_mind.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
-    assert.equal(rows[0].preset, "Going Deeper · GDM");
-    assert.equal(rows[0].going_deeper.completed_timed_practice, true);
-    assert.equal(rows[0].going_deeper.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
+    assert.equal(rows.length, 3);
+    assert.equal(rows[2].preset, "Quiet Mind · QMM");
+    assert.equal(rows[2].quiet_mind.completed_timed_practice, true);
+    assert.equal(rows[2].quiet_mind.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
+    assert.equal(rows[1].preset, "Going Deeper · GDM");
+    assert.equal(rows[1].going_deeper.completed_timed_practice, true);
+    assert.equal(rows[1].going_deeper.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
+    assert.equal(rows[0].preset, "Breathing Energy");
+    assert.equal(rows[0].breathing_energy.completed_timed_practice, true);
+    assert.equal(rows[0].breathing_energy.next_exercise, target === "sync" ? "Focus Sync" : "Threshold Explorer");
   }
 });
 
@@ -1335,7 +1353,7 @@ test("direct Going Deeper enters QMM first, offers three imagery choices, then r
   assert.equal(rows[0].going_deeper.last_phase, "return");
   assert.equal(rows[0].going_deeper.completed_timed_practice, true);
   assert.equal(rows[0].going_deeper.voice_opted_in, false);
-  assert.match(app.root.innerHTML, /Continue to Threshold Explorer/);
+  assert.match(app.root.innerHTML, /Continue to Breathing Energy/);
 });
 
 test("GDM optional browser guidance speaks per phase, and Return Now blocks continuation", () => {
@@ -1374,7 +1392,7 @@ test("GDM optional browser guidance speaks per phase, and Return Now blocks cont
   assert.match(app.root.innerHTML, /Foundation first/, "next attempt restarts QMM");
 });
 
-test("GDM only permits handoff after finishing both timed foundation steps", () => {
+test("GDM routes to Breathing Energy, then permits an explicit exploration handoff", () => {
   const app = harness({ withAudio: true });
   app.click("sync");
   app.click("duration", 180);
@@ -1392,10 +1410,96 @@ test("GDM only permits handoff after finishing both timed foundation steps", () 
   app.click("start");
   app.advance(180000);
   app.click("save");
-  assert.match(app.root.innerHTML, /Continue to Focus Sync/);
+  assert.match(app.root.innerHTML, /Continue to Breathing Energy/);
   app.click("gdm-continue");
+  assert.match(app.root.innerHTML, /Third foundation/);
+  assert.equal(app.contexts.length, 0);
+  app.click("start");
+  assert.doesNotMatch(app.root.innerHTML, /BREATHING ENERGY · STAGE/, "Breathing Energy requires independent consent");
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  app.click("save");
+  assert.match(app.root.innerHTML, /Continue to Focus Sync/);
+  app.click("energy-continue");
   assert.match(app.root.innerHTML, /Complete itinerary · 17 stations/);
   assert.match(app.root.innerHTML, /id="q-safe"/);
   assert.match(app.root.innerHTML, /id="q-headphones"/);
   assert.equal(app.contexts.length, 0);
+});
+
+test("direct Breathing Energy requires QMM and GDM and remains silent-first", () => {
+  const app = harness({ withAudio: true, withVoice: true });
+  app.click("energy");
+  assert.match(app.root.innerHTML, /Quiet Mind · QMM/);
+  assert.match(app.root.innerHTML, /Foundation first/);
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  app.click("save");
+  app.click("qmm-continue");
+  assert.match(app.root.innerHTML, /Your GDM practice/);
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  app.advance(180000);
+  app.click("save");
+  app.click("gdm-continue");
+  assert.match(app.root.innerHTML, /Your Breathing Energy practice/);
+  assert.match(app.root.innerHTML, /Golden-white glow/);
+  assert.match(app.root.innerHTML, /Soft white light/);
+  assert.match(app.root.innerHTML, /No-light body awareness/);
+  assert.doesNotMatch(app.root.innerHTML, /id="q-headphones"/);
+  app.click("energy-visual", undefined, undefined, undefined, "somatic");
+  assert.match(app.root.innerHTML, /Skip light imagery/);
+  app.click("duration", 180);
+  app.check("q-safe");
+  app.click("start");
+  assert.match(app.root.innerHTML, /BREATHING ENERGY · STAGE 1 OF 6/);
+  assert.equal(app.contexts.length, 0, "no tones or generated audio during Breathing Energy");
+  assert.equal(app.spoken.length, 0, "spoken guidance off by default");
+  app.advance(180000);
+  app.click("save");
+  const rows = JSON.parse(app.storage.get("focusbridge21-ledger-v1"));
+  assert.equal(rows.length, 3);
+  assert.equal(rows[0].preset, "Breathing Energy");
+  assert.equal(rows[0].target_gate, null);
+  assert.equal(rows[0].breathing_energy.visual_choice, "somatic");
+  assert.equal(rows[0].breathing_energy.last_phase, "return");
+  assert.equal(rows[0].breathing_energy.completed_timed_practice, true);
+  assert.equal(rows[0].breathing_energy.voice_opted_in, false);
+  assert.match(app.root.innerHTML, /Continue to Threshold Explorer/);
+});
+test("Breathing Energy opt-in voice follows stages, pauses, and safely blocks early handoff", () => {
+  const app = harness({ withVoice: true });
+  app.click("sync");
+  app.click("duration", 180); app.check("q-safe"); app.click("start"); app.advance(180000);
+  app.click("save"); app.click("qmm-continue");
+  app.click("duration", 180); app.check("q-safe"); app.click("start"); app.advance(180000);
+  app.click("save"); app.click("gdm-continue");
+  app.click("duration", 180);
+  app.click("energy-visual", undefined, undefined, undefined, "light");
+  app.check("q-energy-voice");
+  app.check("q-safe");
+  app.click("start");
+  assert.equal(app.spoken.length, 1);
+  app.advance(26000);
+  assert.equal(app.spoken.length, 2);
+  app.click("pause");
+  const count = app.spoken.length;
+  app.advance(50000);
+  assert.equal(app.spoken.length, count, "paused voice should remain paused");
+  app.click("pause");
+  app.click("return");
+  app.click("save");
+  const row = JSON.parse(app.storage.get("focusbridge21-ledger-v1"))[0];
+  assert.equal(row.breathing_energy.visual_choice, "light");
+  assert.equal(row.breathing_energy.voice_opted_in, true);
+  assert.equal(row.breathing_energy.completed_timed_practice, false);
+  assert.doesNotMatch(app.root.innerHTML, /data-action="energy-continue"/);
+  app.click("home");
+  app.click("sync");
+  assert.match(app.root.innerHTML, /Foundation first/, "fresh journey requires fresh QMM again");
 });

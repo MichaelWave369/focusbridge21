@@ -1695,7 +1695,8 @@
         '<button type="button" class="q-secondary" data-action="lab">View the full ledger &amp; labs</button>',
         state.profile === "qmm" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="qmm-continue">Continue to ' +
-            safeText(PROFILES.gdm.label) + ' →</button>' : '',
+            safeText(state.qmmNext === "tele" ? PROFILES.tele.label :
+              state.qmmNext === "targetlab" ? "Blind Target Lab" : PROFILES.gdm.label) + ' →</button>' : '',
         state.profile === "gdm" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="gdm-continue">Continue to ' +
             safeText(PROFILES.energy.label) + ' →</button>' : '',

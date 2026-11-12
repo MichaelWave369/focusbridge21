@@ -117,6 +117,6 @@ test("both Pages entrypoints preload engine and offline shell precaches the modu
     assert.ok(html.indexOf("fb21-audio-engine.js") < html.indexOf("fb21-v13-quiet-deck.js"));
   }
   const worker = readFileSync(new URL("../service-worker.js", import.meta.url), "utf8");
-  assert.match(worker, /focusbridge21-v2-(?:5-master-audio-engine|6-sleep-intentions|7-intention-studio|8-seamless-surf|9-qmm-foundation)|focusbridge21-v3-0-going-deeper|focusbridge21-v3-1-breathing-energy/);
+  assert.match(worker, /focusbridge21-v2-(?:5-master-audio-engine|6-sleep-intentions|7-intention-studio|8-seamless-surf|9-qmm-foundation)|focusbridge21-v3-0-going-deeper|focusbridge21-v3-1-breathing-energy|focusbridge21-v3-2-tele-visualization/);
   assert.match(worker, /fb21-audio-engine\.js/);
 });

@@ -66,6 +66,10 @@
       described:"The book describes a funnel-like point connected to the Hara line and spiritual individuation.",
       health:"Its proposed power and spiritual effects are not demonstrated outcomes.",
       anatomy:"No known organ or biological energy center floats above the head."},
+    {id:"cerebellum", group:"other", name:"Cerebellum Chakra / Well of Dreams", page:14, position:"Back of head near the base of the skull",
+      described:"The book calls this a 'well of dreams' and associates it with internal vision, peripheral sight, and alleged x-ray-like perception.",
+      health:"Claims that crystals or this center provide body-scanning perception comparable to medical imaging are unsupported.",
+      anatomy:"The cerebellum is a real brain structure important for coordination and motor learning. It does not provide human x-ray or MRI-like vision."},
     {id:"pineal", group:"dan", name:"Pineal Spiritual Center (book note)", page:9, position:"Inside the head, near the book's 'mind's eye'",
       described:"A brief note asserts a spiritual 'source intelligence' center at the pineal gland and likens its appearance to a golden sun.",
       health:"No evidence establishes the book's claimed telepathic or cosmic intelligence functions.",
@@ -78,7 +82,8 @@
     {id:"all",label:"All topics"},
     {id:"major",label:"Seven major"},
     {id:"dan",label:"Dan Tiens & related"},
-    {id:"hara",label:"Tan Tien / Hara"}
+    {id:"hara",label:"Tan Tien / Hara"},
+    {id:"other",label:"Other chakras"}
   ]);
   const ESCAPE_MAP = Object.freeze({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"});
   function esc(s){return String(s ?? "").replace(/[&<>"']/g,c=>ESCAPE_MAP[c]);}
@@ -108,7 +113,7 @@
       '<div class="q-atlas-filters" role="group" aria-label="Atlas topic filters">',
       GROUPS.map(g=>'<button type="button" class="q-secondary'+(category===g.id?' q-atlas-selected':'')+
         '" data-action="atlas-filter" data-group="'+esc(g.id)+'" aria-pressed="'+(category===g.id)+'">'+esc(g.label)+'</button>').join(""),
-      '</div><p class="q-detail" role="status">',results.length,' topic',results.length===1?'':'s',' found · sourced to PDF pages 6–13.</p>',
+      '</div><p class="q-detail" role="status">',results.length,' topic',results.length===1?'':'s',' found · sourced to PDF pages 6–15.</p>',
       '<div class="q-atlas-layout">',
       '<div class="q-atlas-results" role="group" aria-label="Atlas topics">',
       results.map(r=>'<button type="button" class="q-atlas-item'+(selected&&r.id===selected.id?' q-atlas-selected':'')+
@@ -134,8 +139,14 @@
       '<div class="q-atlas-range-grid">',
       RANGES.map(r=>'<div class="q-atlas-range"><strong>'+r.dimension+'D</strong><span>Chakras '+r.start+'–'+r.end+'</span></div>').join(""),
       '</div></section>',
+      '<section class="q-panel" aria-label="Book chakra meditation sequence">',
+      '<div class="q-setup-step">CHAPTER 4 · PAGES 14–15</div>',
+      '<h2>Seven chakra light meditations in the source</h2>',
+      '<p class="q-detail">The author presents light visualizations for the seven major chakras, with a suggested top-down order: Crown, Third Eye, Throat, Heart, Solar Plexus, Sacral, Root. The text invites readers to imagine a glowing white or gold sphere at each region and regards heat or tingling as evidence of an "open" chakra. That conclusion is not scientifically established. The author also recommends practicing daily for one or two weeks; this is a source claim, not a clinical recommendation.</p>',
+      '<p class="q-detail">For FocusBridge21, the safe interpretation is a voluntary imagination exercise performed only after QMM: remain comfortable, avoid forcing sensations, and stop if distressed or dizzy. The atlas is informational and does not itself start this meditation.</p>',
+      '</section>',
       '<section class="q-panel"><h2>Reference sources</h2>',
-      '<p class="q-detail">Primary: <i>The Book of Knowledge</i> (Anonymous), chapter 4, pages 6–13, user-provided PDF. Independent anatomy: ',
+      '<p class="q-detail">Primary: <i>The Book of Knowledge</i> (Anonymous), chapter 4, pages 6–15, user-provided PDF. Independent anatomy: ',
       '<a href="https://medlineplus.gov/anatomy.html" target="_blank" rel="noopener noreferrer">MedlinePlus Anatomy (NIH)</a> and ',
       '<a href="https://my.clevelandclinic.org/health/body/23016-thymus" target="_blank" rel="noopener noreferrer">Cleveland Clinic: Thymus</a>. ',
       'Evidence on energy-field claims: <a href="https://www.nccih.nih.gov/health/reiki" target="_blank" rel="noopener noreferrer">NCCIH</a>. ',

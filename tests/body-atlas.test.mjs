@@ -10,16 +10,18 @@ function atlas(){
 }
 test("Chapter 4 faithfully inventories named concepts without inventing 8–50 anatomy",()=>{
   const a=atlas();
-  assert.equal(a.RECORDS.length,16);
+  assert.equal(a.RECORDS.length,17);
   assert.equal(a.RECORDS.filter(r=>r.group==="major").length,7);
   assert.equal(a.RECORDS.filter(r=>r.group==="dan").length,6);
   assert.equal(a.RECORDS.filter(r=>r.group==="hara").length,3);
+  assert.equal(a.RECORDS.filter(r=>r.group==="other").length,1);
   assert.deepEqual(Array.from(a.RANGES,r=>[r.dimension,r.start,r.end]),[
     [3,1,7],[4,8,15],[5,16,22],[6,23,29],[7,30,36],[8,37,43],[9,44,50]
   ]);
-  assert.equal(a.RECORDS.filter(r=>r.page<6||r.page>13).length,0);
+  assert.equal(a.RECORDS.filter(r=>r.page<6||r.page>15).length,0);
   assert.ok(a.RECORDS.every(r=>r.described&&r.anatomy&&r.health));
   assert.match(a.get("pineal").anatomy,/melatonin/);
+  assert.match(a.get("cerebellum").health,/unsupported/);
   assert.match(a.get("thymus").anatomy,/T-cell/);
   assert.match(a.get("third-eye").health,/schizophrenia.*medically inaccurate/);
   assert.equal(a.get("chakra-50"),null);
@@ -39,6 +41,7 @@ test("Atlas text search and categories work, escape dynamic query and mark unsup
   assert.match(html,/Book.*interpretation/);
   assert.match(html,/Established anatomical context/);
   assert.match(html,/Chakras 1–50/);
+  assert.match(html,/Seven chakra light meditations/);
   assert.match(html,/will not invent them/);
   assert.match(html,/data-action="atlas-filter"/);
   assert.match(html,/data-action="atlas-open"/);

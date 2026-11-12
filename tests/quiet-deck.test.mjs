@@ -1312,6 +1312,7 @@ test("direct Going Deeper enters QMM first, offers three imagery choices, then r
   assert.match(app.root.innerHTML, /Continue to Going Deeper/);
   app.click("qmm-continue");
   assert.match(app.root.innerHTML, /Your GDM practice/);
+  app.click("duration", 180);
   assert.match(app.root.innerHTML, /Ladder into quiet/);
   assert.match(app.root.innerHTML, /Backward escalator/);
   assert.match(app.root.innerHTML, /Stillness alternative/);
@@ -1346,6 +1347,7 @@ test("GDM optional browser guidance speaks per phase, and Return Now blocks cont
   app.advance(180000);
   app.click("save");
   app.click("qmm-continue");
+  app.click("duration", 180);
   app.click("gdm-visual", undefined, undefined, undefined, "escalator");
   assert.match(app.root.innerHTML, /Backward escalator/);
   app.check("q-gdm-voice");
@@ -1382,6 +1384,7 @@ test("GDM only permits handoff after finishing both timed foundation steps", () 
   app.click("save");
   app.click("qmm-continue");
   assert.match(app.root.innerHTML, /Second foundation/);
+  app.click("duration", 180);
   assert.equal(app.contexts.length, 0);
   app.click("start");
   assert.doesNotMatch(app.root.innerHTML, /GDM · STAGE/, "GDM has independent consent");

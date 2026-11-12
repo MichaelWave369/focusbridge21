@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v3-0-going-deeper";
+const CACHE_NAME = "focusbridge21-v3-1-breathing-energy";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -36,6 +36,7 @@ const APP_SHELL = [
   "./docs/fb21-rife-lab.js",
   "./docs/fb21-qmm.js",
   "./docs/fb21-gdm.js",
+  "./docs/fb21-breathing-energy.js",
   "./docs/fb21-v13-quiet-deck.js",
   "./docs/fb21-v13-quiet-deck.css",
   "./docs/icon.svg",

@@ -62,6 +62,7 @@
   const PROFILES = Object.freeze({
     qmm: { label: "Quiet Mind · QMM", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     gdm: { label: "Going Deeper · GDM", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
+    energy: { label: "Breathing Energy", duration: 600, surf: 0, bass: 0, beat: 0, tones: false, carrier: 180, difference: 8, space: 0 },
     drift: { label: "Listen & drift", duration: 120, surf: 68, bass: 14, beat: 0, tones: true, carrier: 180, difference: 8, space: 20 },
     lost: { label: "Island 108 · LOST-inspired", island: true, duration: 6480,
       surf: 42, bass: 8, beat: 4, rain: 23, wind: 16, hum: 15, humNote: "C3",
@@ -109,6 +110,7 @@
   const DURATIONS = Object.freeze({
     qmm: [180, 300, 600, 900, 1200, 1800],
     gdm: [180, 300, 600, 900, 1200, 1800],
+    energy: [180, 300, 600, 900, 1200, 1800],
     settle: [60, 90, 120, 300, 600],
     drift: [120, 300, 900, 1500, 2700, 3600, 5400, 7200, 10800, 14400, 21600],
     lost: [900, 2700, 3600, 6480, 10800],
@@ -136,6 +138,7 @@
     screen: "home", mode: "settle", profile: "drift", duration: 90, toneDifference: 8,
     syncMinutes: 12, syncPlan: null, syncStage: 0, islandIndex: 0, qmmStage: 0, qmmVoice: false, qmmNext: null,
     gdmStage: 0, gdmVoice: false, gdmVisual: "ladder", gdmNext: null,
+    energyStage: 0, energyVoice: false, energyVisual: "glow", energyNext: null,
     rife: window.FocusBridgeRife ? window.FocusBridgeRife.config(readRifeSettings()) : null,
     safe: false,
     headphones: false, elapsedMs: 0, lastTick: 0, timer: null,
@@ -252,6 +255,10 @@
     if (!state.gdmVoice || state.profile !== "gdm" || !voiceAvailable()) return;
     window.FocusBridgeVoice.say(stage.voice);
   }
+  function speakEnergy(stage) {
+    if (!state.energyVoice || state.profile !== "energy" || !voiceAvailable()) return;
+    window.FocusBridgeVoice.say(stage.voice);
+  }
   function breathCue() {
     const cycle = state.elapsedMs % 10000;
     return cycle < 4000 ? "Breathe in gently" : "Breathe out comfortably";
@@ -291,10 +298,11 @@
 
   // In the source book, QMM precedes deeper meditation exercises.
   // Every dedicated exploration journey begins with a fresh QMM foundation.
-  // GDM is the second rung. Each rung has a voluntary handoff and new safety
-  // confirmation; ordinary listening, work and sound labs remain independent.
-  function selectMode(mode, completedQMM = false, completedGDM = false) {
-    if (["gdm", "explore", "sync"].includes(mode) && !completedQMM) {
+  // QMM -> GDM -> Breathing Energy precedes dedicated exploration journeys.
+  // Timed completion is not neurological certification; every transition is
+  // voluntary and demands a fresh safety check.
+  function selectMode(mode, completedQMM = false, completedGDM = false, completedEnergy = false) {
+    if (["gdm", "energy", "explore", "sync"].includes(mode) && !completedQMM) {
       selectMode("qmm");
       if (state.screen === "prepare" && state.profile === "qmm") {
         state.qmmNext = mode;
@@ -302,7 +310,7 @@
       }
       return;
     }
-    if ((mode === "explore" || mode === "sync") && !completedGDM) {
+    if (["energy", "explore", "sync"].includes(mode) && !completedGDM) {
       selectMode("gdm", true);
       if (state.screen === "prepare" && state.profile === "gdm") {
         state.gdmNext = mode;
@@ -310,13 +318,22 @@
       }
       return;
     }
+    if (["explore", "sync"].includes(mode) && !completedEnergy) {
+      selectMode("energy", true, true);
+      if (state.screen === "prepare" && state.profile === "energy") {
+        state.energyNext = mode;
+        render();
+      }
+      return;
+    }
     state.qmmNext = null;
     state.gdmNext = null;
+    state.energyNext = null;
     stopPreview("", false);
     if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // prevent old preview voice after switching modes
     state.previewMessage = "";
     state.previewError = "";
-    state.mode = ["settle", "qmm", "gdm"].includes(mode) ? "settle" : "listen";
+    state.mode = ["settle", "qmm", "gdm", "energy"].includes(mode) ? "settle" : "listen";
     state.profile = mode === "settle" || mode === "listen" ? "drift" : mode;
     const profile = PROFILES[state.profile];
     if (state.profile === "qmm" && !window.FocusBridgeQMM) {
@@ -325,6 +342,10 @@
     }
     if (state.profile === "gdm" && !window.FocusBridgeGDM) {
       state.error = "Going Deeper guidance is unavailable. Reload the app to retry.";
+      state.screen = "home"; render(); return;
+    }
+    if (state.profile === "energy" && !window.FocusBridgeBreathingEnergy) {
+      state.error = "Breathing Energy guidance is unavailable. Reload the app to retry.";
       state.screen = "home"; render(); return;
     }
     if (state.profile === "intention" && !intentionEngine) {
@@ -342,6 +363,9 @@
     state.gdmStage = 0;
     state.gdmVoice = false;
     state.gdmVisual = "ladder";
+    state.energyStage = 0;
+    state.energyVoice = false;
+    state.energyVisual = "glow";
     state.toneDifference = profile.difference;
     state.syncStage = 0;
     state.islandIndex = 0;
@@ -399,6 +423,7 @@
     state.screen = "home";
     state.qmmNext = null;
     state.gdmNext = null;
+    state.energyNext = null;
     state.error = "";
     render();
   }
@@ -412,6 +437,7 @@
   function returnToChoices() {
     state.qmmNext = null;
     state.gdmNext = null;
+    state.energyNext = null;
     stopPreview("", false);
     if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop(); // cancel audition on navigation
     state.screen = PROFILES[state.profile]?.holistic ? "holistic" : "home";
@@ -610,6 +636,7 @@
     state.islandIndex = 0;
     state.qmmStage = 0;
     state.gdmStage = 0;
+    state.energyStage = 0;
     state.sleepCueIndex = 0;
     state.intentionNextCue = state.profile === "intention" && intentionEngine
       ? (intentionEngine.CADENCES[state.intentionCadence] || null) : null;
@@ -633,6 +660,7 @@
       speakGate(window.FocusBridgeSync.stageAt(state.syncPlan, 0));
     if (state.profile === "qmm") speakQMM(window.FocusBridgeQMM.stageAt(0, state.duration));
     if (state.profile === "gdm") speakGDM(window.FocusBridgeGDM.stageAt(0, state.duration, state.gdmVisual));
+    if (state.profile === "energy") speakEnergy(window.FocusBridgeBreathingEnergy.stageAt(0, state.duration, state.energyVisual));
     if (state.profile === "sleep" && state.mode === "listen") {
       if (speakSleep("start") && state.sleepGuide) state.sleepCueIndex = 1;
     }
@@ -644,6 +672,8 @@
       return window.FocusBridgeQMM.stageAt(state.elapsedMs / 1000, state.duration).prompt;
     if (state.profile === "gdm" && window.FocusBridgeGDM)
       return window.FocusBridgeGDM.stageAt(state.elapsedMs / 1000, state.duration, state.gdmVisual).prompt;
+    if (state.profile === "energy" && window.FocusBridgeBreathingEnergy)
+      return window.FocusBridgeBreathingEnergy.stageAt(state.elapsedMs / 1000, state.duration, state.energyVisual).prompt;
     if (state.profile === "lost")
       return ISLAND_SEGMENTS[islandStageAt(state.elapsedMs, state.duration)].cue;
     if (state.profile === "rife" && state.mode === "listen")
@@ -693,6 +723,14 @@
         state.gdmStage = phase.index;
         render();
         speakGDM(phase);
+      }
+    }
+    if (state.profile === "energy" && !state.paused && window.FocusBridgeBreathingEnergy) {
+      const phase = window.FocusBridgeBreathingEnergy.stageAt(state.elapsedMs / 1000, state.duration, state.energyVisual);
+      if (phase.index !== state.energyStage) {
+        state.energyStage = phase.index;
+        render();
+        speakEnergy(phase);
       }
     }
     if (state.profile === "lost" && !state.paused) {
@@ -759,7 +797,7 @@
         return;
       }
     }
-    if ((state.voiceGuide || state.qmmVoice || state.gdmVoice || state.sleepGuide || state.intentionSpeak) && window.FocusBridgeVoice) {
+    if ((state.voiceGuide || state.qmmVoice || state.gdmVoice || state.energyVoice || state.sleepGuide || state.intentionSpeak) && window.FocusBridgeVoice) {
       if (state.paused) window.FocusBridgeVoice.pause();
       else window.FocusBridgeVoice.resume();
     }
@@ -787,8 +825,8 @@
         ? crypto.randomUUID() : "quiet-" + Date.now(),
       timestamp: new Date().toISOString(),
       app: "FocusBridge21 Quiet Deck extended audio",
-      preset: ["qmm", "gdm"].includes(state.profile) ? PROFILES[state.profile].label : state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
-      target_gate: state.mode === "settle" && !["qmm", "gdm"].includes(state.profile) || state.profile === "drift" ? 10 : null,
+      preset: ["qmm", "gdm", "energy"].includes(state.profile) ? PROFILES[state.profile].label : state.mode === "settle" || state.profile === "drift" ? "Foundation" : PROFILES[state.profile].label,
+      target_gate: state.mode === "settle" && !["qmm", "gdm", "energy"].includes(state.profile) || state.profile === "drift" ? 10 : null,
       duration_min: state.duration / 60,
       actual_elapsed_sec: elapsed,
       island_108: state.profile === "lost" ? {
@@ -808,7 +846,7 @@
         minutes_per_level: state.syncMinutes,
         interpretation: "Time-based labels and personal reflection, not detected states"
       } : null,
-      guidance_mode: state.profile === "qmm" ? "QMM silent-first guided attention" : state.profile === "gdm" ? "GDM silent-first guided visualization" : "Quiet Deck " + state.mode,
+      guidance_mode: state.profile === "qmm" ? "QMM silent-first guided attention" : state.profile === "gdm" ? "GDM silent-first guided visualization" : state.profile === "energy" ? "Breathing Energy: guided imagination" : "Quiet Deck " + state.mode,
       quiet_mind: state.profile === "qmm" ? {
         progression: "7 timed attention prompts",
         completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
@@ -823,13 +861,24 @@
         last_phase: window.FocusBridgeGDM.stageAt(elapsed, state.duration, state.gdmVisual).id,
         completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
         next_exercise: state.gdmNext ? PROFILES[state.gdmNext].label : null,
+        next_rung: PROFILES.energy.label,
         voice_opted_in: state.gdmVoice && voiceAvailable(),
         evidence_boundary: "Self-reported visual relaxation, not EEG-confirmed alpha/theta or evidence of an external realm"
       } : null,
+      breathing_energy: state.profile === "energy" ? {
+        progression: "Six timed relaxation and imagery prompts",
+        visual_choice: state.energyVisual,
+        last_phase: window.FocusBridgeBreathingEnergy.stageAt(elapsed, state.duration, state.energyVisual).id,
+        completed_timed_practice: !state.interrupted && elapsed >= state.duration - 1,
+        next_exercise: state.energyNext ? PROFILES[state.energyNext].label : null,
+        voice_opted_in: state.energyVoice && voiceAvailable(),
+        evidence_boundary: "Imagined light and self-reported body sensations; no detection or transfer of external energy"
+      } : null,
       voice_guidance_opted_in: ((state.profile === "sync" && state.voiceGuide) ||
         (state.profile === "qmm" && state.qmmVoice) ||
-        (state.profile === "gdm" && state.gdmVoice)) && voiceAvailable(),
-      optional_breath_visual: state.breathGuide,
+        (state.profile === "gdm" && state.gdmVoice) ||
+        (state.profile === "energy" && state.energyVoice)) && voiceAvailable(),
+      optional_breath_visual: state.profile === "sync" && state.breathGuide,
       intention_studio: state.profile === "intention" ? {
         voice_opted_in: state.intentionSpeak && voiceAvailable(),
         cadence: state.intentionCadence,
@@ -909,8 +958,12 @@
         '<span class="q-choice-link">Practice quiet attention →</span></button>',
         '<button type="button" data-action="gdm" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">▽</span><span class="q-choice-kicker">CHAPTER 2 · REQUIRES QMM</span>',
-        '<strong>Going Deeper · GDM</strong><span>Continue from quiet attention into a gentle imagined descent and grounded return.</span>',
+        '<strong>Going Deeper · GDM</strong><span>Follow QMM with gentle imagined descent, then optionally continue to Breathing Energy.</span>',
         '<span class="q-choice-link">Start from QMM →</span></button>',
+        '<button type="button" data-action="energy" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">✧</span><span class="q-choice-kicker">CHAPTER 2 · REQUIRES QMM + GDM</span>',
+        '<strong>Breathing Energy</strong><span>Explore the book\'s golden-white light metaphor with comfortable breathing and a grounded return.</span>',
+        '<span class="q-choice-link">Start at QMM →</span></button>',
         '<button type="button" data-action="listen" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">♫</span><span class="q-choice-kicker">STEREO HEADPHONES</span>',
         '<strong>Listen &amp; drift</strong><span>Soft original stereo tones and a gentle return.</span>',
@@ -929,11 +982,11 @@
         '<span class="q-choice-link">Set up focus →</span></button>',
         '<button type="button" data-action="explore" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">◇</span><span class="q-choice-kicker">SUBJECTIVE EXPLORATION</span>',
-        '<strong>Threshold Explorer</strong><span>QMM → GDM → optional spatial exploration and reflection.</span>',
+        '<strong>Threshold Explorer</strong><span>QMM → GDM → Breathing Energy → optional spatial exploration.</span>',
         '<span class="q-choice-link">Set up exploration →</span></button>',
         '<button type="button" data-action="sync" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">COMPLETE LEVEL JOURNEY</span>',
-        '<strong>Focus Sync</strong><span>QMM → GDM → the full focus-level journey, with grounded returns.</span>',
+        '<strong>Focus Sync</strong><span>QMM → GDM → Breathing Energy → focus-level stations.</span>',
         '<span class="q-choice-link">Plan the full journey →</span></button>',
         '<button type="button" data-action="holistic" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">✧</span><span class="q-choice-kicker">GENTLE SELF-COMFORT</span>',
@@ -1000,7 +1053,7 @@
               '" aria-pressed="' + (state.syncMinutes === minutes) + '">' +
               minutes + ' min/station · ' + formatTime(plan.totalSeconds) + '</button>';
           }).join("")
-        : DURATIONS[["qmm", "gdm"].includes(state.profile) ? state.profile : listen ? state.profile : "settle"].map((seconds) =>
+        : DURATIONS[["qmm", "gdm", "energy"].includes(state.profile) ? state.profile : listen ? state.profile : "settle"].map((seconds) =>
             '<button type="button" class="q-duration ' + (state.duration === seconds ? 'selected' : '') +
             '" data-action="duration" data-seconds="' + seconds +
             '" aria-pressed="' + (state.duration === seconds) + '">' +
@@ -1010,8 +1063,8 @@
           ).join("");
       content = [
         '<button type="button" class="q-back" data-action="back">← Back to ', PROFILES[state.profile]?.holistic ? 'Holistic Zone' : 'choices', '</button>',
-        '<div class="q-eyebrow">', listen || ["qmm", "gdm"].includes(state.profile) ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
-        '<h1>', listen || ["qmm", "gdm"].includes(state.profile) ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
+        '<div class="q-eyebrow">', listen || ["qmm", "gdm", "energy"].includes(state.profile) ? safeText(PROFILES[state.profile].label.toUpperCase()) : 'JUST SETTLE', '</div>',
+        '<h1>', listen || ["qmm", "gdm", "energy"].includes(state.profile) ? safeText(PROFILES[state.profile].label) + '.' : 'Make a little space.', '</h1>',
         '<p class="q-lead">', listen
           ? PROFILES[state.profile].rife
             ? 'A browser-based audio oscillator inspired by the history of frequency experimentation. NOT a Rife RF device, an electromagnetic treatment, or a medical therapy. Audible Hz cannot diagnose or cure disease.'
@@ -1026,7 +1079,9 @@
             ? 'A quiet, original seven-step attention practice adapted from The Book of Knowledge. No audio is needed. You are practicing noticing and returning, not forcing an empty mind.'
             : state.profile === "gdm"
               ? 'Chapter 2 builds upon QMM. Imagine a comfortable descent, then rest and return. Any falling sensation is purely imagined. No EEG or out-of-body state is measured.'
-              : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
+              : state.profile === "energy"
+                ? 'Chapter 2 follows QMM and GDM with breathing and golden-white light imagery. Here breathing stays natural, imagery stays optional, and no energy effect is claimed.'
+                : 'No audio. No forced breath timing. Let thoughts come and go.', '</p>',
         listen && PROFILES[state.profile].holistic
           ? '<p class="q-comfort-note">' + safeText(PROFILES[state.profile].note) + '</p>'
           : '',
@@ -1047,11 +1102,44 @@
         '<div class="q-durations">', choices, '</div>',
         state.profile === "qmm" && state.qmmNext ? [
           '<p class="q-comfort-note" role="status"><strong>Foundation first.</strong> Complete this QMM practice, return gently, and then choose to continue to ',
-          state.qmmNext === "gdm" ? safeText(PROFILES.gdm.label) : safeText(PROFILES.gdm.label) + ' and then ' + safeText(PROFILES[state.qmmNext].label), '. You can stop at any time without continuing.</p>'
+          state.qmmNext === "gdm" ? safeText(PROFILES.gdm.label) :
+          safeText(PROFILES.gdm.label) + ' and then ' + safeText(PROFILES.energy.label) +
+            (state.qmmNext === "energy" ? '' : ' before ' + safeText(PROFILES[state.qmmNext].label)), '. You can stop at any time without continuing.</p>'
         ].join("") : '',
         state.profile === "gdm" && state.gdmNext ? [
           '<p class="q-comfort-note" role="status"><strong>Second foundation.</strong> Complete Going Deeper, reorient, and then choose whether to continue to ',
-          safeText(PROFILES[state.gdmNext].label), '. No transition is automatic.</p>'
+          safeText(PROFILES.energy.label),
+          state.gdmNext === "energy" ? '' : ' before ' + safeText(PROFILES[state.gdmNext].label),
+          '. No transition is automatic.</p>'
+        ].join("") : '',
+        state.profile === "energy" && state.energyNext ? [
+          '<p class="q-comfort-note" role="status"><strong>Third foundation.</strong> Finish this breathing-imagery session, reorient, and then decide whether to continue to ',
+          safeText(PROFILES[state.energyNext].label), '. This is always optional.</p>'
+        ].join("") : '',
+        state.profile === "energy" && window.FocusBridgeBreathingEnergy ? [
+          '<section class="q-panel q-energy-plan" aria-label="Breathing Energy progression">',
+          '<div class="q-setup-step">CHAPTER 2 · AFTER QMM AND GDM</div><h3>Your Breathing Energy practice</h3>',
+          '<p class="q-detail">The original exercise describes imagining the body as a sponge within golden-white light while breathing. We treat this as optional sensory imagery, not physical energy absorption. Breathe comfortably; no force, holds or fixed rhythm.</p>',
+          '<div class="q-setup-step">CHOOSE IMAGERY · OPTIONAL</div><div class="q-durations">',
+          Object.keys(window.FocusBridgeBreathingEnergy.VISUALS).map(key =>
+            '<button type="button" class="q-duration ' + (state.energyVisual === key ? 'selected' : '') +
+            '" data-action="energy-visual" data-visual="' + key +
+            '" aria-pressed="' + (state.energyVisual === key) + '">' +
+            safeText(window.FocusBridgeBreathingEnergy.VISUALS[key].label) + '</button>').join(""),
+          '</div><p class="q-detail">' + safeText(window.FocusBridgeBreathingEnergy.VISUALS[state.energyVisual].description) + '</p>',
+          '<ol class="q-sync-stage-list">',
+          window.FocusBridgeBreathingEnergy.STAGES.map((phase, index) => {
+            const stage = window.FocusBridgeBreathingEnergy.stageAt(
+              (window.FocusBridgeBreathingEnergy.STAGES.slice(0, index).reduce((n, x) => n + x.weight, 0) + 0.000001) * state.duration,
+              state.duration, state.energyVisual);
+            return '<li><strong>' + safeText(phase.title) + '</strong><span>' + safeText(stage.prompt) + '</span></li>';
+          }).join(""),
+          '</ol>',
+          '<label class="q-check" for="q-energy-voice"><input type="checkbox" id="q-energy-voice" ',
+          state.energyVoice && voiceAvailable() ? 'checked' : '', voiceAvailable() ? '' : 'disabled',
+          '> <span><strong>Speak the six original cues</strong><small>Optional browser speech, off by default. Some voices may use online services.</small></span></label>',
+          '<p class="q-detail">Stop if you feel dizzy, breathless, distressed or disoriented. This is not a breathing challenge or measured physiological intervention.</p>',
+          '</section>'
         ].join("") : '',
         state.profile === "gdm" && window.FocusBridgeGDM ? [
           '<section class="q-panel q-gdm-plan" aria-label="Going Deeper meditation progression">',
@@ -1289,6 +1377,7 @@
       ].join("");
     } else if (state.screen === "running") {
       const remaining = formatTime(state.duration - state.elapsedMs / 1000);
+      const showBreathCompanion = state.profile === "sync" && state.breathGuide;
       const syncStation = state.profile === "sync" && state.syncPlan
         ? window.FocusBridgeSync.stageAt(state.syncPlan, state.elapsedMs / 1000) : null;
       content = [
@@ -1301,7 +1390,7 @@
         state.mode === "listen" ?
           safeText(PROFILES[state.profile].label.toUpperCase()) +
             (allSoundOff() ? ' · SILENT PRACTICE' : ' · SOUND ACTIVE') :
-          state.profile === "qmm" ? 'QUIET MIND · INTENTIONALLY SILENT' : state.profile === "gdm" ? 'GOING DEEPER · INTENTIONALLY SILENT' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
+          state.profile === "qmm" ? 'QUIET MIND · INTENTIONALLY SILENT' : state.profile === "gdm" ? 'GOING DEEPER · INTENTIONALLY SILENT' : state.profile === "energy" ? 'BREATHING ENERGY · INTENTIONALLY SILENT' : 'JUST SETTLE · INTENTIONALLY SILENT', '</div>',
         state.profile === "qmm" && window.FocusBridgeQMM ? [
           '<section class="q-sync-active q-qmm-active" aria-label="Quiet Mind stage">',
           '<div class="q-sync-step">QMM · STAGE ', state.qmmStage + 1, ' OF 7</div>',
@@ -1314,6 +1403,12 @@
           safeText(window.FocusBridgeGDM.VISUALS[state.gdmVisual].label), '</div>',
           '<h2>', safeText(window.FocusBridgeGDM.STAGES[state.gdmStage].title), '</h2>',
           '<p class="q-detail">All descent and landing images are imagined; your body stays supported.</p></section>'
+        ].join("") : '',
+        state.profile === "energy" && window.FocusBridgeBreathingEnergy ? [
+          '<section class="q-sync-active q-energy-active" aria-label="Breathing Energy stage">',
+          '<div class="q-sync-step">BREATHING ENERGY · STAGE ', state.energyStage + 1, ' OF 6</div>',
+          '<h2>', safeText(window.FocusBridgeBreathingEnergy.STAGES[state.energyStage].title), '</h2>',
+          '<p class="q-detail">No fixed breath timing. Any light is imagined, and sensations are subjective.</p></section>'
         ].join("") : '',
         syncStation ? [
           '<section class="q-sync-active" aria-label="Focus Sync stage">',
@@ -1341,10 +1436,10 @@
           state.rife.intensity, '% of the limited software gain</p>',
           '<p class="q-detail">Audio only. No RF transmission, disease treatment, or measured body response.</p></section>'
         ].join("") : '',
-        '<div class="q-orb', state.breathGuide ? ' q-orb-guided' : '',
+        '<div class="q-orb', showBreathCompanion ? ' q-orb-guided' : '',
         state.paused ? ' q-orb-paused' : '', '" aria-hidden="true" style="animation-delay:-',
         (state.elapsedMs / 1000).toFixed(2), 's"><div class="q-orb-inner"></div></div>',
-        state.breathGuide ? '<p id="q-breath-phase" class="q-breath-phase" role="status">' +
+        showBreathCompanion ? '<p id="q-breath-phase" class="q-breath-phase" role="status">' +
           (state.paused ? 'Breathing companion paused' : breathCue()) + '</p>' : '',
         '<div id="fb21-q-timer" class="q-timer" role="timer" aria-label="Remaining session time">', remaining, '</div>',
         '<p id="fb21-q-cue" class="q-cue">', state.paused ? 'Paused. Return whenever you like.' : cue(), '</p>',
@@ -1393,7 +1488,10 @@
             safeText(PROFILES.gdm.label) + ' →</button>' : '',
         state.profile === "gdm" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
           ? '<button type="button" class="q-secondary" data-action="gdm-continue">Continue to ' +
-            safeText(PROFILES[state.gdmNext || "explore"].label) + ' →</button>' : '',
+            safeText(PROFILES.energy.label) + ' →</button>' : '',
+        state.profile === "energy" && !state.interrupted && state.elapsedMs >= (state.duration * 1000 - 1000)
+          ? '<button type="button" class="q-secondary" data-action="energy-continue">Continue to ' +
+            safeText(PROFILES[state.energyNext || "explore"].label) + ' →</button>' : '',
         '</div>'
       ].join("");
     }
@@ -1403,7 +1501,7 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
-    if (["settle", "qmm", "gdm", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
+    if (["settle", "qmm", "gdm", "energy", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "qmm-continue" && state.screen === "saved" &&
         state.profile === "qmm" && !state.interrupted &&
         state.elapsedMs >= state.duration * 1000 - 1000) {
@@ -1413,8 +1511,14 @@
     else if (action === "gdm-continue" && state.screen === "saved" &&
         state.profile === "gdm" && !state.interrupted &&
         state.elapsedMs >= state.duration * 1000 - 1000) {
-      const target = state.gdmNext || "explore";
-      selectMode(target, true, true); // user completed both timed preludes
+      const target = state.gdmNext || "energy";
+      selectMode(target, true, true); // the third rung is Breathing Energy
+    }
+    else if (action === "energy-continue" && state.screen === "saved" &&
+        state.profile === "energy" && !state.interrupted &&
+        state.elapsedMs >= state.duration * 1000 - 1000) {
+      const target = state.energyNext || "explore";
+      selectMode(target, true, true, true); // each preceding timed session was completed
     }
     else if (action === "lab") openLab();
     else if (action === "home") returnHome();
@@ -1427,6 +1531,11 @@
     else if (action === "gdm-visual" && state.screen === "prepare" &&
         state.profile === "gdm" && window.FocusBridgeGDM) {
       state.gdmVisual = window.FocusBridgeGDM.visual(button.dataset.visual);
+      render();
+    }
+    else if (action === "energy-visual" && state.screen === "prepare" &&
+        state.profile === "energy" && window.FocusBridgeBreathingEnergy) {
+      state.energyVisual = window.FocusBridgeBreathingEnergy.visual(button.dataset.visual);
       render();
     }
     else if (action === "preview") startPreview();
@@ -1556,6 +1665,10 @@
     }
     if (event.target.id === "q-gdm-voice" && state.profile === "gdm" && state.screen === "prepare") {
       state.gdmVoice = voiceAvailable() && event.target.checked;
+      render();
+    }
+    if (event.target.id === "q-energy-voice" && state.profile === "energy" && state.screen === "prepare") {
+      state.energyVoice = voiceAvailable() && event.target.checked;
       render();
     }
     if (event.target.id === "q-guide-breath") {

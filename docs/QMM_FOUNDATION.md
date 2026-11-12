@@ -44,7 +44,7 @@ Presets: **3, 5, 10, 15, 20, 30 minutes**. Ten minutes is the default. Longer pr
 - Safety checkbox is required. Stop with **Return now** at any time; there is no penalty.
 - Pause/resume pauses the stage clock and optional voice.
 - The Signal Ledger receives local-only metadata: title, elapsed time, last stage, consent for voice, and optional notes. No mind state or thought-silence score is invented.
-- After saving, users can choose **Continue to Threshold Explorer**, but doing so begins a separate preparation flow, never an automatic escalation.
+- After completing QMM, users can choose **Continue to Going Deeper (GDM)**, then optional **Breathing Energy**, before any dedicated exploration journey. Every transition has a separate preparation flow.
 - If closing eyes feels uncomfortable or disorienting, keep them open. If symptoms worsen, stop and orient to surroundings. No practice while driving or operating equipment.
 
 ## Recommended personal practice
@@ -57,12 +57,12 @@ The book's later "Going Deeper" practice includes imaginative descent imagery as
 
 ### Current QMM-first routing
 
-Selecting **Going Deeper**, **Focus Sync**, or **Threshold Explorer** in Quiet Deck now opens the QMM setup first. The destination is clearly displayed, and the user chooses a 3–30 minute QMM session (10 minutes by default). Completing its timed progression and the grounded return, then saving the reflection, offers a voluntary **Continue to Going Deeper** button. The subsequent GDM preparation and any later exploration practice each require their own safety check. See [GDM_GOING_DEEPER.md](GDM_GOING_DEEPER.md).
+Selecting **Going Deeper**, **Breathing Energy**, **Focus Sync**, or **Threshold Explorer** in Quiet Deck opens QMM first. The user chooses a 3–30-minute QMM session (10 minutes by default). Finishing the timer, returning gently, and saving a reflection allows a voluntary **Continue to Going Deeper** action, followed optionally by **Breathing Energy**, then a dedicated exploration experience. Each rung has its own safety check. See [GDM](GDM_GOING_DEEPER.md) and [Breathing Energy](BREATHING_ENERGY.md).
 
-Ending QMM early is always allowed and never unlocks the follow-on button. The local receipt records completion of the **timed sequence**, not mastery of a thought-free mental state. A completed standalone QMM can hand off to GDM after reflection; GDM can then offer optional Threshold Explorer or a selected Focus Sync route.
+Ending QMM early is always allowed and never unlocks the follow-on button. The local receipt records completion of the **timed sequence**, not mastery of a thought-free mental state. A completed standalone QMM can hand off to GDM, which can offer Breathing Energy, which can offer Threshold Explorer or a selected Focus Sync route.
 
 This prerequisite applies to dedicated meditative exploration paths in the current Quiet Deck. **Listen & drift, Deep Focus for work, Sleep Sanctuary, Intention Studio, the Holistic Zone, and Rife Frequency Lab** remain independent because they are listening, productivity, reflection, comfort, or audio-test tools rather than the book's meditations. The legacy full laboratory retains its current controls; this change does not silently claim to intercept every possible old entrypoint.
 
-**Going Deeper Meditation (GDM)** is now the second stage after QMM for deliberate exploration routes. The next potential book-derived practice is *Breathing Energy*, which explicitly calls for both QMM and GDM first. Keep transitions voluntary, preserve Return Now, and never assert that a neurological or paranormal gate was achieved.
+**Going Deeper Meditation (GDM)** is the second stage and **Breathing Energy** is the third, as the book's Chapter 2 specifies. Keep all transitions voluntary, preserve Return Now, and never assert that a neurological or paranormal gate was achieved.
 
 **Philosophy:** Curiosity is welcome. Claims stay bounded to what the app actually observes.

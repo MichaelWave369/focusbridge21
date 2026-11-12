@@ -1701,7 +1701,7 @@ test("Chapter 5 requires both QMM and GDM, never Breathing Energy, and voice req
  app.click("gdm-continue");
  assert.match(app.root.innerHTML,/Your Clairaudience · Listening Imagery practice/);
  assert.doesNotMatch(app.root.innerHTML,/Your Breathing Energy practice/);
- assert.match(app.root.innerHTML,/No messages or voices are required|no messages or voices are required/);
+ assert.match(app.root.innerHTML,/not listening for real messages|not collecting messages/);
  assert.match(app.root.innerHTML,/id="q-safe"/);
  assert.doesNotMatch(app.root.innerHTML,/id="q-headphones"/);
  app.click("duration",180);

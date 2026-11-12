@@ -119,15 +119,17 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
   runInNewContext(read("docs/fb21-gdm.js"), { window });
   runInNewContext(read("docs/fb21-breathing-energy.js"), { window });
   runInNewContext(read("docs/fb21-tele-visualization.js"), { window, Uint32Array });
+  runInNewContext(read("docs/fb21-body-atlas.js"), { window });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate, crypto: browserCrypto, Uint32Array });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
   assert.ok(root, "quiet root exists");
-  const click = (action, seconds, minutes, frequency, visual, targetIndex) => root.listeners.click({
-    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual, targetIndex } }) }
+  const click = (action, seconds, minutes, frequency, visual, targetIndex, group, atlasId) => root.listeners.click({
+    target: { closest: () => ({ disabled: false, dataset: { action, seconds, minutes, frequency, visual, targetIndex, group, atlasId } }) }
   });
   const check = (id, value = true) => root.listeners.change({ target: { id, checked: value } });
   const note = (value) => root.listeners.input({ target: { id: "q-note", value } });
+  const searchAtlas = (value) => root.listeners.input({ target: { id: "q-atlas-search", value, selectionStart: value.length } });
   const setMix = (key, value) => root.listeners.input({ target: { id: "q-mix-" + key, value, setAttribute() {} } });
   const setHumNote = (value) => root.listeners.change({ target: { id: "q-hum-note", value } });
   const setMaster = (value) => root.listeners.input({ target: { id: "q-master", value } });
@@ -139,7 +141,7 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
     clock += milliseconds;
     for (const callback of [...timers.values()]) callback();
   };
-  return { root, click, check, note, setMix, setHumNote, setMaster, setSleepIntention, setIntention, chooseIntention, cadence, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
+  return { root, click, check, note, searchAtlas, setMix, setHumNote, setMaster, setSleepIntention, setIntention, chooseIntention, cadence, advance, storage, classes, contexts, scheduled, session, spoken, voiceOps,
     get reloads() { return reloads; } };
 }
 
@@ -193,6 +195,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-gdm\.js/);
     assert.match(html, /fb21-breathing-energy\.js/);
     assert.match(html, /fb21-tele-visualization\.js/);
+    assert.match(html, /fb21-body-atlas\.js/);
     assert.ok(html.indexOf("fb21-gdm.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-rife-lab.js") < html.indexOf("fb21-v13-quiet-deck.js"));
     assert.ok(html.indexOf("fb21-focus-sync.js") < html.indexOf("fb21-v13-quiet-deck.js"),
@@ -200,7 +203,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v3-2-tele-visualization/, "Chapter 3 must refresh the offline PWA cache");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-3-chapter4-atlas/, "Chapter 4 must refresh the offline PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -505,10 +508,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has fourteen first-run cards including Chapter 3 experiments", () => {
+test("Quiet Deck has fifteen first-run cards including Chapter 4 Human Body Atlas", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 14, "Chapter 3 adds Tele-Visualization and Blind Target Lab cards");
+  assert.equal(choices.length, 15, "Chapter 4 adds the searchable Human Body Atlas card");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -684,7 +687,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 14);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 15);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1593,4 +1596,46 @@ test("Chapter 3 no secure randomness prevents fake testing; early Return Now blo
   app.click("target-begin");
   assert.doesNotMatch(app.root.innerHTML,/BLIND TRIAL 1 OF 20/);
   assert.equal(JSON.parse(app.storage.get("focusbridge21-ledger-v1")).length,2);
+});
+
+test("Chapter 4 Human Body Atlas opens as a reference without forcing QMM, and filters the author's concepts",()=>{
+  const app=harness({withAudio:true});
+  app.click("atlas");
+  assert.match(app.root.innerHTML,/Human Body <em>Atlas/);
+  assert.match(app.root.innerHTML,/SOURCE-CRITICAL REFERENCE/);
+  assert.doesNotMatch(app.root.innerHTML,/Foundation first/);
+  assert.doesNotMatch(app.root.innerHTML,/id="q-safe"/);
+  assert.equal(app.contexts.length,0,"reference view starts no audio");
+  assert.match(app.root.innerHTML,/16 topics found/);
+  assert.match(app.root.innerHTML,/Root \/ Base Chakra/);
+  assert.match(app.root.innerHTML,/Chakras 1–50/);
+  assert.match(app.root.innerHTML,/not.*medical facts/);
+  app.click("atlas-filter",undefined,undefined,undefined,undefined,undefined,"dan");
+  assert.match(app.root.innerHTML,/6 topics found/);
+  assert.match(app.root.innerHTML,/Soul Star/);
+  assert.doesNotMatch(app.root.innerHTML,/data-atlas-id="root"/);
+  app.click("atlas-open",undefined,undefined,undefined,undefined,undefined,undefined,"thymus");
+  assert.match(app.root.innerHTML,/T-cell maturation/);
+  assert.match(app.root.innerHTML,/Book.*interpretation/);
+  assert.match(app.root.innerHTML,/Established anatomical context/);
+  app.searchAtlas("pineal");
+  assert.match(app.root.innerHTML,/1 topic found/);
+  assert.match(app.root.innerHTML,/melatonin/);
+  app.searchAtlas("nothing matches");
+  assert.match(app.root.innerHTML,/No matching topics/);
+  app.click("atlas-filter",undefined,undefined,undefined,undefined,undefined,"all");
+  app.searchAtlas("schizophrenia");
+  assert.match(app.root.innerHTML,/1 topic found/);
+  assert.match(app.root.innerHTML,/medically inaccurate/);
+  app.click("home");
+  assert.match(app.root.innerHTML,/Start where/);
+  assert.equal(app.contexts.length,0);
+});
+test("Atlas user search is escaped even inside the interactive Quiet Deck",()=>{
+  const app=harness();
+  app.click("atlas");
+  app.searchAtlas("<img src=x onerror=alert(1)>");
+  assert.doesNotMatch(app.root.innerHTML,/<img src=x onerror=/);
+  assert.match(app.root.innerHTML,/&lt;img/);
+  assert.match(app.root.innerHTML,/0 topics found/);
 });

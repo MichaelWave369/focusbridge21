@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v3-4-chapters45";
+const CACHE_NAME = "focusbridge21-v3-5-chapter6-energy";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -40,6 +40,7 @@ const APP_SHELL = [
   "./docs/fb21-tele-visualization.js",
   "./docs/fb21-body-atlas.js",
   "./docs/fb21-chapters45.js",
+  "./docs/fb21-chapter6-energy.js",
   "./docs/fb21-v13-quiet-deck.js",
   "./docs/fb21-v13-quiet-deck.css",
   "./docs/icon.svg",

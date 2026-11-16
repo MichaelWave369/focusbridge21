@@ -44,5 +44,5 @@ test("Chapter 7 engine preloads before Quiet Deck in both entrypoints and PWA of
   assert.ok(html.indexOf("fb21-chapter7-cleansing.js")<html.indexOf("fb21-v13-quiet-deck.js"));
  }
  assert.match(read("service-worker.js"),/docs\/fb21-chapter7-cleansing\.js/);
- assert.match(read("service-worker.js"),/focusbridge21-v3-6-chapter7-cleansing/);
+ assert.match(read("service-worker.js"),/focusbridge21-v3-7-human-code12/);
 });

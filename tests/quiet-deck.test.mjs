@@ -80,6 +80,7 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
     crypto: browserCrypto,
     addEventListener() {},
     location: { reload() { reloads++; } },
+    confirm() { return true; },
     FocusBridgeSoundscape: { HUM_NOTES, schedule(ctx, options, seconds) {
       scheduled.push({ ctx, options, seconds }); return true;
     } },
@@ -99,7 +100,8 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
   };
   const localStorage = {
     getItem(key) { return storage.get(key) ?? null; },
-    setItem(key, value) { storage.set(key, value); }
+    setItem(key, value) { storage.set(key, value); },
+    removeItem(key) { storage.delete(key); }
   };
   const sessionStorage = {
     getItem(key) { return session.get(key) ?? null; },
@@ -123,6 +125,7 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
   runInNewContext(read("docs/fb21-chapters45.js"), { window });
   runInNewContext(read("docs/fb21-chapter6-energy.js"), { window });
   runInNewContext(read("docs/fb21-chapter7-cleansing.js"), { window });
+  runInNewContext(read("docs/fb21-human-code12.js"), { window, localStorage, Date: FakeDate });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate, crypto: browserCrypto, Uint32Array });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -209,7 +212,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v3-6-chapter7-cleansing/, "Chapter 7 must refresh the PWA cache");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-7-human-code12/, "Chapter 7 must refresh the PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });
@@ -514,10 +517,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has nineteen first-run cards including Chapter 7 cleansing imagery", () => {
+test("Quiet Deck has twenty first-run cards including Chapter 7 and Human Code 12", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 19, "Chapter 7 adds a separate bottom-up color imagery card");
+  assert.equal(choices.length, 20, "Human Code 12 adds a new card without removing Chapter 7");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -693,7 +696,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 19);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 20);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);
@@ -1913,4 +1916,23 @@ test("Chapter 7 cannot be started after an interrupted QMM",()=>{
  app.check("q-safe");app.click("start");
  app.advance(10000);app.click("return");app.click("save");
  assert.doesNotMatch(app.root.innerHTML,/data-action="qmm-continue"/);
+});
+
+
+test("Human Code 12 card opens in Quiet Deck, saves a local note and keeps legacy QMM available", () => {
+  const app = harness();
+  assert.match(app.root.innerHTML, /data-action="human12"/);
+  app.click("human12");
+  assert.match(app.root.innerHTML, /Human Code <em>12/);
+  assert.match(app.root.innerHTML, /The Vessel/);
+  assert.match(app.root.innerHTML, /The Whole/);
+  app.root.listeners.input({target:{id:"hc-reflection",value:"Practiced grounding today"}});
+  app.click("hc-mark");
+  assert.match(app.root.innerHTML, /1 \/ 12/);
+  const entry = JSON.parse(app.storage.get("focusbridge21-human-code12-v1"));
+  assert.equal(entry.entries["1"].note,"Practiced grounding today");
+  assert.equal(entry.entries["1"].explored,true);
+  app.click("hc-qmm");
+  assert.match(app.root.innerHTML, /Quiet Mind/);
+  assert.match(app.root.innerHTML, /SAFETY CHECK/);
 });

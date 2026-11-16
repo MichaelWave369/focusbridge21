@@ -1269,6 +1269,10 @@
         '<span class="q-choice-icon" aria-hidden="true">✦</span><span class="q-choice-kicker">CREATE · SAVE · LISTEN</span>',
         '<strong>Intention Studio</strong><span>Your own spoken reflections, saved sound recipes, and thoughtful playback timing.</span>',
         '<span class="q-choice-link">Open Intention Studio →</span></button>',
+        '<button type="button" data-action="human12" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">⑫</span><span class="q-choice-kicker">TWELVE LEVELS · SELF-PACED</span>',
+        '<strong>Human Code 12</strong><span>A practical atlas for attention, imagination, relationships, and contribution. Journal privately and explore at your own pace.</span>',
+        '<span class="q-choice-link">Explore the 12 levels →</span></button>',
         '<button type="button" data-action="focus" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">◎</span><span class="q-choice-kicker">STEADY ATTENTION</span>',
         '<strong>Deep Focus</strong><span>A stable, unobtrusive sound field for work or study.</span>',
@@ -1304,6 +1308,10 @@
         '<p class="q-footnote">Not feeling well, dizzy, or faint? Skip audio practice and rest.',
         ' The full app has more detailed safety information.</p>'
       ].join("");
+    } else if (state.screen === "human12") {
+      content = window.FocusBridgeHumanCode12
+        ? window.FocusBridgeHumanCode12.view()
+        : '<p role="alert">Human Code 12 is unavailable. Reload the app to retry.</p>';
     } else if (state.screen === "holistic") {
       content = [
         '<button type="button" class="q-back" data-action="home">← Back to Quiet Deck</button>',
@@ -1981,6 +1989,29 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
+    if (action === "human12") {
+      stopPreview("", false);
+      stopAudio();
+      clearInterval(state.timer);
+      if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
+      state.screen = "human12";
+      state.profile = "human12";
+      render();
+      return;
+    }
+    if (state.screen === "human12" && action.startsWith("hc-") && window.FocusBridgeHumanCode12) {
+      const human = window.FocusBridgeHumanCode12;
+      if (action === "hc-select") human.select(button.dataset.level);
+      else if (action === "hc-mark") human.toggleExplored();
+      else if (action === "hc-export") human.exportFile();
+      else if (action === "hc-reset") {
+        if (window.confirm("Delete only your Human Code 12 reflections and progress on this browser?")) human.reset(true);
+      }
+      else if (action === "hc-qmm") { selectMode("qmm"); return; }
+      else if (action === "hc-intention") { selectMode("intention"); return; }
+      render();
+      return;
+    }
     if (["settle", "qmm", "gdm", "energy", "tele", "chakra", "clair", "energy6", "cleanse7", "targetlab", "atlas", "listen", "sleep", "intention", "focus", "explore", "sync", "rife", "lost", ...HOLISTIC_CHOICES.map(x => x.key)].includes(action)) selectMode(action);
     else if (action === "qmm-continue" && state.screen === "saved" &&
         state.profile === "qmm" && !state.interrupted &&
@@ -2242,6 +2273,10 @@
           try { field.setSelectionRange(cursor, cursor); } catch {}
         }
       }
+      return;
+    }
+    if (event.target.id === "hc-reflection" && state.screen === "human12" && window.FocusBridgeHumanCode12) {
+      window.FocusBridgeHumanCode12.updateNote(event.target.value);
       return;
     }
     if (event.target.id === "q-note") state.note = event.target.value;

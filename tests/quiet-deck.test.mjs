@@ -209,7 +209,7 @@ test("both Pages entrypoints reference Quiet Deck while retaining the original a
     assert.match(html, /fb21-react\.js/);
     assert.match(html, /fb21-v12-experience\.js/);
   }
-  assert.match(read("service-worker.js"), /focusbridge21-v3-6-chapter7-cleansing/, "Chapter 7 must refresh the PWA cache");
+  assert.match(read("service-worker.js"), /focusbridge21-v3-7-human-code12/, "Chapter 7 must refresh the PWA cache");
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.js/);
   assert.match(read("service-worker.js"), /fb21-v13-quiet-deck\.css/);
 });

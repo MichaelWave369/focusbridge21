@@ -514,10 +514,10 @@ test("deepest Focus Sync pace runs through all stations and grounded return with
   assert.equal(entries[0].sync_journey.finished_full_journey, true);
 });
 
-test("Quiet Deck has nineteen first-run cards including Chapter 7 cleansing imagery", () => {
+test("Quiet Deck has twenty first-run cards including Chapter 7 and Human Code 12", () => {
   const app = harness();
   const choices = app.root.innerHTML.match(/class="q-choice"/g) || [];
-  assert.equal(choices.length, 19, "Chapter 7 adds a separate bottom-up color imagery card");
+  assert.equal(choices.length, 20, "Human Code 12 adds a new card without removing Chapter 7");
   assert.match(app.root.innerHTML, /Rife Frequency Lab/);
   app.click("rife");
   assert.match(app.root.innerHTML, /Audio oscillator|audio oscillator|browser-based audio oscillator/);
@@ -693,7 +693,7 @@ test("soundscape ledger records newly mixed layers and accurate HUM note", async
 test("Island 108 is a discoverable fan tribute without breaking the home grid", () => {
   const app = harness();
   const home = app.root.innerHTML;
-  assert.equal((home.match(/class="q-choice"/g) || []).length, 19);
+  assert.equal((home.match(/class="q-choice"/g) || []).length, 20);
   assert.match(home, /class="q-island-teaser"/);
   assert.match(home, /data-action="lost"/);
   assert.match(home, /4 · 8 · 15 · 16 · 23 · 42/);

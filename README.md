@@ -6,6 +6,17 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## Human Code 12: original, self-paced learning atlas
+
+An optional **Human Code 12** screen now lives inside the Quiet Deck, without replacing its meditations or altering existing saves. Twelve original levels span **Foundation (1–3), Awareness (4–6), Connection (7–9), and Integration (10–12)**. Each level offers an objective, a non-coercive exercise, a reflection prompt, and a real-world action. The 3/6/9/12 markers are review milestones, not ranks or certifications.
+
+- Visit the **Human Code 12** card on either Pages entrypoint, choose any level, keep a private browser-local journal, and optionally mark lessons explored. There are no artificial unlocks or mandatory beliefs.
+- Link directly to the existing **QMM** and **Intention Studio** session setup, preserving their existing comfort, consent, audio, and Return Now controls.
+- A separate `focusbridge21-human-code12-v1` key stores notes and progress only. Optional JSON export and confirmation-based reset never touch the Signal Ledger or other saved recipes. Storage is not encrypted.
+- These 12 curriculum numbers are **not** Monroe/Gateway Focus 10/12/15/21, nor proof of consciousness changing external physics, spiritual advancement, or health outcomes.
+
+See [Human Code 12 design, privacy, and QA](docs/HUMAN_CODE_12.md).
+
 ## Chapter 7: Seven-Center Cleansing Imagery
 
 The recovered *The Book of Knowledge* (Anonymous, **PDF pages 19–21**) describes a **QMM-first**, **Root-to-Crown** series of symbolic color exercises. This new Quiet Deck profile preserves the author's seven-center order, specified colors, and front/back imagery while **rejecting medical or supernatural claims as verified results**.

@@ -1,0 +1,52 @@
+/* Human Code 12 Quiet Deck extension, scoped to the existing app. */
+#fb21-quiet-root .hc-note, #fb21-quiet-root .hc-summary,
+#fb21-quiet-root .hc-detail, #fb21-quiet-root .hc-footer {
+  border: 1px solid #50647e; border-radius: 20px;
+  background: rgba(17, 29, 46, .86); padding: 22px;
+}
+#fb21-quiet-root .hc-note { color: #cddceb; line-height: 1.6; margin-bottom: 22px; }
+#fb21-quiet-root .hc-summary { margin: 0 0 22px; }
+#fb21-quiet-root .hc-summary > div:first-child { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+#fb21-quiet-root .hc-summary strong { font-size: 1.9rem; color: #b2edda; }
+#fb21-quiet-root .hc-summary span { color: #c9d7e8; }
+#fb21-quiet-root .hc-progress { width: 100%; height: 10px; border-radius: 99px; background: #374962; overflow: hidden; margin: 14px 0 10px; }
+#fb21-quiet-root .hc-progress > div { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #92dbc7, #d1b6ef); transition: width .2s ease; }
+#fb21-quiet-root .hc-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 1.16fr); gap: 18px; align-items: start; }
+#fb21-quiet-root .hc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+#fb21-quiet-root .hc-level {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  border: 1px solid #516783; color: #e8eff8; text-align: left;
+  border-radius: 15px; background: #16243a; padding: 17px;
+  min-height: 132px; cursor: pointer; font: inherit;
+}
+#fb21-quiet-root .hc-level:hover, #fb21-quiet-root .hc-level:focus-visible { border-color: #a8ecd9; }
+#fb21-quiet-root .hc-level[aria-pressed="true"] { background: #1f3d47; border-color: #a8ecd9; }
+#fb21-quiet-root .hc-level small { font-size: .68rem; color: #a6e5d6; font-weight: 750; letter-spacing: .07em; }
+#fb21-quiet-root .hc-level strong { font-size: 1.03rem; line-height: 1.24; }
+#fb21-quiet-root .hc-level span { color: #b8c8d9; font-size: .78rem; }
+#fb21-quiet-root .hc-kicker { color: #a6e5d6; font-size: .75rem; font-weight: 750; letter-spacing: .1em; }
+#fb21-quiet-root .hc-detail h2 { font-size: clamp(1.75rem, 3vw, 2.35rem); margin: 10px 0; }
+#fb21-quiet-root .hc-detail h3 { margin: 24px 0 7px; color: #d4eee6; font-size: 1rem; }
+#fb21-quiet-root .hc-detail p, #fb21-quiet-root .hc-footer p { color: #cbd9e8; line-height: 1.7; }
+#fb21-quiet-root .hc-detail label { display: block; margin: 22px 0 8px; font-weight: 650; color: #e5edf7; }
+#fb21-quiet-root #hc-reflection {
+  display: block; width: 100%; min-height: 145px; resize: vertical;
+  background: #0b1523; color: #f1f6ff; border: 1px solid #637991;
+  border-radius: 13px; padding: 13px; font: inherit; line-height: 1.5;
+}
+#fb21-quiet-root .hc-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+#fb21-quiet-root .hc-actions button { max-width: 100%; }
+#fb21-quiet-root .hc-footer { margin-top: 20px; }
+#fb21-quiet-root .hc-footer h2 { margin-top: 0; }
+@media (max-width: 800px) {
+  #fb21-quiet-root .hc-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  #fb21-quiet-root .hc-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #fb21-quiet-root .hc-level { padding: 12px; min-height: 126px; }
+  #fb21-quiet-root .hc-detail, #fb21-quiet-root .hc-footer,
+  #fb21-quiet-root .hc-note, #fb21-quiet-root .hc-summary { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #fb21-quiet-root .hc-progress > div { transition: none; }
+}

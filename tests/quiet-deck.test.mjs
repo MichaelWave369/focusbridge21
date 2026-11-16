@@ -80,6 +80,7 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
     crypto: browserCrypto,
     addEventListener() {},
     location: { reload() { reloads++; } },
+    confirm() { return true; },
     FocusBridgeSoundscape: { HUM_NOTES, schedule(ctx, options, seconds) {
       scheduled.push({ ctx, options, seconds }); return true;
     } },
@@ -99,7 +100,8 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
   };
   const localStorage = {
     getItem(key) { return storage.get(key) ?? null; },
-    setItem(key, value) { storage.set(key, value); }
+    setItem(key, value) { storage.set(key, value); },
+    removeItem(key) { storage.delete(key); }
   };
   const sessionStorage = {
     getItem(key) { return session.get(key) ?? null; },
@@ -123,6 +125,7 @@ function harness({ withAudio = false, withVoice = false, withCrypto = true } = {
   runInNewContext(read("docs/fb21-chapters45.js"), { window });
   runInNewContext(read("docs/fb21-chapter6-energy.js"), { window });
   runInNewContext(read("docs/fb21-chapter7-cleansing.js"), { window });
+  runInNewContext(read("docs/fb21-human-code12.js"), { window, localStorage, Date: FakeDate });
   runInNewContext(script, { document, window, localStorage, sessionStorage,
     setInterval, clearInterval, Date: FakeDate, crypto: browserCrypto, Uint32Array });
   const root = elements.find((item) => item.id === "fb21-quiet-root");
@@ -1913,4 +1916,23 @@ test("Chapter 7 cannot be started after an interrupted QMM",()=>{
  app.check("q-safe");app.click("start");
  app.advance(10000);app.click("return");app.click("save");
  assert.doesNotMatch(app.root.innerHTML,/data-action="qmm-continue"/);
+});
+
+
+test("Human Code 12 card opens in Quiet Deck, saves a local note and keeps legacy QMM available", () => {
+  const app = harness();
+  assert.match(app.root.innerHTML, /data-action="human12"/);
+  app.click("human12");
+  assert.match(app.root.innerHTML, /Human Code <em>12/);
+  assert.match(app.root.innerHTML, /The Vessel/);
+  assert.match(app.root.innerHTML, /The Whole/);
+  app.root.listeners.input({target:{id:"hc-reflection",value:"Practiced grounding today"}});
+  app.click("hc-mark");
+  assert.match(app.root.innerHTML, /1 \/ 12/);
+  const entry = JSON.parse(app.storage.get("focusbridge21-human-code12-v1"));
+  assert.equal(entry.entries["1"].note,"Practiced grounding today");
+  assert.equal(entry.entries["1"].explored,true);
+  app.click("hc-qmm");
+  assert.match(app.root.innerHTML, /Quiet Mind/);
+  assert.match(app.root.innerHTML, /SAFETY CHECK/);
 });

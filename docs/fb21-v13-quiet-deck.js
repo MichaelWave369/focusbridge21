@@ -150,6 +150,7 @@
     gdmStage: 0, gdmVoice: false, gdmVisual: "ladder", gdmNext: null,
     energyStage: 0, energyVoice: false, energyVisual: "glow", energyNext: null,
     teleStage: 0, teleVoice: false, targetLab: null,
+    gatewayLab: {status:"ready",rounds:[],outcome:null,error:"",saved:false},
     chapterStage: 0, chapterVoice: false,
     energy6Stage: 0, energy6Voice: false, energy6Theme: "body",
     cleanse7Stage: 0, cleanse7Voice: false, cleanse7Style: "release",
@@ -1269,6 +1270,10 @@
         '<span class="q-choice-icon" aria-hidden="true">✦</span><span class="q-choice-kicker">CREATE · SAVE · LISTEN</span>',
         '<strong>Intention Studio</strong><span>Your own spoken reflections, saved sound recipes, and thoughtful playback timing.</span>',
         '<span class="q-choice-link">Open Intention Studio →</span></button>',
+        '<button type="button" data-action="gateway" class="q-choice">',
+        '<span class="q-choice-icon" aria-hidden="true">◇</span><span class="q-choice-kicker">GATEWAY 1983 · EVIDENCE · PROBABILITY</span>',
+        '<strong>Gateway Evidence Atlas</strong><span>Explore historical claims, neuroscience, and a future-target experiment.</span>',
+        '<span class="q-choice-link">Open research atlas →</span></button>',
         '<button type="button" data-action="human12" class="q-choice">',
         '<span class="q-choice-icon" aria-hidden="true">⑫</span><span class="q-choice-kicker">TWELVE LEVELS · SELF-PACED</span>',
         '<strong>Human Code 12</strong><span>A practical atlas for attention, imagination, relationships, and contribution. Journal privately and explore at your own pace.</span>',
@@ -1308,6 +1313,11 @@
         '<p class="q-footnote">Not feeling well, dizzy, or faint? Skip audio practice and rest.',
         ' The full app has more detailed safety information.</p>'
       ].join("");
+    } else if (state.screen === "gateway") {
+      content = window.FocusBridgeGatewayResearch
+        ? window.FocusBridgeGatewayResearch.render(state.gatewayLab,
+            window.FocusBridgeGatewayResearch.randomAvailable(window.crypto))
+        : '<p role="alert">Gateway module unavailable. Reload to retry.</p>';
     } else if (state.screen === "human12") {
       content = window.FocusBridgeHumanCode12
         ? window.FocusBridgeHumanCode12.view()
@@ -1989,6 +1999,17 @@
     const button = event.target.closest("button[data-action]");
     if (!button || button.disabled) return;
     const action = button.dataset.action;
+    if (action === "gateway") {
+      stopPreview("",false);
+      stopAudio();
+      clearInterval(state.timer);
+      if (window.FocusBridgeVoice) window.FocusBridgeVoice.stop();
+      state.screen="gateway";
+      state.profile="gateway";
+      state.gatewayLab={status:"ready",rounds:[],outcome:null,error:"",saved:false};
+      render();
+      return;
+    }
     if (action === "human12") {
       stopPreview("", false);
       stopAudio();
@@ -2009,6 +2030,42 @@
       }
       else if (action === "hc-qmm") { selectMode("qmm"); return; }
       else if (action === "hc-intention") { selectMode("intention"); return; }
+      render();
+      return;
+    }
+    if (state.screen === "gateway" && action === "gw-begin" && window.FocusBridgeGatewayResearch) {
+      const g=window.FocusBridgeGatewayResearch;
+      state.gatewayLab=g.randomAvailable(window.crypto)?g.newBlock():
+        {status:"error",rounds:[],outcome:null,error:"Secure randomness unavailable.",saved:false};
+      render();
+      return;
+    }
+    if (state.screen === "gateway" && action === "gw-guess" && window.FocusBridgeGatewayResearch) {
+      const g=window.FocusBridgeGatewayResearch;
+      const lab=g.recordPrediction(state.gatewayLab,button.dataset.targetIndex,window.crypto);
+      state.gatewayLab=lab;
+      if (lab && lab.status==="complete" && lab.outcome && !lab.saved) {
+        let ledger=[];
+        try { const old=JSON.parse(localStorage.getItem(LEDGER_KEY)||"[]"); if(Array.isArray(old)) ledger=old; } catch {}
+        try {
+          const receipt={
+            session_id:"gateway-future-"+Date.now(),timestamp:new Date().toISOString(),
+            app:"FocusBridge21 Quiet Deck",preset:"Gateway Future-Target Lab",
+            target_gate:null,duration_min:null,actual_elapsed_sec:null,
+            guidance_mode:"F01 browser prediction before subsequent local random draw",
+            gateway_future_target_lab:{
+              protocol_version:"F01-v1",trials:lab.outcome.trials,hits:lab.outcome.hits,
+              chance_baseline:lab.outcome.chance,expected_chance_hits:lab.outcome.expected,
+              one_sided_chance_tail:lab.outcome.oneSidedTail,
+              guesses:lab.rounds.map(x=>g.TARGETS[x.guess].toLowerCase()),
+              targets:lab.rounds.map(x=>g.TARGETS[x.target].toLowerCase()),
+              evidence_boundary:"Editable local browser demonstration, no proof of precognition"},
+            notes:"",claim_boundary:"No independently verified timing, blinding or time-travel claim"
+          };
+          localStorage.setItem(LEDGER_KEY,JSON.stringify([receipt,...ledger]));
+          lab.saved=true;
+        } catch { lab.error="Local receipt could not be saved."; }
+      }
       render();
       return;
     }

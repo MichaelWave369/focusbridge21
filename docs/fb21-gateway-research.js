@@ -69,6 +69,7 @@ function render(block,cryptoReady){
  '<p class="q-lead">Follow the 1983 Army assessment, modern neuroscience, and what is still speculative. Independent research, not Monroe Institute or proprietary Hemi-Sync content.</p>',
  '<section class="gw-intro"><b>Keep the categories separate:</b> documented historical claim, tested observation, and extraordinary inference. An official document does not itself certify the conclusion.</section>',
  '<div class="gw-topics">',topics,'</div>',
+ '<section class="gw-intro"><h2>F02 · Future Beacon Protocol</h2><p>A separate research studio seals 20 predictions, lets you witness the commitment in a public GitHub comment, and checks a later drand beacon against independent records. No audio or private sensors.</p><p><a href="'+(typeof document === "undefined" ? "docs/f02/index.html" : new URL("f02/index.html",document.querySelector('script[src$="fb21-gateway-research.js"]')?.src||location.href).href)+'">Open F02 research studio →</a></p><p>Public-record verification relies on HTTPS relay agreement, not full BLS signature verification. Results are not proof of precognition.</p></section>',
  '<section class="q-panel gw-lab"><div class="q-eyebrow">F01 · EXPERIMENTAL PROBABILITY LAB</div>',
  '<h2>Future-Target Lab</h2>',
  '<p>This differs from the existing Blind Target Lab: here your prediction is locked before the random target is drawn. This is a browser-only demonstration, not a test of physical time travel.</p>',

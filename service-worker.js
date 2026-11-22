@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusbridge21-v3-8-gateway-evidence";
+const CACHE_NAME = "focusbridge21-v3-7-human-code12-gateway-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

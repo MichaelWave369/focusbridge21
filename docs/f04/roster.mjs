@@ -39,8 +39,8 @@ export async function buildCohortRoster(study,issueUrl,comments){
    else if(parsed[1]!==study.study_id||parsed[2]!==study.study_hash||
       f03[0][1]!==parsed[3]||f03[0][2]!==parsed[4])
      row.reason="Study or campaign hashes do not match preregistration";
-   else if(f03[0][3]!=="4"||Number(f03[0][4])!==study.first_round||
-       Number(f03[0][5])!==study.first_round+(BLOCKS-1)*ROUND_SPACING)
+   else if(Number(f03[0][3])!==study.first_round||
+       Number(f03[0][4])!==study.first_round+(BLOCKS-1)*ROUND_SPACING)
      row.reason="Campaign uses a different target schedule";
    else if(!Number.isFinite(created)||!Number.isFinite(updated)||updated<created||
       created<masterUpdated||created>=deadline||updated>=deadline)

@@ -25,7 +25,7 @@ export function scheduledTime(round) {
 export function nextFutureRound(nowMs,leadSeconds=LEAD_SECONDS) {
  if(!Number.isFinite(nowMs)||nowMs<GENESIS*1000)throw Error("Invalid current time");
  if(!Number.isSafeInteger(leadSeconds)||leadSeconds<60)throw Error("Insufficient lead time");
- return Math.ceil((nowMs/1000+leadSeconds-GENESIS)/PERIOD)+1;
+ return Math.floor((nowMs/1000+leadSeconds-GENESIS)/PERIOD)+2;
 }
 export function validatePredictions(predictions) {
  if(!Array.isArray(predictions)||predictions.length!==TRIALS||

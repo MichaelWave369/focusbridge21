@@ -1,0 +1,11 @@
+/* FocusBridge21 Gateway source-critical atlas */
+#fb21-quiet-root .gw-intro {padding:1rem 1.2rem;margin:1rem 0 1.5rem;border:1px solid rgba(160,180,230,.3);border-radius:15px;background:rgba(30,50,85,.2);line-height:1.65}
+#fb21-quiet-root .gw-topics {display:grid;gap:.7rem;margin:1.1rem 0 1.7rem}
+#fb21-quiet-root .gw-topic {border:1px solid rgba(160,180,230,.27);border-radius:13px;overflow:hidden;background:rgba(30,40,65,.36)}
+#fb21-quiet-root .gw-topic summary {cursor:pointer;padding:1rem;display:grid;gap:.3rem}
+#fb21-quiet-root .gw-topic summary small {color:#b6d9f3;text-transform:uppercase;letter-spacing:.08em}
+#fb21-quiet-root .gw-topic summary:focus-visible {outline:3px solid #b6d9f3;outline-offset:-3px}
+#fb21-quiet-root .gw-topic>div {padding:0 1rem 1rem;line-height:1.6}
+#fb21-quiet-root .gw-topic a {color:#b6e4ff;overflow-wrap:anywhere}
+#fb21-quiet-root .gw-lab .q-sync-stage-list {max-height:340px;overflow:auto}
+@media(min-width:780px){#fb21-quiet-root .gw-topics{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}

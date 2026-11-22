@@ -6,6 +6,16 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## F03: Preregistered Four-Block Campaign + BLS verification
+
+The Gateway research program now includes a **four-block, 80-prediction preregistration studio**. One public GitHub issue-comment witness fixes the entire campaign before its first future drand Quicknet round; all four registered rounds must be audited, with unavailable blocks explicitly reported. The CLI adds pinned-key **BLS12-381 short-signature verification**, deterministic target derivation, and complete-case exploratory chance-model reporting. The separate public-registration overview can identify commitments lacking public audit reports, but cannot detect unregistered experiments.
+
+- [F03 browser studio](docs/f03/index.html)
+- [F03 protocol and audit commands](docs/GATEWAY_F03_PROTOCOL.md)
+- Existing [F02 single-block protocol](docs/f02/index.html) and Quiet Deck practices remain unchanged.
+
+This is research infrastructure, not proof of precognition, time travel or medical outcomes.
+
 ## F02: Future Beacon Protocol
 
 A separate, source-auditable experiment workspace now allows 20 predictions to be sealed into a SHA-256 commitment **before** an externally scheduled drand Quicknet round. It produces a private sealed JSON file and a public commitment line, and audits GitHub issue-comment timestamps and two public beacon relays afterward. Online audit refuses changed or late records and derives targets reproducibly from beacon output. **It does not perform BLS signature verification**, nor claim precognition or eliminate selection bias. See [F02 protocol](docs/GATEWAY_F02_PROTOCOL.md) and the [F02 browser studio](docs/f02/index.html).

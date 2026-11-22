@@ -6,6 +6,10 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## F02: Future Beacon Protocol
+
+A separate, source-auditable experiment workspace now allows 20 predictions to be sealed into a SHA-256 commitment **before** an externally scheduled drand Quicknet round. It produces a private sealed JSON file and a public commitment line, and audits GitHub issue-comment timestamps and two public beacon relays afterward. Online audit refuses changed or late records and derives targets reproducibly from beacon output. **It does not perform BLS signature verification**, nor claim precognition or eliminate selection bias. See [F02 protocol](docs/GATEWAY_F02_PROTOCOL.md) and the [F02 browser studio](docs/f02/index.html).
+
 ## Gateway Evidence Atlas and Future-Target Lab
 
 The Quiet Deck now includes a source-linked, eight-topic **Gateway Evidence Atlas**, separating the 1983 Army report from modern findings and unverified claims. The new **Future-Target Lab** predicts one of four symbols before each subsequent browser-random draw, with 20 locked trials, withheld feedback, a 25% baseline, and local Signal Ledger receipts under a distinct namespace.

@@ -23,6 +23,6 @@ jobs:
         run: npm install --ignore-scripts --no-audit --no-fund
       - name: Verify JavaScript syntax
         run: |
-          for file in docs/*.js service-worker.js docs/f02/*.mjs docs/f03/*.mjs scripts/*.mjs; do node --check "$file"; done
+          for file in docs/*.js service-worker.js docs/f02/*.mjs docs/f03/*.mjs docs/f04/*.mjs scripts/*.mjs; do node --check "$file"; done
       - name: Run Quiet Deck smoke tests
         run: node --test tests/*.test.mjs

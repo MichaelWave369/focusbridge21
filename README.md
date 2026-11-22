@@ -6,6 +6,14 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## F04: Multi-Participant Cohort Study
+
+FocusBridge21 now has a proposed **F04 research cohort layer**: a public, SHA-256-sealed study plan fixes a participant limit (2–24), enrollment deadline, shared future Quicknet rounds and predeclared analysis. Participants seal 80 predictions in private F03-compatible files and post linked public registration lines on one study issue. A read-only roster includes duplicate, late and overflow attempts. Independent CLI audit verifies every enrolled campaign against its public GitHub witness and the F03 pinned-key BLS verifier; **incomplete cohorts have no pooled p-value**.
+
+Because all participants share future targets, F04's exact randomization-model calculation explicitly accounts for correlated predictions instead of falsely treating each person's hit indicators as independent. The study interface collects no personal health information or sensors, and **no recruitment, posting or study launch is automatic**. This is pilot infrastructure, not an approved or active human-subject study.
+
+See the [F04 browser study and enrollment studio](docs/f04/index.html), [protocol and CLI guide](docs/GATEWAY_F04_PROTOCOL.md), and the existing [F03 campaign studio](docs/f03/index.html).
+
 ## F03: Preregistered Four-Block Campaign + BLS verification
 
 The Gateway research program now includes a **four-block, 80-prediction preregistration studio**. One public GitHub issue-comment witness fixes the entire campaign before its first future drand Quicknet round; all four registered rounds must be audited, with unavailable blocks explicitly reported. The CLI adds pinned-key **BLS12-381 short-signature verification**, deterministic target derivation, and complete-case exploratory chance-model reporting. The separate public-registration overview can identify commitments lacking public audit reports, but cannot detect unregistered experiments.

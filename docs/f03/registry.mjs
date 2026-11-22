@@ -49,12 +49,15 @@ export async function validateRegistration(reg){
  if(reg.registration_hash!==hash)throw Error("The campaign registration was modified after sealing");
  return reg;
 }
-export async function createCampaign(predictionBlocks,{nowMs=Date.now(),randomProvider=globalThis.crypto}={}){
+export async function createCampaign(predictionBlocks,{nowMs=Date.now(),randomProvider=globalThis.crypto,firstRound=null}={}){
  if(!Array.isArray(predictionBlocks)||predictionBlocks.length!==BLOCKS)
    throw Error("F03 requires exactly four blocks");
  predictionBlocks.forEach(validatePredictions);
  if(!secure(randomProvider))throw Error("Secure browser crypto is required");
- const first=nextFutureRound(nowMs,LEAD_SECONDS);
+ const minimum=nextFutureRound(nowMs,LEAD_SECONDS);
+ if(firstRound!==null&&(!Number.isSafeInteger(firstRound)||firstRound<minimum))
+   throw Error("Requested fixed beacon round is too early or invalid");
+ const first=firstRound===null?minimum:firstRound;
  const sealed_blocks=[];
  for(let i=0;i<BLOCKS;i++){
    const plan={schema:F02,chain_hash:CHAIN_HASH,beacon_round:first+i*ROUND_SPACING,

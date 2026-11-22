@@ -6,6 +6,14 @@ FocusBridge21 is a local-first practice app for developing meditative capacities
 
 It is inspired by the broad idea of focus-level training, but it is independent of proprietary Monroe Institute / Hemi-Sync content and signals.
 
+## Gateway Evidence Atlas and Future-Target Lab
+
+The Quiet Deck now includes a source-linked, eight-topic **Gateway Evidence Atlas**, separating the 1983 Army report from modern findings and unverified claims. The new **Future-Target Lab** predicts one of four symbols before each subsequent browser-random draw, with 20 locked trials, withheld feedback, a 25% baseline, and local Signal Ledger receipts under a distinct namespace.
+
+This is an educational probability exercise, not evidence of precognition or time travel. The existing Chapter 3 Blind Target Lab, Human Code 12, QMM sessions and audio practices remain separate. No proprietary Monroe Institute or Hemi-Sync materials are included.
+
+See [research protocol, sources and safeguards](docs/GATEWAY_EVIDENCE_ATLAS.md).
+
 ## Human Code 12: original, self-paced learning atlas
 
 An optional **Human Code 12** screen now lives inside the Quiet Deck, without replacing its meditations or altering existing saves. Twelve original levels span **Foundation (1–3), Awareness (4–6), Connection (7–9), and Integration (10–12)**. Each level offers an objective, a non-coercive exercise, a reflection prompt, and a real-world action. The 3/6/9/12 markers are review milestones, not ranks or certifications.

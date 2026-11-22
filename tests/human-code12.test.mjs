@@ -95,7 +95,7 @@ test("Both FocusBridge21 entrypoints and offline cache load the curriculum befor
     assert.ok(html.indexOf("fb21-human-code12.js") < html.indexOf("fb21-v13-quiet-deck.js"));
   }
   const cache = read("service-worker.js");
-  assert.match(cache, /focusbridge21-v3-7-human-code12/);
+  assert.match(cache, /focusbridge21-v3-8-gateway-evidence/);
   assert.match(cache, /docs\/fb21-human-code12\.js/);
   assert.match(cache, /docs\/fb21-human-code12\.css/);
   assert.match(quiet, /data-action="human12"/);
